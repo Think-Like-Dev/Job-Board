@@ -1,0 +1,27 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "apply": "Apply Now",
+    "applied": "Applied"
+  },
+  "nav": {
+    "login": "Login / Signup",
+    "profile": "Profile",
+    "applications": "My Applications",
+    "logout": "Logout"
+  },
+  "auth": {
+    "title": "Welcome to the Job Board",
+    "emailLabel": "Email Address",
+    "continueWithEmail": "Continue with Email",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithLinkedIn": "Continue with LinkedIn",
+    "otpTitle": "Verify your email",
+    "otpLabel": "Enter OTP",
+    "verify": "Verify"
+  }
+}

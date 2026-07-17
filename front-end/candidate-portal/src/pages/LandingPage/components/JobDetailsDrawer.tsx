@@ -1,17 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../../components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '../../../components/ui/sheet';
 import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
 import { Bookmark, BookmarkCheck, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../../api/apiClient';
-import { API_ENDPOINTS } from '../../../api/endpoints.config';
+import { useJobDetails, useToggleBookmark } from '@api/hooks/useJobs';
 import { ApplyWorkflowModal } from './ApplyWorkflowModal';
-import { Skeleton } from '../../../components/ui/skeleton';
+import { Skeleton } from '@ui/skeleton';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../store';
-import { AuthModal } from '../../../components/auth/AuthModal';
+import type { RootState } from '@store/index';
+import { AuthModal } from '@components/auth/AuthModal';
 
 interface JobDetailsDrawerProps {
   jobId: string;
@@ -21,30 +18,14 @@ interface JobDetailsDrawerProps {
 
 export function JobDetailsDrawer({ jobId, isOpen, onClose }: JobDetailsDrawerProps) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [hasApplied, setHasApplied] = useState(false); // Simulate application state
 
-  const { data: job, isLoading } = useQuery({
-    queryKey: ['job', jobId],
-    queryFn: async () => {
-      const res = await apiClient.get(API_ENDPOINTS.JOBS.GET_DETAILS(jobId));
-      return res as any;
-    },
-    enabled: isOpen && !!jobId,
-  });
+  const { data: job, isLoading } = useJobDetails(jobId);
 
-  const toggleBookmark = useMutation({
-    mutationFn: async () => {
-      return await apiClient.post(API_ENDPOINTS.JOBS.BOOKMARK(jobId));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    }
-  });
+  const toggleBookmark = useToggleBookmark();
 
   const handleClose = () => {
     navigate('/');
@@ -78,8 +59,8 @@ export function JobDetailsDrawer({ jobId, isOpen, onClose }: JobDetailsDrawerPro
                     <Button variant="ghost" size="icon" onClick={handleShare}>
                       <Share2 className="w-5 h-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => toggleBookmark.mutate()}>
-                      {job.isBookmarked ? (
+                    <Button variant="ghost" size="icon" onClick={() => toggleBookmark.mutate(jobId)}>
+                      {job?.isBookmarked ? (
                         <BookmarkCheck className="w-6 h-6 fill-primary text-primary" />
                       ) : (
                         <Bookmark className="w-6 h-6" />

@@ -1,48 +1,15 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useJobsList, useToggleBookmark } from '@api/hooks/useJobs';
+import type { Job } from '@/types/job.types';
+import { Card } from '@ui/card';
+import { Button } from '@ui/button';
+import { Badge } from '@ui/badge';
+import { Skeleton } from '@ui/skeleton';
 import { Bookmark, BookmarkCheck, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Card } from '../../../components/ui/card';
-import { Skeleton } from '../../../components/ui/skeleton';
-import { apiClient } from '../../../api/apiClient';
-import { API_ENDPOINTS } from '../../../api/endpoints.config';
-
-interface Job {
-  id: string;
-  title: string;
-  category: string;
-  location: string;
-  experience: string;
-  salaryRange: string;
-  description: string;
-  isBookmarked: boolean;
-  postedAt: string;
-}
 
 export function JobCard({ job }: { job: Job }) {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [isBookmarked, setIsBookmarked] = useState(job.isBookmarked);
-
-  const toggleBookmark = useMutation({
-    mutationFn: async () => {
-      // Simulate API call
-      return await apiClient.post(API_ENDPOINTS.JOBS.BOOKMARK(job.id));
-    },
-    onMutate: () => {
-      // Optimistic update
-      setIsBookmarked(!isBookmarked);
-    },
-    onError: () => {
-      // Revert on error
-      setIsBookmarked(!isBookmarked);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    }
-  });
+  const toggleBookmark = useToggleBookmark();
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -83,10 +50,10 @@ export function JobCard({ job }: { job: Job }) {
               className="rounded-full text-muted-foreground hover:text-primary"
               onClick={(e) => {
                 e.stopPropagation();
-                toggleBookmark.mutate();
+                toggleBookmark.mutate(job.id);
               }}
             >
-              {isBookmarked ? (
+              {job.isBookmarked ? (
                 <BookmarkCheck className="w-6 h-6 fill-primary text-primary" />
               ) : (
                 <Bookmark className="w-6 h-6" />
@@ -124,13 +91,7 @@ export function JobCard({ job }: { job: Job }) {
 }
 
 export function JobsList() {
-  const { data: jobs, isLoading } = useQuery({
-    queryKey: ['jobs'],
-    queryFn: async () => {
-      const res = await apiClient.get(API_ENDPOINTS.JOBS.GET_ALL);
-      return res as Job[];
-    }
-  });
+  const { data: jobs, isLoading } = useJobsList({});
 
   if (isLoading) {
     return (

@@ -10,8 +10,18 @@ import { useSSE } from './hooks/useSSE';
 import './i18n/config';
 import './App.css';
 
-const queryClient = new QueryClient();
-
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: true,
+      throwOnError: false,
+    },
+    mutations: {
+      throwOnError: false,
+    },
+  },
+});
 function AppContent() {
   useSSE();
   return (

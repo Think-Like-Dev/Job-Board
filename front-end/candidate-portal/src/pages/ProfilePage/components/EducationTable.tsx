@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button } from '../../../components/ui/button';
+import { Button } from '@ui/button';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table';
 
 export interface Education {
   id: string;
@@ -14,7 +14,7 @@ export interface Education {
 }
 
 export function EducationTable() {
-  const [educations, setEducations] = useState<Education[]>([
+  const [educations] = useState<Education[]>([
     {
       id: '1',
       institution: 'University of Technology',

@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
+import { Label } from '@ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card';
+import { Skeleton } from '@ui/skeleton';
 import { EducationTable } from './components/EducationTable';
 import { ExperienceTable } from './components/ExperienceTable';
-import { validateImageSize, validatePassportAspectRatio, validateResume } from '../../utils/validators';
+import { validateImageSize, validatePassportAspectRatio, validateResume } from '@utils/validators';
+import { useProfile, useUpdateProfile } from '@api/hooks/useProfile';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
+  const { data: profile, isLoading } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
   const [profilePic, setProfilePic] = useState<string | null>(null);
 
   const handlePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +48,21 @@ export default function ProfilePage() {
     toast.success('Resume uploaded successfully');
   };
 
+  const handleSave = () => {
+    updateProfileMutation.mutate({}, {
+      onSuccess: () => toast.success('Profile saved successfully'),
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container max-w-4xl mx-auto py-12 px-4 space-y-8">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-4xl mx-auto py-12 px-4 space-y-8">
       <div>
@@ -63,7 +82,7 @@ export default function ProfilePage() {
                 {profilePic ? (
                   <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xs text-muted-foreground text-center p-2">Passport Photo<br/>(Max 1MB)</span>
+                  <span className="text-xs text-muted-foreground text-center p-2">Passport Photo<br />(Max 1MB)</span>
                 )}
                 <input
                   type="file"
@@ -77,19 +96,19 @@ export default function ProfilePage() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>First Name <span className="text-destructive">*</span></Label>
-                <Input defaultValue="John" />
+                <Input defaultValue={profile?.firstName ?? 'John'} />
               </div>
               <div className="space-y-2">
                 <Label>Last Name <span className="text-destructive">*</span></Label>
-                <Input defaultValue="Doe" />
+                <Input defaultValue={profile?.lastName ?? 'Doe'} />
               </div>
               <div className="space-y-2">
                 <Label>Email <span className="text-destructive">*</span></Label>
-                <Input defaultValue="candidate@example.com" disabled />
+                <Input defaultValue={profile?.email ?? 'candidate@example.com'} disabled />
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
-                <Input placeholder="+1 (555) 000-0000" />
+                <Input defaultValue={profile?.phone ?? ''} placeholder="+1 (555) 000-0000" />
               </div>
             </div>
           </div>
@@ -106,7 +125,7 @@ export default function ProfilePage() {
             <Input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} className="max-w-sm" />
             <Button variant="outline">
               <svg viewBox="0 0 24 24" className="w-4 h-4 mr-2" fill="#0A66C2">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
               </svg>
               Sync from LinkedIn
             </Button>
@@ -127,7 +146,9 @@ export default function ProfilePage() {
 
       <div className="flex justify-end gap-4">
         <Button variant="outline">Cancel</Button>
-        <Button>Save Profile</Button>
+        <Button onClick={handleSave} disabled={updateProfileMutation.isPending}>
+          {updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+        </Button>
       </div>
     </div>
   );

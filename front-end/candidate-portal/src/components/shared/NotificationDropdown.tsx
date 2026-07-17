@@ -1,22 +1,21 @@
 import { Bell, Check, Trash2, CheckCircle2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import type { RootState } from '@store/index';
 import { 
   markAsRead, 
   markAllAsRead, 
   clearRead, 
   clearAll 
-} from '../../store/slices/notificationSlice';
+} from '@store/slices/notificationSlice';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '../ui/dropdown-menu';
-import { Button } from '../ui/button';
-import { ScrollArea } from '../ui/scroll-area';
-import { formatDateToLocale } from '../../utils/date';
+} from '@ui/dropdown-menu';
+import { Button } from '@ui/button';
+import { ScrollArea } from '@ui/scroll-area';
+import { formatDateToLocale } from '@utils/date';
 
 export function NotificationDropdown() {
   const dispatch = useDispatch();
@@ -24,15 +23,13 @@ export function NotificationDropdown() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="relative p-2 rounded-full hover:bg-muted transition-colors">
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-destructive rounded-full">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
+      <DropdownMenuTrigger className="relative p-2 rounded-full hover:bg-muted transition-colors border-none outline-none focus:ring-0">
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-destructive rounded-full">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex justify-between items-center px-4 py-2">

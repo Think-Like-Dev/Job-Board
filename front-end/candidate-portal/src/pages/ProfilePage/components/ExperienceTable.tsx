@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button } from '../../../components/ui/button';
+import { Button } from '@ui/button';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table';
 
 export interface Experience {
   id: string;
@@ -12,7 +12,7 @@ export interface Experience {
 }
 
 export function ExperienceTable() {
-  const [experiences, setExperiences] = useState<Experience[]>([
+  const [experiences] = useState<Experience[]>([
     {
       id: '1',
       company: 'Tech Corp',

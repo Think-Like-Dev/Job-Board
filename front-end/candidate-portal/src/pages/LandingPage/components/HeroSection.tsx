@@ -1,7 +1,7 @@
 export function HeroSection() {
   return (
     <section className="relative w-full h-[40vh] md:h-[70vh] bg-muted overflow-hidden flex items-center justify-center">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-secondary/80 mix-blend-multiply z-10" />
+      <div className="absolute inset-0 bg-linear-to-r from-primary/80 to-secondary/80 mix-blend-multiply z-10" />
       <img
         src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=2850"
         alt="Company Cover"

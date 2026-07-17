@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
-import { useMutation } from '@tanstack/react-query';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,9 +17,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { apiClient } from '../../api/apiClient';
-import { API_ENDPOINTS } from '../../api/endpoints.config';
-import { loginSuccess, UserProfile } from '../../store/slices/authSlice';
+import { useSendOtp, useVerifyOtp } from '@api/hooks/useAuth';
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -33,7 +29,6 @@ const otpSchema = z.object({
 
 export function AuthModal({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'options' | 'email' | 'otp'>('options');
   const [email, setEmail] = useState('');
@@ -48,42 +43,36 @@ export function AuthModal({ children }: { children: React.ReactNode }) {
     defaultValues: { otp: '' },
   });
 
-  const sendOtpMutation = useMutation({
-    mutationFn: async (data: { email: string }) => {
-      return apiClient.post(API_ENDPOINTS.AUTH.LOGIN_OTP, data);
-    },
-    onSuccess: (_, variables) => {
-      setEmail(variables.email);
-      setStep('otp');
-      toast.success('OTP sent successfully!');
-    },
-    onError: () => {
-      toast.error('Failed to send OTP. Please try again.');
-    },
-  });
-
-  const verifyOtpMutation = useMutation({
-    mutationFn: async (data: { email: string; otp: string }) => {
-      return apiClient.post(API_ENDPOINTS.AUTH.VERIFY_OTP, data);
-    },
-    onSuccess: (data) => {
-      const user = data.user as UserProfile;
-      dispatch(loginSuccess(user));
-      toast.success('Logged in successfully!');
-      setIsOpen(false);
-      setStep('options');
-    },
-    onError: () => {
-      toast.error('Invalid OTP. Please try again.');
-    },
-  });
+  const sendOtpMutation = useSendOtp();
+  const verifyOtpMutation = useVerifyOtp();
 
   const onEmailSubmit = (values: z.infer<typeof emailSchema>) => {
-    sendOtpMutation.mutate(values);
+    sendOtpMutation.mutate(values, {
+      onSuccess: () => {
+        setEmail(values.email);
+        setStep('otp');
+        toast.success('OTP sent successfully!');
+      },
+      onError: () => {
+        toast.error('Failed to send OTP. Please try again.');
+      },
+    });
   };
 
   const onOtpSubmit = (values: z.infer<typeof otpSchema>) => {
-    verifyOtpMutation.mutate({ email, otp: values.otp });
+    verifyOtpMutation.mutate(
+      { email, otp: values.otp },
+      {
+        onSuccess: () => {
+          toast.success('Logged in successfully!');
+          setIsOpen(false);
+          setStep('options');
+        },
+        onError: () => {
+          toast.error('Invalid OTP. Please try again.');
+        },
+      }
+    );
   };
 
   const resetState = () => {
@@ -98,7 +87,7 @@ export function AuthModal({ children }: { children: React.ReactNode }) {
       setIsOpen(open);
       if (!open) resetState();
     }}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

@@ -1,17 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@api/apiClient';
-import { API_ENDPOINTS } from '@api/endpoints.config';
+import { useBookmarks } from '@api/hooks/useJobs';
 import { JobCard } from '../../LandingPage/components/JobsList';
 import { Skeleton } from '@ui/skeleton';
+import type { Job } from '@/types/job.types';
 
 export function BookmarksTab() {
-  const { data: jobs, isLoading } = useQuery({
-    queryKey: ['jobs'],
-    queryFn: async () => {
-      const res = await apiClient.get(API_ENDPOINTS.JOBS.GET_ALL);
-      return res as any[];
-    }
-  });
+  const { data: bookmarkedJobs, isLoading } = useBookmarks();
 
   if (isLoading) {
     return (
@@ -27,15 +20,13 @@ export function BookmarksTab() {
     );
   }
 
-  const bookmarkedJobs = jobs?.filter(job => job.isBookmarked) || [];
-
-  if (bookmarkedJobs.length === 0) {
+  if (!bookmarkedJobs || bookmarkedJobs.length === 0) {
     return <div className="text-center py-12 text-muted-foreground">No bookmarked jobs found.</div>;
   }
 
   return (
     <div className="mt-6 space-y-4">
-      {bookmarkedJobs.map((job) => (
+      {bookmarkedJobs.map((job: Job) => (
         <JobCard key={job.id} job={job} />
       ))}
     </div>

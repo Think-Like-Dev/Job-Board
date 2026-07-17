@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@api/apiClient';
-import { API_ENDPOINTS } from '@api/endpoints.config';
+import { useApplications } from '@api/hooks/useApplications';
 import { ApplicationCard } from './ApplicationCard';
 import { ApplicationDetailsModal } from './ApplicationDetailsModal';
 import { Skeleton } from '@ui/skeleton';
@@ -9,13 +7,7 @@ import { Skeleton } from '@ui/skeleton';
 export function ApplicationsTab() {
   const [selectedApp, setSelectedApp] = useState<any>(null);
 
-  const { data: applications, isLoading } = useQuery({
-    queryKey: ['applications'],
-    queryFn: async () => {
-      const res = await apiClient.get(API_ENDPOINTS.APPLICATIONS.GET_ALL);
-      return res as any[];
-    }
-  });
+  const { data: applications, isLoading } = useApplications();
 
   if (isLoading) {
     return (

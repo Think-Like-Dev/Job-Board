@@ -1,11 +1,17 @@
-import { Label } from '../../../components/ui/label';
-import { Checkbox } from '../../../components/ui/checkbox';
+import { useState } from 'react';
+import { Label } from '@ui/label';
+import { Checkbox } from '@ui/checkbox';
+import { Slider } from '@ui/slider';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '../../../components/ui/accordion';
+} from '@ui/accordion';
+
+const SALARY_MIN = 0;
+const SALARY_MAX = 300;
+const SALARY_STEP = 5;
 
 const filterCategories = [
   {
@@ -25,13 +31,52 @@ const filterCategories = [
   },
 ];
 
+function formatSalary(value: number): string {
+  if (value >= 1000) return `$${value}K`;
+  return `$${value}K`;
+}
+
 export function SidebarFilters() {
+  const [salaryRange, setSalaryRange] = useState<number[]>([30, 150]);
+
   return (
     <aside className="w-full h-full">
       <div className="sticky top-24 space-y-6 bg-card border rounded-xl p-6 shadow-sm">
         <h3 className="font-semibold text-lg tracking-tight">Filters</h3>
-        
-        <Accordion type="multiple" defaultValue={['category', 'location']} className="w-full">
+
+        {/* ── Salary Range ─────────────────────────────────────────── */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm">Salary Range</h4>
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+            <span className="bg-muted px-2 py-1 rounded font-semibold text-foreground">
+              {formatSalary(salaryRange[0])}
+            </span>
+            <span className="text-muted-foreground/60">–</span>
+            <span className="bg-muted px-2 py-1 rounded font-semibold text-foreground">
+              {formatSalary(salaryRange[1])}
+            </span>
+          </div>
+
+          <Slider
+            value={salaryRange}
+            min={SALARY_MIN}
+            max={SALARY_MAX}
+            step={SALARY_STEP}
+            onValueChange={(val:any) => setSalaryRange(val)}
+            className="w-full"
+          />
+
+          <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+            <span>{formatSalary(SALARY_MIN)}</span>
+            <span>{formatSalary(SALARY_MAX)}+</span>
+          </div>
+        </div>
+
+        <div className="border-t" />
+
+        {/* ── Checkbox filters ─────────────────────────────────────── */}
+        <Accordion>
           {filterCategories.map((category) => (
             <AccordionItem value={category.id} key={category.id} className="border-b-0">
               <AccordionTrigger className="hover:no-underline py-3">

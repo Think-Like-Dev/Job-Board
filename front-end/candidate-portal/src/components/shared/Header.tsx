@@ -30,7 +30,6 @@ export function Header() {
         {isAuthenticated ? (
           <>
             <NotificationDropdown />
-
             <DropdownMenu>
               <DropdownMenuTrigger>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -58,7 +57,9 @@ export function Header() {
           </>
         ) : (
           <AuthModal>
-            <Button>{t('nav.login')}</Button>
+            <Button>
+              {t('nav.login')}
+            </Button>
           </AuthModal>
         )}
       </div>

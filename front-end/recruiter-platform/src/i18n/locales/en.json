@@ -1,0 +1,52 @@
+{
+"common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "cancelled": "Cancelled",
+    "edit": "Edit",
+    "editing": "Editing...",
+    "edited": "Edited",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleted": "Deleted"
+  },
+  "job": {
+    "saveAsDraft": "Save as Draft",
+    "savingDraft": "Saving Draft...",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "archive": "Archive",
+    "archiving": "Archiving...",
+    "unarchive": "Unarchive",
+    "unarchiving":"Unarchiving...",
+    "createJob": "Create Job",
+    "updatingJob": "Updating Job..."
+  },
+  "nav": {
+    "back": "Back",
+    "logout": "Logout"
+  },
+  "auth": {
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "otpLabel": "Enter OTP",
+    "verify": "Verify",
+    "verifying": "Verifying...",
+    "login": "Login",
+    "logging": "Logging In...",
+    "verifyOtp": "Verify OTP",
+    "otpVerifySuccess": "Logged in successfully!",
+    "emailPlaceholder": "Enter your email address",
+    "passwordPlaceholder": "Enter your password",
+    "otpPlaceholder": "Enter your OTP of 6 characters",
+    "emailErrorMessage": "Please enter a valid email address",
+    "passwordErrorMessage": "Please enter a valid password",
+    "otpErrorMessage": "OTP must be exactly 6 characters",
+    "otpSendSuccess": "OTP sent successfully!",
+    "otpSendError": "Failed to send OTP. Please try again.",
+    "otpVerifyError": "Invalid OTP. Please try again."
+  }
+}

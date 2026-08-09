@@ -1,4 +1,12 @@
 {
+  "landing": {
+    "dreamJob": "Find Your Dream Job",
+    "dreamJobDescription": "Discover opportunities that match your skills and aspirations.",
+    "buildCareer": "Build Your Career",
+    "buildCareerDescription": "Connect with us across our global network.",
+    "growConfidence": "Grow With Confidence",
+    "growConfidenceDescription": "Take the next step toward a brighter future."
+  },
   "common": {
     "loading": "Loading...",
     "save": "Save",

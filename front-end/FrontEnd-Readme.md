@@ -12,6 +12,6 @@ This Project uses following tools and tech stack
   - Zod for schema validation , react-hook-forms for form management
 
 
-
- - [candidate-portal](./candidate-portal/CandidatePortal-Readme.md)
- - [recruiter-platform](./recruiter-platform/RecruiterPlatform-Readme.md)
+## list of services
+ - [candidate-portal](./candidate-portal/CandidatePortal-Readme.md) - candidate portal front end for job application
+ - [recruiter-platform](./recruiter-platform/RecruiterPlatform-Readme.md) - recruiter portal for posting job and manage operations like candidates , their applications , interviews and more.

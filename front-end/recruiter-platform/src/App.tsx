@@ -1,0 +1,43 @@
+import { TooltipProvider } from "@ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import AppRoutes from "./routes/AppRoutes";
+import { BrowserRouter } from "react-router-dom";
+import { Provider } from "react-redux";
+import { store } from "./store";
+import "./i18n/config";
+import "./App.css";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: true,
+      throwOnError: false,
+    },
+    mutations: {
+      throwOnError: false,
+    },
+  },
+});
+
+function AppContent() {
+  return (
+    <BrowserRouter>
+      <TooltipProvider>
+        <AppRoutes />
+      </TooltipProvider>
+    </BrowserRouter>
+  );
+}
+
+function App() {
+  return (
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <AppContent />
+      </QueryClientProvider>
+    </Provider>
+  );
+}
+
+export default App;

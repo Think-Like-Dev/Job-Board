@@ -1,0 +1,564 @@
+enum user_role {
+	ADMIN
+	RECRUITER
+	HIRING_MANAGER
+}
+
+enum job_status {
+	DRAFT
+	PUBLISHED
+	ARCHIVED
+	CLOSED
+}
+
+enum employment_type {
+	FULL_TIME
+	PART_TIME
+	CONTRACT
+	INTERN
+}
+
+enum application_status {
+	DRAFT
+	APPLIED
+	IN_REVIEW
+	SHORTLISTED
+	INTERVIEW
+	OFFER_EXTENDED
+	OFFER_ACCEPTED
+	OFFER_REJECTED
+	REJECTED
+	WITHDRAWN
+	AUTO_REJECTED
+}
+
+enum interview_mode {
+	ONLINE
+	IN_PERSON
+	PHONE_CALL
+}
+
+enum interview_status {
+	SCHEDULED
+	COMPLETED
+	CANCELLED
+	RESCHEDULED
+}
+
+enum offer_status {
+	PENDING
+	ACCEPTED
+	REJECTED
+	EXPIRED
+}
+
+enum question_type {
+	TEXT
+	TEXTAREA
+	RADIO
+	CHECKBOX
+	DROPDOWN
+	DATE
+	NUMBER
+	FILE
+	EMAIL
+	PHONE
+}
+
+enum email_status {
+	QUEUED
+	SENT
+	FAILED
+}
+
+enum file_type {
+	RESUME
+	COVER_LETTER
+	OFFER_LETTER
+	PROFILE_IMAGE
+	OTHER
+}
+
+
+Table users {
+	id bigint [pk, increment]
+	name varchar
+	email varchar [not null]
+	password_hash varchar
+	role user_role
+	is_active boolean [default: true]
+	created_at timestamp
+	updated_at timestamp
+}
+
+
+Table sessions {
+	id bigint [pk, increment]
+	user_id bigint [not null]
+	session_token varchar
+	expires_at timestamp
+	last_verified_at timestamp
+	created_at timestamp
+
+	indexes {
+		user_id [name: "sessions_index_0"]
+		session_token [name: "sessions_index_1"]
+	}
+}
+
+
+Table files {
+	id bigint [pk, increment]
+	file_type file_type
+	filename varchar
+	mime_type varchar
+	size bigint
+	storage_path varchar
+	created_at timestamp
+}
+
+
+Table candidates {
+	id bigint [pk, increment]
+	email varchar [not null]
+	first_name varchar
+	last_name varchar
+	phone varchar
+	profile_image_file_id bigint
+	linkedin_url varchar
+	portfolio_url varchar
+	created_at timestamp
+	updated_at timestamp
+}
+
+
+Table candidate_addresses {
+	id bigint [pk, increment]
+	candidate_id bigint
+	address varchar
+	city varchar
+	state varchar
+	country varchar
+	postal_code varchar
+}
+
+
+Table candidate_resumes {
+	id bigint [pk, increment]
+	candidate_id bigint
+	file_id bigint
+	version int
+	parsing_status varchar
+	created_at timestamp
+
+	indexes {
+		(candidate_id, version) [name: "candidate_resumes_index_2", unique]
+	}
+}
+
+
+Table candidate_education {
+	id bigint [pk, increment]
+	candidate_id bigint
+	institution varchar
+	degree varchar
+	field_of_study varchar
+	start_date date
+	end_date date
+	grade varchar
+	gpa decimal
+}
+
+
+Table candidate_experience {
+	id bigint [pk, increment]
+	candidate_id bigint
+	company_name varchar
+	job_title varchar
+	start_date date
+	end_date date
+	salary varchar
+	description text
+}
+
+
+Table skills {
+	id bigint [pk, increment]
+	name varchar
+}
+
+
+Table candidate_skills {
+	candidate_id bigint
+	skill_id bigint
+	id bigint [pk, increment, not null]
+
+	indexes {
+		(candidate_id, skill_id) [name: "candidate_skills_index_3"]
+	}
+}
+
+
+Table candidate_certifications {
+	id bigint [pk, increment]
+	candidate_id bigint
+	name varchar
+	issuer varchar
+	issue_date date
+	expiry_date date
+}
+
+
+Table jobs {
+	id bigint [pk, increment]
+	title varchar
+	category varchar
+	department varchar
+	designation varchar
+	employment_type employment_type
+	location varchar
+	description text
+	experience_required varchar
+	salary_min decimal
+	salary_max decimal
+	vacancy_count int
+	status job_status
+	created_by bigint
+	created_at timestamp
+	updated_at timestamp
+}
+
+
+Table job_skills {
+	job_id bigint [not null]
+	skill_id bigint [not null]
+	id bigint [pk, increment, not null]
+
+	indexes {
+		(job_id, skill_id) [name: "job_skills_index_4"]
+	}
+}
+
+
+Table job_application_questions {
+	id bigint [pk, increment]
+	job_id bigint
+	label varchar
+	question_type question_type
+	required boolean
+	validation_rules json
+	display_order int
+}
+
+
+Table question_options {
+	id bigint [pk, increment]
+	question_id bigint
+	option_value varchar
+}
+
+Table applications {
+	id bigint [pk, increment]
+	candidate_id bigint
+	job_id bigint
+	resume_id bigint
+	status application_status
+	applied_at timestamp
+	withdrawn_at timestamp
+	created_at timestamp
+
+	indexes {
+		(candidate_id, job_id) [name: "applications_index_5", unique]
+	}
+}
+
+
+Table application_answers {
+	id bigint [pk, increment]
+	application_id bigint
+	question_id bigint
+	answer text
+}
+
+
+Table application_status_history {
+	id bigint [pk, increment]
+	application_id bigint
+	old_status application_status
+	new_status application_status
+	reason text
+	changed_by bigint
+	created_at timestamp
+}
+
+
+Table interview_rounds {
+	id bigint [pk, increment]
+	job_id bigint
+	name varchar
+	round_number int
+}
+
+
+Table interviews {
+	id bigint [pk, increment]
+	application_id bigint
+	round_id bigint
+	mode interview_mode
+	status interview_status
+	scheduled_at timestamp
+	meeting_link varchar
+	location varchar
+	instructions text
+}
+
+
+Table interviewers {
+	interview_id bigint [not null]
+	user_id bigint [not null]
+	id bigint [pk, increment, not null]
+
+	indexes {
+		(interview_id, user_id) [name: "interviewers_index_6"]
+	}
+}
+
+
+Table interview_feedback {
+	id bigint [pk, increment]
+	interview_id bigint
+	interviewer_id bigint
+	rating int
+	comments text
+}
+
+
+Table offers {
+	id bigint [pk, increment]
+	application_id bigint
+	offer_file_id bigint
+	salary decimal
+	deadline timestamp
+	status offer_status
+	accepted_at timestamp
+}
+
+Table email_templates [headercolor: #175e7a] {
+	id bigint [ pk, increment, unique ]
+	name varchar
+	category varchar
+	subject varchar
+	body text
+	created_at timestamp
+	updated_at timestamp
+}
+
+Table email_logs [headercolor: #175e7a] {
+	id bigint [ pk, increment, unique ]
+	template_id bigint
+	application_id bigint
+	recipient varchar
+	status email_status
+	sent_at timestamp
+}
+
+Table candidate_bookmarks [headercolor: #175e7a] {
+	candidate_id bigint
+	job_id bigint
+	created_at timestamp
+	id bigint [ pk, increment, unique ]
+}
+
+Table notifications [headercolor: #175e7a] {
+	id bigint [ pk, increment, unique ]
+	candidate_id bigint
+	title varchar
+	message text
+	read_at timestamp
+	created_at timestamp
+}
+
+Table resume_analysis [headercolor: #175e7a] {
+	id bigint [ pk, increment, unique ]
+	resume_id bigint
+	extracted_data json
+	summary text
+	model_name varchar
+	created_at timestamp
+}
+
+Table candidate_job_match [headercolor: #175e7a] {
+	id bigint [ pk, increment, unique ]
+	application_id bigint
+	score decimal
+	matching_skills json
+	missing_skills json
+	ai_summary text
+	created_at timestamp
+}
+
+Table activity_logs [headercolor: #175e7a] {
+	id bigint [ pk, increment, unique ]
+	user_id bigint
+	entity_type varchar
+	entity_id bigint
+	action varchar
+	metadata json
+	created_at timestamp
+}
+
+Ref fk_users_id_sessions {
+	users.id < sessions.user_id [delete: restrict, update: no action]
+}
+
+Ref fk_files_id_candidates {
+	files.id < candidates.profile_image_file_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_addresses {
+	candidates.id < candidate_addresses.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_resumes {
+	candidates.id < candidate_resumes.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_files_id_candidate_resumes {
+	files.id < candidate_resumes.file_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_education {
+	candidates.id < candidate_education.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_experience {
+	candidates.id < candidate_experience.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_skills {
+	candidates.id < candidate_skills.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_skills_id_candidate_skills {
+	skills.id < candidate_skills.skill_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_certifications {
+	candidates.id < candidate_certifications.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_users_id_jobs {
+	users.id < jobs.created_by [delete: restrict, update: no action]
+}
+
+Ref fk_jobs_id_job_skills {
+	jobs.id < job_skills.job_id [delete: restrict, update: no action]
+}
+
+Ref fk_skills_id_job_skills {
+	skills.id < job_skills.skill_id [delete: restrict, update: no action]
+}
+
+Ref fk_jobs_id_job_application_questions {
+	jobs.id < job_application_questions.job_id [delete: restrict, update: no action]
+}
+
+Ref fk_job_application_questions_id_question_options {
+	job_application_questions.id < question_options.question_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_applications {
+	candidates.id < applications.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_jobs_id_applications {
+	jobs.id < applications.job_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidate_resumes_id_applications {
+	candidate_resumes.id < applications.resume_id [delete: restrict, update: no action]
+}
+
+Ref fk_applications_id_application_answers {
+	applications.id < application_answers.application_id [delete: restrict, update: no action]
+}
+
+Ref fk_job_application_questions_id_application_answers {
+	job_application_questions.id < application_answers.question_id [delete: restrict, update: no action]
+}
+
+Ref fk_applications_id_application_status_history {
+	applications.id < application_status_history.application_id [delete: restrict, update: no action]
+}
+
+Ref fk_users_id_application_status_history {
+	users.id < application_status_history.changed_by [delete: restrict, update: no action]
+}
+
+Ref fk_jobs_id_interview_rounds {
+	jobs.id < interview_rounds.job_id [delete: restrict, update: no action]
+}
+
+Ref fk_applications_id_interviews {
+	applications.id < interviews.application_id [delete: restrict, update: no action]
+}
+
+Ref fk_interview_rounds_id_interviews {
+	interview_rounds.id < interviews.round_id [delete: restrict, update: no action]
+}
+
+Ref fk_interviews_id_interviewers {
+	interviews.id < interviewers.interview_id [delete: restrict, update: no action]
+}
+
+Ref fk_users_id_interviewers {
+	users.id < interviewers.user_id [delete: restrict, update: no action]
+}
+
+Ref fk_interviews_id_interview_feedback {
+	interviews.id < interview_feedback.interview_id [delete: restrict, update: no action]
+}
+
+Ref fk_users_id_interview_feedback {
+	users.id < interview_feedback.interviewer_id [delete: restrict, update: no action]
+}
+
+Ref fk_applications_id_offers {
+	applications.id < offers.application_id [delete: restrict, update: no action]
+}
+
+Ref fk_files_id_offers {
+	files.id < offers.offer_file_id [delete: restrict, update: no action]
+}
+
+Ref fk_email_templates_id_email_logs {
+	email_templates.id < email_logs.template_id [delete: restrict, update: no action]
+}
+
+Ref fk_applications_id_email_logs {
+	applications.id < email_logs.application_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_candidate_bookmarks {
+	candidates.id < candidate_bookmarks.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_jobs_id_candidate_bookmarks {
+	jobs.id < candidate_bookmarks.job_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidates_id_notifications {
+	candidates.id < notifications.candidate_id [delete: restrict, update: no action]
+}
+
+Ref fk_candidate_resumes_id_resume_analysis {
+	candidate_resumes.id < resume_analysis.resume_id [delete: restrict, update: no action]
+}
+
+Ref fk_applications_id_candidate_job_match {
+	applications.id < candidate_job_match.application_id [delete: restrict, update: no action]
+}
+
+Ref fk_users_id_activity_logs {
+	users.id < activity_logs.user_id [delete: restrict, update: no action]
+}

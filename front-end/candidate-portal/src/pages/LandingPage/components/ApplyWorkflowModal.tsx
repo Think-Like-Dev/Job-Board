@@ -16,9 +16,15 @@ interface ApplyWorkflowModalProps {
   onClose: () => void;
   onApplied: () => void;
 }
+enum ApplyWorkflowSteps{
+  RESUME,
+  PROFILE,
+  ADDITIONAL_QUESTIONS,
+  DECLARATION,
+}
 
 export function ApplyWorkflowModal({ jobId, isOpen, onClose, onApplied }: ApplyWorkflowModalProps) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<ApplyWorkflowSteps>(ApplyWorkflowSteps.RESUME);
   const queryClient = useQueryClient();
 
   const applyMutation = useMutation({
@@ -55,7 +61,7 @@ export function ApplyWorkflowModal({ jobId, isOpen, onClose, onApplied }: ApplyW
         </DialogHeader>
 
         <div className="py-4">
-          {step === 1 && (
+          {step === ApplyWorkflowSteps.RESUME && (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Step 1: Resume &amp; Cover Letter</h3>
               <div className="space-y-2">
@@ -69,7 +75,7 @@ export function ApplyWorkflowModal({ jobId, isOpen, onClose, onApplied }: ApplyW
             </div>
           )}
 
-          {step === 2 && (
+          {step === ApplyWorkflowSteps.PROFILE && (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Step 2: Profile Review</h3>
               <p className="text-sm text-muted-foreground">
@@ -89,7 +95,7 @@ export function ApplyWorkflowModal({ jobId, isOpen, onClose, onApplied }: ApplyW
             </div>
           )}
 
-          {step === 3 && (
+          {step === ApplyWorkflowSteps.ADDITIONAL_QUESTIONS && (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Step 3: Additional Questions</h3>
               <div className="space-y-4">
@@ -112,7 +118,7 @@ export function ApplyWorkflowModal({ jobId, isOpen, onClose, onApplied }: ApplyW
             </div>
           )}
 
-          {step === 4 && (
+          {step === ApplyWorkflowSteps.DECLARATION && (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Step 4: Declaration</h3>
               <div className="flex items-start space-x-3">

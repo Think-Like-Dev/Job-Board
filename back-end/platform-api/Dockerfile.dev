@@ -1,0 +1,32 @@
+FROM node:22-bookworm-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN npm install -g pnpm@latest
+
+COPY package*.json pnpm-*.yaml ./
+
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["pnpm", "start:dev"]
+
+# ============================================================
+# Migration target
+# ============================================================
+FROM builder AS migration
+
+CMD ["pnpm", "migration:up"]
+
+# ============================================================
+# Seed target
+# ============================================================
+FROM builder AS seed
+
+CMD ["pnpm", "seed:run"]

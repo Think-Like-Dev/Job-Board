@@ -62,8 +62,11 @@ httpClient.interceptors.response.use(
     const responseData = error.response?.data as Record<string, string> | undefined;
     const message = responseData?.message ?? error.message ?? 'An unexpected error occurred';
 
-    // Session expired or forbidden — clear Redux state and redirect to landing
-    if (status === 401 || status === 403) {
+    // Session expired or forbidden — clear Redux state and redirect to landing.
+    // Auth endpoints are exempt: a 401 there means bad credentials / no session,
+    // not an expired session on a protected page.
+    const isAuthRequest = error.config?.url?.includes('/auth/') ?? false;
+    if ((status === 401 || status === 403) && !isAuthRequest) {
       store.dispatch(logout());
       // Replace so the user cannot navigate back to a protected page
       window.location.replace('/');

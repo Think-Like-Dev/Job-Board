@@ -15,7 +15,7 @@ import {
 
 export function Header() {
   const { t } = useTranslation();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, isInitialized, user } = useSelector((state: RootState) => state.auth);
   const logoutMutation = useLogout();
   const navigate = useNavigate();
   return (
@@ -27,7 +27,9 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        {isAuthenticated ? (
+        {!isInitialized ? (
+          <div className="h-9 w-24 animate-pulse rounded bg-muted" />
+        ) : isAuthenticated ? (
           <>
             <NotificationDropdown />
             <DropdownMenu>

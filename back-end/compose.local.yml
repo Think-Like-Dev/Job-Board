@@ -1,0 +1,138 @@
+services:
+  platform-api:
+    build:
+      context: ./platform-api
+      dockerfile: Dockerfile.dev
+
+    env_file:
+      - ./env/.env.local
+
+    environment:
+      NODE_ENV: local
+
+    volumes:
+      - ./platform-api/src:/app/src
+      - ./platform-api/package.json:/app/package.json
+      - ./platform-api/pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./platform-api/pnpm-workspace.yaml:/app/pnpm-workspace.yaml
+
+    command:
+      - npm
+      - run
+      - start:dev
+
+    ports:
+      - "5000:5000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+  # migrate
+  migrate:
+    build:
+      context: ./platform-api
+      dockerfile: Dockerfile.dev
+      target: migration
+
+    env_file:
+      - ./env/.env.local
+
+    profiles:
+      - migration
+
+    restart: "no"
+
+    networks:
+      - backend
+     
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # seed
+  seed:
+    build:
+      context: ./platform-api
+      dockerfile: Dockerfile.dev
+      target: seed
+
+    env_file:
+      - ./env/.env.local
+
+    environment:
+      NODE_ENV: local
+
+    profiles:
+      - seed
+
+    restart: "no"
+
+    networks:
+      - backend
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-bookworm
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+
+    restart: unless-stopped
+
+    command: ["redis-server", "--appendonly", "yes"]
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    networks:
+      - backend
+
+volumes:
+  platform_api_node_modules:
+    name: job-board-platform-api-node-modules
+
+  postgres_data:
+    name: job-board-postgres-data
+
+  redis_data:
+    name: job-board-redis-data

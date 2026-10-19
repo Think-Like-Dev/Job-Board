@@ -49,7 +49,7 @@ Job-Board
     └───recruiter-platform
 ```
 
-For a more detailed overview of the architecture and implementation, refer to the documentation in the respective [front-end](./front-end/FrontEnd-Readme.md) and [back-end](/back-end/BackEnd-Readme.md) directories.
+For a more detailed overview of the architecture and implementation, refer to the documentation in the respective [front-end](./front-end/FrontEnd-Readme.md) and [back-end](./back-end/BackEnd-Readme.md) directories.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

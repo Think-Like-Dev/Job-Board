@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { QUERY_KEYS } from './queryKeys';
-import { sendOtp, verifyOtp, getMe, logoutUser } from '../services/auth.service';
-import { loginSuccess, logout } from '@store/slices/authSlice';
-import type { SendOtpPayload, VerifyOtpPayload } from '@/types/auth.types';
+import { login, verifyOtp, getMe, logoutUser } from '../services/auth.service';
+import { loginSuccess, logout, setInitialized } from '@store/slices/authSlice';
+import type { RootState } from '@/store';
+import type { LoginPayload, VerifyOtpPayload } from '@/types/auth.types';
 
 export function useAuthMe(enabled: boolean) {
   return useQuery({
@@ -12,12 +14,34 @@ export function useAuthMe(enabled: boolean) {
     staleTime: 15 * 60 * 1000,
     gcTime: Infinity,
     enabled,
+    retry: false,
   });
 }
 
-export function useSendOtp() {
+/**
+ * Restores the Redux auth state from the HttpOnly session cookie once per
+ * app load. A 401 simply means "not signed in" and must not redirect.
+ */
+export function useAuthBootstrap() {
+  const dispatch = useDispatch();
+  const isInitialized = useSelector(
+    (state: RootState) => state.auth.isInitialized,
+  );
+  const { data, isSuccess, isError } = useAuthMe(!isInitialized);
+
+  useEffect(() => {
+    if (isInitialized) return;
+    if (isSuccess && data) {
+      dispatch(loginSuccess(data));
+    } else if (isError) {
+      dispatch(setInitialized());
+    }
+  }, [isInitialized, isSuccess, isError, data, dispatch]);
+}
+
+export function useLogin() {
   return useMutation({
-    mutationFn: (payload: SendOtpPayload) => sendOtp(payload),
+    mutationFn: (payload: LoginPayload) => login(payload),
   });
 }
 

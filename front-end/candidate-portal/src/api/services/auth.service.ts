@@ -22,10 +22,9 @@ export async function verifyOtp(payload: VerifyOtpPayload): Promise<AuthResponse
 }
 
 export async function getMe(): Promise<UserProfile> {
-  // Use the raw response schema or redefine here. Based on mock, GET_ME returns just UserProfile
   const response = await api.get<unknown>(API_ENDPOINTS.AUTH.ME);
-  // Re-using the UserProfileSchema from auth.schema
-  return parseSchema(AuthResponseSchema.shape.user, response, 'getMe Response');
+  const parsed = parseSchema(AuthResponseSchema, response, 'getMe Response');
+  return parsed.user;
 }
 
 export async function logoutUser(): Promise<void> {

@@ -26,7 +26,7 @@ if (ENV.MOCK_API) {
   });
 
   mock.onGet(API_ENDPOINTS.AUTH.ME).reply(() => {
-    return [200, mockUser];
+    return [200, { user: mockUser }];
   });
 
   mock.onPost(API_ENDPOINTS.AUTH.LOGOUT).reply(200, {

@@ -5,9 +5,12 @@ import { z } from 'zod';
 export const UserProfileSchema = z.object({
   id: z.string(),
   email: z.email(),
+  name: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   avatarUrl: z.string().optional(),
+  role: z.string().optional(),
+  principalType: z.enum(['candidate', 'user']).optional(),
 });
 
 export const AuthResponseSchema = z.object({

@@ -78,7 +78,7 @@ Clicking Login / Signup opens an authentication modal with the following options
 
 Email authentication requires OTP verification for both registration and login.
 
-Authenticated users are allowed to see the private menus like profile menu by only checking the session cookie. We are **not using Jwt token** , we are **using cookie for validation and getting user detail.**
+Authenticated users are allowed to see private menus such as the profile menu by checking the session cookie. We are **not using JWT tokens**. Authentication is **stateful**: the cookie carries only an opaque session token, while the authoritative session payload (principal, email, role, expiry) is stored in **Redis** with a TTL. All API requests must be sent with credentials so the cookie is included.
 **Profile Menu**
 
 Authenticated users can access:
@@ -230,8 +230,8 @@ Just below the Job title we show a card with current status of the application w
 8. Applied - will just show the date and time of application
 
 ### Additional Job application status flow constraints
- 1. Once an applicaiton is submitted it cannot be moved back to draft.
- 2. Candidates can withdraw the application before it's status is changed to "In Review". 
+ 1. Once an application is submitted it cannot be moved back to draft.
+ 2. Candidates can withdraw the application before its status is changed to "In Review".
  3. Once the status reaches "Offer Extended" , Candidates should be able to either
     - accept the offer within given deadline (have accept offer button and upload acceptance letter)
     - reject the offer within given deadline (reject with reason mandatory)
@@ -240,7 +240,7 @@ Just below the Job title we show a card with current status of the application w
 ## Notifications
 
 - Display a notification bell with an unread badge next to the profile dropdown, visible only when the user is logged in.
-- Use **Server-Sent Events (SSE)** to fetch notifications by sending the encoded authentication token as a query parameter.
+- Use **Server-Sent Events (SSE)** to fetch notifications. The client opens `EventSource` with `withCredentials: true`, so the browser sends the HttpOnly session cookie; the backend resolves it against the Redis session store. Do not try to read the session token in JavaScript.
 - Open an SSE connection every **5 minutes**, receive the latest notifications, then close the connection once all events are received.
 - Notifications represent **application status updates**.
 - Allow users to:

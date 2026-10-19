@@ -7,6 +7,7 @@ import AppRoutes from './routes/AppRoutes';
 import { Header } from './components/shared/Header';
 import { Footer } from './components/shared/Footer';
 import { useSSE } from './hooks/useSSE';
+import { useAuthBootstrap } from '@api/hooks/useAuth';
 import './i18n/config';
 import './App.css';
 
@@ -23,6 +24,7 @@ const queryClient = new QueryClient({
   },
 });
 function AppContent() {
+  useAuthBootstrap();
   useSSE();
   return (
     <BrowserRouter>

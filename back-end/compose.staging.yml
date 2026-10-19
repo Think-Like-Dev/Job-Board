@@ -1,0 +1,87 @@
+services:
+  platform-api:
+    env_file:
+      - ./env/.env.staging
+
+    environment:
+      NODE_ENV: staging
+
+    ports:
+      - "5000:5000"
+
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  migrate:
+    env_file:
+      - ./env/.env.staging
+    environment:
+      NODE_ENV: staging
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    env_file:
+      - ./env/.env.staging
+    environment:
+      NODE_ENV: staging
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-bookworm
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+
+    restart: unless-stopped
+
+    command: ["redis-server", "--appendonly", "yes"]
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    name: job-board-staging-postgres-data
+
+  redis_data:
+    name: job-board-staging-redis-data

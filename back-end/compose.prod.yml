@@ -1,0 +1,22 @@
+services:
+  platform-api:
+    env_file:
+      - ./env/.env.production
+
+    environment:
+      NODE_ENV: production
+
+    ports:
+      - "5000:5000"
+
+  migrate:
+    env_file:
+      - ./env/.env.production
+    environment:
+      NODE_ENV: production
+
+  seed:
+    env_file:
+      - ./env/.env.production
+    environment:
+      NODE_ENV: production

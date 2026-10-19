@@ -1,6 +1,6 @@
 # AI Platform API
 
-You are a Principal AI Microservice Architect and Senior Python Engineer. Your task is to implement a production-grade, asynchronous AI Microservice for an Applicant Tracking System (ATS) platform using Python 3.11+, FastAPI, SQLModel (PostgreSQL via asyncpg), PydanticAI, LangChain, and Cryptography.
+You are a Principal AI Microservice Architect and Senior Python Engineer. Your task is to implement a production-grade, asynchronous AI Microservice for an Applicant Tracking System (ATS) platform using Python 3.14+, FastAPI, SQLModel (PostgreSQL via asyncpg), PydanticAI, LangChain, and Cryptography.
 
 Enforce strict code quality:
 1. Linting & Formatting: Compliance with `ruff format` and `ruff check --fix` across every module.
@@ -65,7 +65,7 @@ Layer Structure:
 
 MODULE 1: BYOK (Bring Your Own Key) & SECURITY MANAGEMENT
 --------------------------------------------------------------------------------
-- Encryption: Implement AES-256-GCM symmetric encryption using `cryptography.fernet.Fernet`.
+- Encryption: Implement AES-256-GCM symmetric encryption using `cryptography.hazmat.primitives.ciphers.aead.AESGCM`. Do not use `cryptography.fernet.Fernet` for this: Fernet is AES-128-CBC + HMAC-SHA256, not AES-256-GCM.
 - Key Storage Logic:
   1. Accept raw API key string from client input.
   2. Extract last 4 characters -> store in `key_last_four`.

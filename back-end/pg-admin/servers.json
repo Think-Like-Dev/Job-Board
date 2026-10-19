@@ -1,0 +1,23 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Job Board PostgreSQL",
+      "Group": "Job Board",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "job_board",
+      "Username": "thinklikedev",
+      "SSLMode": "prefer"
+    },
+    "2": {
+      "Name": "Job Board Production PostgreSQL",
+      "Group": "Production",
+      "Host": "prod-db.internal",
+      "Port": 5432,
+      "MaintenanceDB": "job_board",
+      "Username": "prod-debug-user",
+      "SSLMode": "require"
+    }
+
+  }
+}

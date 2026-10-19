@@ -3,18 +3,20 @@ import { API_ENDPOINTS } from '../endpoints.config';
 import { parseSchema } from "@lib/schemaValidation";
 import {
   AuthResponseSchema,
-  OtpSentResponseSchema,
-  SendOtpPayloadSchema,
+  LoginPayloadSchema,
+  LoginResponseSchema,
   VerifyOtpPayloadSchema,
 } from '../schemas/auth.schema';
-import type { SendOtpPayload, VerifyOtpPayload, AuthResponse, OtpSentResponse, UserProfile } from '@/types/auth.types';
+import type { LoginPayload, VerifyOtpPayload, AuthResponse, LoginResponse, UserProfile } from '@/types/auth.types';
 
-export async function sendOtp(payload: SendOtpPayload): Promise<OtpSentResponse> {
-  const validatedPayload = parseSchema(SendOtpPayloadSchema, payload, 'sendOtp');
-  const response = await api.post<unknown>(API_ENDPOINTS.AUTH.LOGIN_OTP, validatedPayload);
-  return parseSchema(OtpSentResponseSchema, response, 'sendOtp Response');
+/** Recruiter login step 1: validates email + password and sends an OTP. */
+export async function login(payload: LoginPayload): Promise<LoginResponse> {
+  const validatedPayload = parseSchema(LoginPayloadSchema, payload, 'login');
+  const response = await api.post<unknown>(API_ENDPOINTS.AUTH.LOGIN, validatedPayload);
+  return parseSchema(LoginResponseSchema, response, 'login Response');
 }
 
+/** Recruiter login step 2: verifies the OTP and starts the session. */
 export async function verifyOtp(payload: VerifyOtpPayload): Promise<AuthResponse> {
   const validatedPayload = parseSchema(VerifyOtpPayloadSchema, payload, 'verifyOtp');
   const response = await api.post<unknown>(API_ENDPOINTS.AUTH.VERIFY_OTP, validatedPayload);
@@ -22,10 +24,9 @@ export async function verifyOtp(payload: VerifyOtpPayload): Promise<AuthResponse
 }
 
 export async function getMe(): Promise<UserProfile> {
-  // Use the raw response schema or redefine here. Based on mock, GET_ME returns just UserProfile
   const response = await api.get<unknown>(API_ENDPOINTS.AUTH.ME);
-  // Re-using the UserProfileSchema from auth.schema
-  return parseSchema(AuthResponseSchema.shape.user, response, 'getMe Response');
+  const parsed = parseSchema(AuthResponseSchema, response, 'getMe Response');
+  return parsed.user;
 }
 
 export async function logoutUser(): Promise<void> {

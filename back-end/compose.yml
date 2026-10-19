@@ -1,30 +1,94 @@
-name: job-board
+name: job-board-backend
+
 services:
+  platform-api:
+    build:
+      context: ./platform-api
+      dockerfile: Dockerfile
 
-  postgres:
-    image: postgres:18-bookworm
+    restart: unless-stopped
 
-    container_name: postgres-db
-    restart: always
+    networks:
+      - backend
+
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U thinklikedev -d job_board" ]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-    environment:
-      POSTGRES_USER: thinklikedev
-      POSTGRES_PASSWORD: admin@thinklikedev
-      POSTGRES_DB: job_board
-    ports:
-      - "5432:5432"
-    volumes:
-      - job_board_postgres:/var/lib/postgresql
+      start_period: 20s
+  # migrate
+  migrate:
+    build:
+      context: ./platform-api
+      target: migration
+
+    profiles:
+      - migration
+
+    restart: "no"
+
     networks:
-      - pg-network
+      - backend
 
-volumes:
-  job_board_postgres:
+  # seed
+  seed:
+    build:
+      context: ./platform-api
+      target: seed
 
+    profiles:
+      - seed
+
+    restart: "no"
+
+    networks:
+      - backend
+
+  # debug
+  pgadmin:
+    image: dpage/pgadmin4:latest
+
+    profiles:
+      - debug
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+
+    ports:
+      - "5050:80"
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      # - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+
+    networks:
+      - backend
+
+  redisinsight:
+    image: redis/redisinsight:latest
+
+    profiles:
+      - debug
+
+    ports:
+      - "5540:5540"
+
+    volumes:
+      - redisinsight_data:/data
+
+    networks:
+      - backend
 networks:
-  pg-network:
-    external: true
+  backend:
+    name: job-board-backend
+    driver: bridge
+volumes:
+  pgadmin_data:
+    name: job-board-pgadmin-data
+
+  redisinsight_data:
+    name: job-board-redisinsight-data
+
+#host.docker.internal

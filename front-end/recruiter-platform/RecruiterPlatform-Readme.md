@@ -69,7 +69,7 @@ Recruiters can do the following operations as a bulk or individually:
 - Add interview notes and instructions.
 - Attach meeting links or location details.
 
-Interview schedules are automatically reflected in the Candidate Portal and also sent as email whnever status is changed.
+Interview schedules are automatically reflected in the Candidate Portal and also sent as email whenever status is changed.
 
 ### Email Template Management
 
@@ -98,7 +98,7 @@ The platform automatically sends email notifications when recruiters perform act
 - Rescheduling interviews
 - Sending offers
 - Updating application status
-- Zuho Rejecting applications having no response crossing offer deadlines
+- Auto-rejecting applications having no response crossing offer deadlines
 - Requesting additional information
 
 Manual email communication is also supported whenever required.
@@ -145,11 +145,11 @@ src/
 
 ### Authentication
 
-- Since this is internal tool , there will be no signup. 
-- Authentication is done via just email and password. 
-- On every login user will be asked for OTP verification.
-- There is no public route pages , every page except login is allowed only after authentication.
-- We use cookie for authentication verificaiton. We do not use JWT token. We validate cookie details , session validity on every certain interval and on before making every major api call like job publish and status updates.
+- Since this is an internal tool, there is no signup.
+- Authentication is done via email and password, followed by OTP verification on every login. `POST /auth/login` validates the password and sends the OTP; `POST /auth/otp/verify` completes the login.
+- There are no public pages: every page except login and password reset requires authentication.
+- Authentication is **stateful and cookie-based**: the `session_token` cookie carries an opaque token whose authoritative session payload (principal, email, role, expiry) lives in **Redis** with a TTL. We do not use JWT. The app calls `GET /auth/me` on load to restore Redux state, and validates session validity before major API calls such as job publish and status updates.
+- **Role-based routing:** only `RECRUITER` gets the dashboard/workspace routes (`/`, `/jobs`). `ADMIN` and `HIRING_MANAGER` currently land on a welcome screen (`/`) showing their name and role in muted text. Add new pages by extending the role branches in `src/routes/AppRoutes.tsx`.
 
 ### Dashboard
 
@@ -168,7 +168,7 @@ It provides quick access to:
 
 This Job list page displays all jobs as list of wide cards in two tabs.
 
-- **Published Jobs** showing Actively Published Jobs which is recieving application, i.e. Jobs which are not archived 
+- **Published Jobs** showing Actively Published Jobs which is receiving application, i.e. Jobs which are not archived
 - **Archived Jobs** showing jobs which are archived. 
 
 Each job card allows recruiters to:
@@ -228,7 +228,7 @@ Each job card allows recruiters to:
 - Published Jobs can be archived, even before last submission date. 
   **constraints when clikcing archive button
     - if no candidates accepted offer in that job, show an alert wit the following message and get confirmation.
-  ```No candidates got confirmed in this Job . This archiving action cannot be reverted and it will make this job obsolete i.e. no kind of status update for the job or candidate applicaiton's can be made. ```
+  ```No candidates got confirmed in this Job . This archiving action cannot be reverted and it will make this job obsolete i.e. no kind of status update for the job or candidate applications can be made. ```
 - Archived Jobs cannot be unarchived.
 
 **Created Job cards list shows**
@@ -253,7 +253,7 @@ Interview Scheduled: 18
 * **Clone Job**
  Allows to clone job - Clicking on the copy button just copies it's contents to create page to create a new job.
 * **Archive Button**
-  Marks a Job as archived - It just makes a job obsolete ,actions like job status round update or updating status of applicaiton in that job cannot be performed. we can just view it for visual history.
+  Marks a Job as archived - It just makes a job obsolete ,actions like job status round update or updating status of application in that job cannot be performed. we can just view it for visual history.
 * **Detailed view** - clicking on it shows Job detail in a slide up  drawer modal.
 
 Provide appropriate buttons for the above actions in job card.
@@ -274,7 +274,7 @@ A table containing all candidates.
 Columns:
 
 * Candidate Name
-* Canidate email
+* Candidate email
 * Resume Status
 * Current Application Stage
 * AI Ranking Score
@@ -387,7 +387,7 @@ Recruiters can schedule interviews for candidates in the current interview round
 - Interview round
 - Date & time
 - Interviewer(s)
-- Meeting mode (In person , onilne or phone call)
+- Meeting mode (In person , online or phone call)
 - Meeting link or location
 - Candidate instructions
 

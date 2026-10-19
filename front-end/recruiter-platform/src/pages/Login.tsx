@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { z } from "zod";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useSendOtp, useVerifyOtp } from "@api/hooks/useAuth";
+import { useLogin, useVerifyOtp } from "@api/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -28,18 +28,18 @@ const Login = () => {
 
   const emailForm = useForm({
     resolver: zodResolver(emailSchema),
-    defaultValues: { email: "" },
+    defaultValues: { email: "", password: "" },
   });
-  const sendOtpMutation = useSendOtp();
+  const loginMutation = useLogin();
   const onEmailSubmit = (values: z.infer<typeof emailSchema>) => {
-    sendOtpMutation.mutate(values, {
+    loginMutation.mutate(values, {
       onSuccess: () => {
         setEmail(values.email);
         setStep("otp");
         toast.success(t("auth.otpSendSuccess"));
       },
       onError: () => {
-        toast.error(t("auth.otpSendError"));
+        toast.error(t("auth.loginError"));
       },
     });
   };
@@ -56,7 +56,7 @@ const Login = () => {
         onSuccess: () => {
           toast.success(t("auth.loginSuccess"));
           setStep("email");
-          navigate("/dashboard");
+          navigate("/");
         },
         onError: () => {
           toast.error(t("auth.otpVerifyError"));
@@ -111,8 +111,8 @@ const Login = () => {
               </p>
             )}
           </div>
-          <Button disabled={sendOtpMutation.isPending} type="submit">
-            {sendOtpMutation.isPending ? (
+          <Button disabled={loginMutation.isPending} type="submit">
+            {loginMutation.isPending ? (
               <>
                 <Loader2 className="animate-spin" /> {t("auth.logging")}
               </>

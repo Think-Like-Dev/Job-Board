@@ -4,6 +4,7 @@ import AppRoutes from "./routes/AppRoutes";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./store";
+import { useAuthBootstrap } from "@api/hooks/useAuth";
 import "./i18n/config";
 import "./App.css";
 
@@ -21,6 +22,7 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
+  useAuthBootstrap();
   return (
     <BrowserRouter>
       <TooltipProvider>

@@ -6,11 +6,11 @@ import { ENV } from '../config/env.config';
 
 export function useSSE() {
   const dispatch = useDispatch();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const timeoutRef = useRef<number>(0);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated) return;
 
     const connectAndFetch = () => {
       if (ENV.MOCK_API) {
@@ -28,8 +28,10 @@ export function useSSE() {
         return;
       }
 
-      const token = btoa(JSON.stringify(user));
-      const eventSource = new EventSource(`${ENV.API_BASE_URL}/notifications/stream?token=${token}`);
+      const eventSource = new EventSource(
+        `${ENV.API_BASE_URL}/notifications/stream`,
+        { withCredentials: true },
+      );
       
       eventSource.onmessage = (event) => {
         try {
@@ -60,5 +62,5 @@ export function useSSE() {
         clearInterval(timeoutRef.current);
       }
     };
-  }, [isAuthenticated, user, dispatch]);
+  }, [isAuthenticated, dispatch]);
 }

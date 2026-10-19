@@ -29,6 +29,14 @@
     "back": "Back",
     "logout": "Logout"
   },
+  "welcome": {
+    "title": "Welcome {{name}}"
+  },
+  "roles": {
+    "ADMIN": "Admin",
+    "RECRUITER": "Recruiter",
+    "HIRING_MANAGER": "Hiring Manager"
+  },
   "auth": {
     "emailLabel": "Email Address",
     "passwordLabel": "Password",
@@ -47,6 +55,8 @@
     "otpErrorMessage": "OTP must be exactly 6 characters",
     "otpSendSuccess": "OTP sent successfully!",
     "otpSendError": "Failed to send OTP. Please try again.",
-    "otpVerifyError": "Invalid OTP. Please try again."
+    "otpVerifyError": "Invalid OTP. Please try again.",
+    "loginSuccess": "Logged in successfully!",
+    "loginError": "Invalid email or password."
   }
 }

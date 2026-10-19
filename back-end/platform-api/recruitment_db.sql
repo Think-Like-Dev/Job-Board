@@ -81,17 +81,9 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"updated_at" TIMESTAMP,
 	PRIMARY KEY("id")
 );
-CREATE TABLE IF NOT EXISTS "sessions" (
-	"id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	"user_id" UUID NOT NULL,
-	"session_token" VARCHAR,
-	"expires_at" TIMESTAMP,
-	"last_verified_at" TIMESTAMP,
-	"created_at" TIMESTAMP,
-	PRIMARY KEY("id")
-);
-CREATE INDEX "sessions_index_0" ON "sessions" ("user_id");
-CREATE INDEX "sessions_index_1" ON "sessions" ("session_token");
+-- NOTE: Login sessions are NOT stored in Postgres. They live in Redis
+-- (the central auth store) with a TTL, managed by the platform-api AuthService.
+-- See src/modules/auth/auth.service.ts and back-end/compose.yml (redis service).
 CREATE TABLE IF NOT EXISTS "files" (
 	"id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 	"file_type" FILE_TYPE,
@@ -335,7 +327,6 @@ CREATE TABLE IF NOT EXISTS "activity_logs" (
 	PRIMARY KEY("id")
 );
 
-ALTER TABLE "sessions" ADD CONSTRAINT "fk_users_id_sessions" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "candidates" ADD CONSTRAINT "fk_files_id_candidates" FOREIGN KEY ("profile_image_file_id") REFERENCES "files" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "candidate_addresses" ADD CONSTRAINT "fk_candidates_id_candidate_addresses" FOREIGN KEY ("candidate_id") REFERENCES "candidates" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE "candidate_resumes" ADD CONSTRAINT "fk_candidates_id_candidate_resumes" FOREIGN KEY ("candidate_id") REFERENCES "candidates" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION DEFERRABLE INITIALLY IMMEDIATE;

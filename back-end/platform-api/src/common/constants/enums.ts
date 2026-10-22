@@ -27,6 +27,18 @@ export enum EmploymentType {
   INTERN = 'INTERN',
 }
 
+export enum WorkMode {
+  ON_SITE = 'ON_SITE',
+  HYBRID = 'HYBRID',
+  REMOTE = 'REMOTE',
+}
+
+export enum CompensationType {
+  FIXED = 'FIXED',
+  RANGE = 'RANGE',
+  NEGOTIABLE = 'NEGOTIABLE',
+}
+
 export enum ApplicationStatus {
   DRAFT = 'DRAFT',
   APPLIED = 'APPLIED',

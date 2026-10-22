@@ -23,7 +23,8 @@
     "unarchive": "Unarchive",
     "unarchiving":"Unarchiving...",
     "createJob": "Create Job",
-    "updatingJob": "Updating Job..."
+    "updatingJob": "Updating Job...",
+    "listTitle": "Jobs"
   },
   "nav": {
     "back": "Back",
@@ -58,5 +59,95 @@
     "otpVerifyError": "Invalid OTP. Please try again.",
     "loginSuccess": "Logged in successfully!",
     "loginError": "Invalid email or password."
+  },
+  "jobForm": {
+    "createTitle": "Create Job",
+    "stepOf": "Step {{current}} of {{total}}",
+    "questions": {
+      "title": "Application Questions",
+      "description": "Choose the questions candidates must answer when they apply for this role.",
+      "addQuestion": "Add Question",
+      "comingSoon": "The questions builder is coming soon."
+    },
+    "steps": {
+      "basics": "Job Basics",
+      "description": "Description & Requirements",
+      "compensation": "Compensation & Details",
+      "process": "Hiring Process & Settings",
+      "questions": "Application Questions",
+      "review": "Review"
+    },
+    "fields": {
+      "title": "Job Title",
+      "department": "Department",
+      "designation": "Designation",
+      "category": "Category",
+      "employmentType": "Employment Type",
+      "location": "Location",
+      "workMode": "Work Mode",
+      "description": "Job Description",
+      "responsibilities": "Responsibilities",
+      "yearsOfExperience": "Years of Experience",
+      "skills": "Skills",
+      "keywords": "Keywords",
+      "compensationType": "Compensation",
+      "currency": "Currency",
+      "period": "Period",
+      "amount": "Amount",
+      "amountMin": "Minimum Amount",
+      "amountMax": "Maximum Amount",
+      "vacancies": "Vacancies",
+      "benefits": "Benefits",
+      "workShiftTiming": "Work Shift Timing",
+      "totalInterviewRounds": "Total Interview Rounds",
+      "lastApplicationDate": "Last Application Date",
+      "coverLetterRequired": "Cover Letter Required",
+      "attachmentsAllowed": "Attachments Allowed",
+      "maximumAttachments": "Maximum Attachments"
+    },
+    "placeholders": {
+      "title": "e.g. Senior Backend Engineer",
+      "department": "e.g. Engineering",
+      "designation": "e.g. Backend Engineer",
+      "category": "e.g. Software Development",
+      "location": "e.g. Bengaluru, India",
+      "description": "Describe the role, team and responsibilities",
+      "responsibilities": "List the key responsibilities",
+      "yearsOfExperience": "e.g. 3-5 years",
+      "tags": "Type a value and press Enter",
+      "shift": "e.g. 9:00 AM - 6:00 PM"
+    },
+    "compensationOptions": {
+      "NONE": "No salary information",
+      "FIXED": "Fixed",
+      "RANGE": "Range",
+      "NEGOTIABLE": "Negotiable"
+    },
+    "periodOptions": {
+      "Yearly": "Yearly",
+      "Monthly": "Monthly",
+      "Hourly": "Hourly"
+    },
+    "actions": {
+      "next": "Next",
+      "back": "Back",
+      "saveDraft": "Save as Draft"
+    },
+    "review": {
+      "yes": "Yes",
+      "no": "No",
+      "notProvided": "Not provided"
+    },
+    "validation": {
+      "required": "This field is required",
+      "selectAtLeastOne": "Select at least one option",
+      "positiveNumber": "Enter a valid positive number"
+    },
+    "toasts": {
+      "draftSaved": "Job saved as draft",
+      "published": "Job published successfully",
+      "createFailed": "Could not create the job. Please try again.",
+      "titleRequired": "Add a job title before saving a draft"
+    }
   }
 }

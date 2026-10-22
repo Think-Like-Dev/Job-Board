@@ -9,6 +9,7 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { UsersModule } from '@modules/users/users.module';
 import { CandidatesModule } from '@modules/candidates/candidates.module';
 import { FilesModule } from '@modules/files/files.module';
+import { JobsModule } from '@modules/jobs/jobs.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { FilesModule } from '@modules/files/files.module';
     UsersModule,
     CandidatesModule,
     FilesModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

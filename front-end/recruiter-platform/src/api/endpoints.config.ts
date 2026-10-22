@@ -8,9 +8,9 @@ export const API_ENDPOINTS = {
   JOBS: {
     GET_ALL: '/jobs',
     CREATE: '/jobs',
-    UPDATE: (id: number)=>`/jobs/${id}`,
-    GET_DETAILS: (id: number) => `/jobs/${id}`,
-    PATCH: (id: number)=>`/jobs/${id}/status`,
+    UPDATE: (id: string)=>`/jobs/${id}`,
+    GET_DETAILS: (id: string) => `/jobs/${id}`,
+    PATCH: (id: string)=>`/jobs/${id}/status`,
   },
   PROFILE: {
     GET: '/profile',

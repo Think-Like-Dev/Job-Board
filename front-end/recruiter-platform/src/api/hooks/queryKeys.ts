@@ -12,7 +12,7 @@ export const QUERY_KEYS = {
   JOBS: {
     ALL: ["jobs"] as const,
     LIST: (filters: JobFilters) => ["jobs", "list", filters] as const,
-    DETAIL: (id: number) => ["jobs", "detail", id] as const,
+    DETAIL: (id: string) => ["jobs", "detail", id] as const,
   },
   APPLICATIONS: {
     ALL: ["applications"] as const,

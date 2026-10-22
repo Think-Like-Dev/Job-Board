@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { JobFilters, UpdateJobRequest } from "../schemas/jobs.schema";
+import type {
+  CreateJobRequest,
+  JobFilters,
+  UpdateJobRequest,
+} from "../schemas/jobs.schema";
 import {
+  createJob,
   getJobs,
   getJobById,
   patchJob,
@@ -18,7 +23,7 @@ export function useGetJobs(filters: JobFilters) {
   });
 }
 
-export function useGetJobById(id: number) {
+export function useGetJobById(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.JOBS.DETAIL(id),
     queryFn: () => getJobById(id),
@@ -28,7 +33,18 @@ export function useGetJobById(id: number) {
   });
 }
 
-export function usePatchJobStatus(id: number, status: JobStatus) {
+export function useCreateJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["create", QUERY_KEYS.JOBS.ALL],
+    mutationFn: (payload: CreateJobRequest) => createJob(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.JOBS.ALL });
+    },
+  });
+}
+
+export function usePatchJobStatus(id: string, status: JobStatus) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["patch", QUERY_KEYS.JOBS.DETAIL(id)],
@@ -39,7 +55,7 @@ export function usePatchJobStatus(id: number, status: JobStatus) {
   });
 }
 
-export function useUpdateJob(id: number, payload: UpdateJobRequest) {
+export function useUpdateJob(id: string, payload: UpdateJobRequest) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["update", QUERY_KEYS.JOBS.DETAIL(id)],

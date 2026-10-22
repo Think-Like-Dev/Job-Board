@@ -28,7 +28,7 @@ export async function createJob(payload: CreateJobRequest): Promise<CreateJobRes
 }
 
 export async function updateJob(
-  id: number,
+  id: string,
   payload: UpdateJobRequest,
 ): Promise<GetSingleJobResponse> {
   const response = await api.put<GetSingleJobResponse>(API_ENDPOINTS.JOBS.UPDATE(id), payload);
@@ -36,13 +36,13 @@ export async function updateJob(
 }
 
 export async function patchJob(
-  id: number,
+  id: string,
   status: string,
 ): Promise<PatchJobResponse> {
   const response = await api.patch<PatchJobResponse>(API_ENDPOINTS.JOBS.PATCH(id),{id,status});
   return parseSchema(PatchJobResponseSchema, response, "patchJob Response");
 }
-export async function getJobById(id: number): Promise<GetSingleJobResponse> {
+export async function getJobById(id: string): Promise<GetSingleJobResponse> {
   const response = await api.get<GetSingleJobResponse>(API_ENDPOINTS.JOBS.GET_DETAILS(id));
   return parseSchema(
     SingleJobResponseSchema,

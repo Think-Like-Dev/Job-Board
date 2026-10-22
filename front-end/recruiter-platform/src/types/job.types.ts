@@ -46,7 +46,7 @@ export type Compensation =
     })
   | null;
 export interface Job {
-  id: number;
+  id: string;
   code: string;
   title: string;
   category: string;
@@ -55,12 +55,16 @@ export interface Job {
   employmentType: EmploymentType;
   compensation?: Compensation;
   location: string;
-  modeOfWork: WorkMode[];
+  workMode: WorkMode[];
   workShiftTiming: string[];
   skills: string[];
   keywords: string[];
   responsibilities: string;
   vacancies: number;
+  department?: string;
+  designation?: string;
+  benefits?: string[];
+  totalInterviewRounds?: number;
   status: JobStatus;
   applicationSettings?: {
     coverLetterRequired: boolean;
@@ -69,7 +73,7 @@ export interface Job {
     customQuestions?: object[];
   };
   hiringProcess?: string[];
-  autoClosingDate?: string;
+  lastApplicationDate?: string;
   createdAt: string;
   updatedAt: string;
 }

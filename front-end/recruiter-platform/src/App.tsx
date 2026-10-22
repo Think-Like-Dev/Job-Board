@@ -1,4 +1,5 @@
 import { TooltipProvider } from "@ui/tooltip";
+import { Toaster } from "@ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AppRoutes from "./routes/AppRoutes";
 import { BrowserRouter } from "react-router-dom";
@@ -27,6 +28,7 @@ function AppContent() {
     <BrowserRouter>
       <TooltipProvider>
         <AppRoutes />
+        <Toaster position="top-right" richColors />
       </TooltipProvider>
     </BrowserRouter>
   );

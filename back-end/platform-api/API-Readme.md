@@ -320,18 +320,6 @@ pnpm migration:create
 pnpm migration:check
 ```
 
-Docker (build the migration image):
-
-```sh
-docker compose --env-file <env_file_path> --profile migration run --build migrate
-```
-
-Docker (run pending migrations):
-
-```sh
-docker compose --env-file <env_file_path> --profile migration run --rm migrate
-```
-
 ## Seed data
 
 The default seeder creates three internal users:
@@ -351,14 +339,68 @@ pnpm seed:run
 pnpm seed:create <SeederName>
 ```
 
-Docker (build the seed image):
 
+## Local Development Workflow
+
+1. Initial setup - Start PostgreSQL and Redis Infrastructure:
 ```sh
-docker compose --env-file <env_file_path> --profile seed run --build seed
+docker compose --env-file ./env/.env.local up -d postgres redis
+```
+2. Build the development image:
+```sh
+docker compose --env-file ./env/.env.local build platform-api
+```
+3. Run migrations
+```sh
+docker compose --env-file ./env/.env.local --profile migration run --rm migrate
+```
+4. Run seeds
+```sh
+docker compose --env-file ./env/.env.local --profile seed run --rm seed
+```
+5. Start the API
+```sh
+docker compose --env-file ./env/.env.local up -d platform-api
 ```
 
-Docker (run seeders):
+> For subsequent development sessions, you don't need to repeat migrations and seeds unless there are new migrations or seed data to apply. 
+>You can simply run: `docker compose --env-file ./env/.env.local up -d platform-api
+`
 
+## Staging / Prod / Remote Cloud Workflow
+  `<env_file_path> -> ./env/.env.staging or ./env/.env.production`
+
+1. Start Infrastructure
 ```sh
-docker compose --env-file <env_file_path> --profile seed run --rm seed
+docker compose --env-file <env_file_path> up -d postgres redis
 ```
+2. Build the application image
+```sh
+docker compose --env-file <env_file_path> build platform-api
+```
+Because all three services share the same image tag, this image is also used by migration and seed.
+
+3. Run migrations
+```sh
+docker compose --env-file <env_file_path> --profile migration run --rm migrate pnpm run migration:up:dist
+```
+4. Run seeds when required
+```sh
+docker compose --env-file <env_file_path> --profile seed run --rm seed pnpm run seed:run:dist
+```
+5. Start API
+```sh
+docker compose --env-file <env_file_path>  up -d platform-api
+```
+
+> **Note**: **In staging and Prod environments the built source will be under dist folder , we might have to run the script from dist folder with special commands as provided above.**
+It also supports running the migraiton down and until specific version
+
+|Scope|Command|
+|:---:|:-----:|
+| Migration Up One version | `pnpm run migration:up` |
+| Migration Down One version | `pnpm run migration:down` |
+| Migration Up until certain file | `pnpm run migration:up --to <filename>` |
+| Migration Down until certain file | `pnpm run migration:down --to <filename>` |
+
+_In case of executing from build folder add `:dist` as the suffix of command_

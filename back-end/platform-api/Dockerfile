@@ -6,9 +6,9 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@12.9.1
 
-COPY package*.json pnpm-*.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN pnpm install --frozen-lockfile
 
@@ -19,20 +19,22 @@ COPY src ./src
 
 RUN pnpm run build
 
-# ============================================================
-# Migration target
-# ============================================================
-FROM builder AS migration
-
-# CMD ["pnpm", "exec", "mikro-orm", "migration:up", "--config", "./dist/src/database/mikro-orm.cli.config.js"]
-CMD ["pnpm", "migration:up"]
 
 # ============================================================
-# Seed target
+# Production dependencies
 # ============================================================
-FROM builder AS seed
 
-CMD ["pnpm", "seed:run"]
+FROM node:22-bookworm-slim AS production-deps
+
+WORKDIR /app
+
+RUN npm install -g pnpm@12.9.1
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN pnpm install --prod --frozen-lockfile \
+    && pnpm store prune
+
 
 # ============================================================
 # Production
@@ -40,7 +42,6 @@ CMD ["pnpm", "seed:run"]
 
 FROM node:22-bookworm-slim AS production
 
-ENV NODE_ENV=production
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
@@ -48,16 +49,14 @@ RUN apt-get update \
 
 WORKDIR /app
 
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@12.9.1
 
-COPY package*.json pnpm-*.yaml ./
+COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
 
-RUN pnpm install --prod --frozen-lockfile && pnpm store prune
+COPY --from=builder --chown=node:node /app/dist ./dist
 
-COPY --from=builder /app/dist ./dist
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml  ./
 
 USER node
 
 EXPOSE 5000
-
-CMD ["node", "dist/main.js"]

@@ -1,5 +1,8 @@
+name: job-board-local
 services:
   platform-api:
+    image: job-board-platform-api:local
+
     build:
       context: ./platform-api
       dockerfile: Dockerfile.dev
@@ -11,53 +14,26 @@ services:
       NODE_ENV: local
 
     volumes:
-      - ./platform-api/src:/app/src
-      - ./platform-api/package.json:/app/package.json
-      - ./platform-api/pnpm-lock.yaml:/app/pnpm-lock.yaml
-      - ./platform-api/pnpm-workspace.yaml:/app/pnpm-workspace.yaml
-
-    command:
-      - npm
-      - run
-      - start:dev
+      - ./platform-api:/app
+      - platform_api_node_modules:/app/node_modules
 
     ports:
       - "5000:5000"
 
+    command: ["pnpm", "start:dev"]
+
     depends_on:
       postgres:
         condition: service_healthy
-
       redis:
         condition: service_healthy
-  # migrate
-  migrate:
-    build:
-      context: ./platform-api
-      dockerfile: Dockerfile.dev
-      target: migration
 
-    env_file:
-      - ./env/.env.local
+  # Migration
+  migrate:
+    image: job-board-platform-api:local
 
     profiles:
       - migration
-
-    restart: "no"
-
-    networks:
-      - backend
-     
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  # seed
-  seed:
-    build:
-      context: ./platform-api
-      dockerfile: Dockerfile.dev
-      target: seed
 
     env_file:
       - ./env/.env.local
@@ -65,8 +41,39 @@ services:
     environment:
       NODE_ENV: local
 
+    volumes:
+      - ./platform-api:/app
+      - platform_api_node_modules:/app/node_modules
+
+    command: ["pnpm", "migration:up"]
+
+    restart: "no"
+
+    networks:
+      - backend
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Seed
+  seed:
+    image: job-board-platform-api:local
+
     profiles:
       - seed
+
+    env_file:
+      - ./env/.env.local
+
+    environment:
+      NODE_ENV: local
+
+    volumes:
+      - ./platform-api:/app
+      - platform_api_node_modules:/app/node_modules
+
+    command: ["pnpm", "seed:run"]
 
     restart: "no"
 
@@ -131,7 +138,7 @@ volumes:
     name: job-board-platform-api-node-modules
 
   postgres_data:
-    name: job-board-postgres-data
+    name: job-board-local-postgres-data
 
   redis_data:
-    name: job-board-redis-data
+    name: job-board-local-redis-data

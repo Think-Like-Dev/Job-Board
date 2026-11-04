@@ -166,6 +166,9 @@ importers:
 
   .:
     dependencies:
+      '@mikro-orm/cli':
+        specifier: 7.2.3
+        version: 7.2.3
       '@mikro-orm/core':
         specifier: ^7.2.3
         version: 7.2.3
@@ -177,6 +180,9 @@ importers:
         version: 7.1.0(@mikro-orm/core@7.2.3)(@nestjs/common@12.1.2(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.1.2)(reflect-metadata@0.2.2)
       '@mikro-orm/postgresql':
         specifier: ^7.2.3
+        version: 7.2.3(@mikro-orm/core@7.2.3)
+      '@mikro-orm/seeder':
+        specifier: 7.2.3
         version: 7.2.3(@mikro-orm/core@7.2.3)
       '@nestjs/common':
         specifier: ^12.1.2
@@ -224,12 +230,6 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.12.0(supports-color@8.1.1))
-      '@mikro-orm/cli':
-        specifier: 7.2.3
-        version: 7.2.3
-      '@mikro-orm/seeder':
-        specifier: 7.2.3
-        version: 7.2.3(@mikro-orm/core@7.2.3)
       '@nestjs/cli':
         specifier: ^12.0.8
         version: 12.0.8(@swc/cli@0.8.1(@swc/core@1.16.13)(chokidar@5.0.0)(supports-color@8.1.1))(@swc/core@1.16.13)(@types/node@26.6.4)(prettier@3.9.9)(ts-loader@9.6.2(typescript@6.0.3)(webpack@5.111.1(@swc/core@1.16.13)(uglify-js@3.19.3)))(webpack@5.111.1(@swc/core@1.16.13)(uglify-js@3.19.3))

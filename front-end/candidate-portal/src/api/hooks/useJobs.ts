@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { QUERY_KEYS } from './queryKeys';
-import { getJobs, getJobDetails, toggleBookmark } from '../services/job.service';
-import type { Job, JobFilters } from '@/types/job.types';
+import { getJobs, getJobDetails } from '../services/job.service';
+import type { JobFilters, JobSummary } from '@/types/job.types';
+import { useLocalBookmarks } from '@/hooks/useLocalBookmarks';
 
 export function useJobsList(filters: JobFilters) {
   return useQuery({
@@ -9,7 +10,6 @@ export function useJobsList(filters: JobFilters) {
     queryFn: () => getJobs(filters),
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 }
 
@@ -23,40 +23,16 @@ export function useJobDetails(id: string) {
   });
 }
 
+/**
+ * UI-only bookmarks. The backend bookmark module is deferred, so this reads
+ * and writes local storage instead of calling the reserved bookmark routes.
+ */
 export function useBookmarks() {
-  return useQuery({
-    queryKey: QUERY_KEYS.JOBS.BOOKMARKS,
-    queryFn: async () => {
-      const jobs = await getJobs({});
-      return jobs.filter((job) => job.isBookmarked);
-    },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
-  });
+  const { bookmarks } = useLocalBookmarks();
+  return { data: bookmarks, isLoading: false };
 }
 
 export function useToggleBookmark() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (jobId: string) => toggleBookmark(jobId),
-    onMutate: async (jobId) => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.JOBS.ALL });
-      const previousJob = queryClient.getQueryData<Job>(QUERY_KEYS.JOBS.DETAIL(jobId));
-      queryClient.setQueryData<Job>(QUERY_KEYS.JOBS.DETAIL(jobId), (old) => {
-        if (!old) return old;
-        return { ...old, isBookmarked: !old.isBookmarked };
-      });
-      return { previousJob, jobId };
-    },
-    onError: (_err, _newJob, context) => {
-      if (context?.previousJob) {
-        queryClient.setQueryData(QUERY_KEYS.JOBS.DETAIL(context.jobId), context.previousJob);
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.JOBS.ALL });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.JOBS.DETAIL(variables) });
-    },
-  });
+  const { toggleBookmark } = useLocalBookmarks();
+  return { mutate: (job: JobSummary) => toggleBookmark(job), isPending: false };
 }

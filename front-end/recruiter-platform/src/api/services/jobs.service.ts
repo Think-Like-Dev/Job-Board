@@ -11,8 +11,13 @@ import {
   SingleJobResponseSchema,
   PatchJobResponseSchema,
   type PatchJobResponse,
+  type PatchJobRequest,
   type CreateJobRequest,
   type UpdateJobRequest,
+  ArchivePreviewResponseSchema,
+  type ArchivePreviewResponse,
+  DeleteJobResponseSchema,
+  type DeleteJobResponse,
 } from "../schemas/jobs.schema";
 
 export async function getJobs(filters: JobFilters): Promise<GetJobsResponse> {
@@ -37,9 +42,12 @@ export async function updateJob(
 
 export async function patchJob(
   id: string,
-  status: string,
+  payload: PatchJobRequest,
 ): Promise<PatchJobResponse> {
-  const response = await api.patch<PatchJobResponse>(API_ENDPOINTS.JOBS.PATCH(id),{id,status});
+  const response = await api.patch<PatchJobResponse>(
+    API_ENDPOINTS.JOBS.PATCH(id),
+    payload,
+  );
   return parseSchema(PatchJobResponseSchema, response, "patchJob Response");
 }
 export async function getJobById(id: string): Promise<GetSingleJobResponse> {
@@ -49,4 +57,24 @@ export async function getJobById(id: string): Promise<GetSingleJobResponse> {
     response,
     "getSingleJob Response",
   );
+}
+
+export async function getArchivePreview(
+  id: string,
+): Promise<ArchivePreviewResponse> {
+  const response = await api.get<ArchivePreviewResponse>(
+    API_ENDPOINTS.JOBS.ARCHIVE_PREVIEW(id),
+  );
+  return parseSchema(
+    ArchivePreviewResponseSchema,
+    response,
+    "getArchivePreview Response",
+  );
+}
+
+export async function deleteJob(id: string): Promise<DeleteJobResponse> {
+  const response = await api.delete<DeleteJobResponse>(
+    API_ENDPOINTS.JOBS.DELETE(id),
+  );
+  return parseSchema(DeleteJobResponseSchema, response, "deleteJob Response");
 }

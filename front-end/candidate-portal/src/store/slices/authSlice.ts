@@ -1,15 +1,7 @@
 import { createSlice,type PayloadAction } from '@reduxjs/toolkit';
+import type { UserProfile } from '../../types/auth.types';
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  name?: string;
-  firstName?: string;
-  lastName?: string;
-  avatarUrl?: string;
-  role?: string;
-  principalType?: 'candidate' | 'user';
-}
+export type { UserProfile };
 
 interface AuthState {
   isAuthenticated: boolean;

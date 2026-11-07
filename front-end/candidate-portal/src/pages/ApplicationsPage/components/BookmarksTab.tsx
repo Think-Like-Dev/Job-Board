@@ -1,7 +1,7 @@
 import { useBookmarks } from '@api/hooks/useJobs';
 import { JobCard } from '../../LandingPage/components/JobsList';
 import { Skeleton } from '@ui/skeleton';
-import type { Job } from '@/types/job.types';
+import type { JobSummary } from '@/types/job.types';
 
 export function BookmarksTab() {
   const { data: bookmarkedJobs, isLoading } = useBookmarks();
@@ -26,7 +26,7 @@ export function BookmarksTab() {
 
   return (
     <div className="mt-6 space-y-4">
-      {bookmarkedJobs.map((job: Job) => (
+      {bookmarkedJobs.map((job: JobSummary) => (
         <JobCard key={job.id} job={job} />
       ))}
     </div>

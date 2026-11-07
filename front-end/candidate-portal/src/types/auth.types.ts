@@ -3,10 +3,10 @@
 export interface UserProfile {
   id: string;
   email: string;
-  name?: string;
-  firstName?: string;
-  lastName?: string;
-  avatarUrl?: string;
+  name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatarUrl?: string | null;
   role?: string;
   principalType?: 'candidate' | 'user';
 }

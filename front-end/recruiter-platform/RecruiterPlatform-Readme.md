@@ -5,7 +5,7 @@ The Recruiter Portal is the frontend application that enables recruiters and hir
 ## Features
 
 ### Job Management
-- Create, edit, publish, unpublish, and archive job postings.
+- Create, edit, publish, and archive job postings.
 - Configure job details including (but not limited to):
   - Job title
   - Department / Category
@@ -16,8 +16,8 @@ The Recruiter Portal is the frontend application that enables recruiters and hir
   - Skills
   - Job description
   - Additional hiring information
-- Draft jobs before publishing.
-- View active, draft, and closed job openings.
+- Draft jobs before publishing, and soft-delete drafts that are no longer needed.
+- View active, draft, and archived job openings.
 
 ### Dynamic Application Form Builder
 Recruiters can configure job-specific application questions while createing a job, which the candidates must answer during application submission. This is simlar to google forms.
@@ -166,20 +166,30 @@ It provides quick access to:
 
 ### Job Management
 
-This Job list page displays all jobs as list of wide cards in two tabs.
+This Job list page displays all jobs in three tabs.
 
-- **Published Jobs** showing Actively Published Jobs which is receiving application, i.e. Jobs which are not archived
-- **Archived Jobs** showing jobs which are archived. 
+- **Drafts** showing jobs saved but not yet published.
+- **Published Jobs** showing actively published jobs that are receiving applications.
+- **Archived Jobs** showing jobs which are archived.
+
+Search, filter and sort apply across all three tabs and reset pagination when changed:
+
+* Search is debounced for 2 seconds and matches job code, title, category or location.
+* Compensation filter lives in one dropdown: any compensation, not provided, negotiable, or a salary range chosen with a dual-thumb slider. Range mode lists jobs whose pay overlaps the selected window, including fixed salaries; the range is applied after the slider has been idle for 2 seconds.
+* Sort by compensation, created date or updated date from the column header: first click sorts ascending, second descending, third clears back to the API's default order.
+* Clearing the filters restores the default newest-created order.
 
 Each job card allows recruiters to:
 
 * Create a new job
-* Edit an existing job (editing is disabled once the job is published)
-  -  Perform Create and edit in a new page , strictly not in a popup modal!. the page url should have the job id
-* Publish or Archive a job
-* Archive completed jobs
+* Edit a draft job (editing is disabled once the job is published)
+  - Perform create and edit on a new page, strictly not in a popup modal. The page URL must include the job id.
+* Publish a draft, or archive a published job
+* Delete a draft (soft delete: the record is retained for history)
 * Configure application questions
 * View candidate statistics
+
+Only the recruiter whose user id created a job can edit, publish, archive, or delete it. Other recruiters can view the job but cannot perform these actions.
 **Creating a Job**
 
 - Creating a Job Collects following details
@@ -222,14 +232,18 @@ Each job card allows recruiters to:
 
 - A Job can be saved in draft state before publishing it.
 
-**Editing a Job**
-- Published Jobs cannot be edited
-- Once a Job process is fully completed, i.e. either they found a candidate or closing it for some other reasons they can mark it as archived
-- Published Jobs can be archived, even before last submission date. 
-  **constraints when clikcing archive button
-    - if no candidates accepted offer in that job, show an alert wit the following message and get confirmation.
-  ```No candidates got confirmed in this Job . This archiving action cannot be reverted and it will make this job obsolete i.e. no kind of status update for the job or candidate applications can be made. ```
+**Editing, Publishing, Archiving and Deleting**
+- Draft jobs can be edited and either stay drafts or be published.
+- Published Jobs cannot be edited.
+- Jobs cannot be unpublished. A published job can only be archived.
+- Once a Job process is fully completed — a candidate was hired or it is being closed for another reason — the recruiter marks it as archived.
+- Published Jobs can be archived even before the last submission date. Published jobs are also archived automatically once their last application date has passed.
+- Constraints when clicking the archive button:
+  - If no candidate accepted an offer in that job, show an alert with the following message and get confirmation:
+    ```No candidates got confirmed in this Job. This archiving action cannot be reverted and it will make this job obsolete, i.e. no kind of status update for the job or candidate applications can be made.```
 - Archived Jobs cannot be unarchived.
+- Only draft jobs can be deleted, and deletion is always a soft delete: the record stays in the system but is hidden from the UI.
+- Every delete operation in the application is a soft delete.
 
 **Created Job cards list shows**
 Each job card displays:
@@ -251,15 +265,13 @@ Interview Scheduled: 18
 
 **Job Card actions**
 * **Clone Job**
- Allows to clone job - Clicking on the copy button just copies it's contents to create page to create a new job.
+ Allows to clone any draft, published or archived job - Clicking on the copy button opens the job detail popup in clone-confirmation mode. Confirming opens the create page pre-filled with the source job's contents (title kept, a past closing date cleared) so it can be saved as a new draft or published.
 * **Archive Button**
   Marks a Job as archived - It just makes a job obsolete ,actions like job status round update or updating status of application in that job cannot be performed. we can just view it for visual history.
-* **Detailed view** - clicking on it shows Job detail in a slide up  drawer modal.
+* **Detailed view** - clicking a job row opens its detail in a slide-up, scrollable drawer. The drawer shows the job information and the status actions.
+* **View Applications** - inside the detail drawer, this action navigates to the **Applications List Page** for that job, using the **Job ID** to fetch all applications received. It is available on published and archived jobs.
 
-Provide appropriate buttons for the above actions in job card.
-
-* **Navigate to Candidates**
-  - Clicking a **Job Card** navigates to the **Candidate List Page** for that job, using the **Job ID** to fetch all associated applications.
+Provide appropriate buttons for the above actions in the job row and the detail drawer.
 
 #### Candidate List for a Job
 

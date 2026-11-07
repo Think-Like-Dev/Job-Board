@@ -64,7 +64,7 @@ export interface Job {
   department?: string;
   designation?: string;
   benefits?: string[];
-  totalInterviewRounds?: number;
+  totalInterviewRounds?: number | null;
   status: JobStatus;
   applicationSettings?: {
     coverLetterRequired: boolean;
@@ -76,4 +76,7 @@ export interface Job {
   lastApplicationDate?: string;
   createdAt: string;
   updatedAt: string;
+  publishedAt?: string;
+  archivedAt?: string;
+  createdBy?: string;
 }

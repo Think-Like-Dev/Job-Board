@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -19,12 +20,18 @@ export const JOB_SORT_FIELDS = [
   'code',
   'location',
   'category',
+  'compensation',
+  'publishedAt',
 ] as const;
 
 export const JOB_SORT_DIRECTIONS = ['ASC', 'DESC'] as const;
 
+export const JOB_COMPENSATION_FILTERS = ['NEGOTIABLE', 'NONE'] as const;
+
 export type JobSortField = (typeof JOB_SORT_FIELDS)[number];
 export type JobSortDirection = (typeof JOB_SORT_DIRECTIONS)[number];
+export type JobCompensationFilter =
+  (typeof JOB_COMPENSATION_FILTERS)[number];
 
 /**
  * Query accepted by `GET /jobs`; mirrors the recruiter list page filters.
@@ -63,11 +70,64 @@ export class ListJobsQueryDto {
   status?: JobStatus;
 
   @ApiPropertyOptional({
+    enum: JOB_COMPENSATION_FILTERS,
+    description:
+      'Filter jobs without a numeric salary; NONE matches jobs with no compensation',
+  })
+  @IsIn([...JOB_COMPENSATION_FILTERS])
+  @IsOptional()
+  compensationType?: JobCompensationFilter;
+
+  @ApiPropertyOptional({
+    description:
+      'Lower bound of the salary-range filter. Matches jobs whose pay overlaps the range.',
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  compensationMin?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Upper bound of the salary-range filter. Matches jobs whose pay overlaps the range.',
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  compensationMax?: number;
+
+  @ApiPropertyOptional({
     description: 'Free-text match on title, code, category or location',
   })
   @IsString()
   @IsOptional()
   search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by job category' })
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by job location' })
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by the free-text years-of-experience field',
+  })
+  @IsString()
+  @IsOptional()
+  yearsOfExperience?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by the stored compensation currency',
+  })
+  @IsString()
+  @IsOptional()
+  currency?: string;
 
   @ApiPropertyOptional({ description: 'Filter by the creating internal user' })
   @IsString()

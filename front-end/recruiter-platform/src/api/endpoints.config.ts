@@ -11,6 +11,8 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string)=>`/jobs/${id}`,
     GET_DETAILS: (id: string) => `/jobs/${id}`,
     PATCH: (id: string)=>`/jobs/${id}/status`,
+    DELETE: (id: string) => `/jobs/${id}`,
+    ARCHIVE_PREVIEW: (id: string) => `/jobs/${id}/archive-preview`,
   },
   PROFILE: {
     GET: '/profile',

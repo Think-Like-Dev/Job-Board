@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
   },
   JOBS: {
     ALL: ["jobs"] as const,
+    LISTS: ["jobs", "list"] as const,
     LIST: (filters: JobFilters) => ["jobs", "list", filters] as const,
     DETAIL: (id: string) => ["jobs", "detail", id] as const,
   },

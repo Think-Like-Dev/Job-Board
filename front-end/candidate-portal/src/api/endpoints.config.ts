@@ -6,8 +6,10 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
   },
   JOBS: {
-    GET_ALL: '/jobs',
-    GET_DETAILS: (id: string) => `/jobs/${id}`,
+    GET_ALL: '/public/jobs',
+    GET_DETAILS: (id: string) => `/public/jobs/${id}`,
+    // Bookmarks are UI-only for now; these routes are reserved for the future
+    // bookmarks module and are not called by the current UI.
     BOOKMARK: (id: string) => `/jobs/${id}/bookmark`,
     REMOVE_BOOKMARK: (id: string) => `/jobs/${id}/bookmark`,
     GET_BOOKMARKS: '/jobs/bookmarks',

@@ -26,21 +26,19 @@ export function Header() {
         </Link>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center relative gap-4">
         {!isInitialized ? (
           <div className="h-9 w-24 animate-pulse rounded bg-muted" />
         ) : isAuthenticated ? (
           <>
             <NotificationDropdown />
-            <DropdownMenu>
+            <DropdownMenu modal={false} closeParentOnEsc>
               <DropdownMenuTrigger>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <div className="flex h-full w-full items-center justify-center rounded-full bg-muted border">
+                  <div className="flex h-full w-full min-w-8 min-h-8 items-center justify-center rounded-full bg-muted border">
                     {user?.firstName?.charAt(0) || 'U'}
                   </div>
-                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className={"relative"}>
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   {t('nav.profile')}
                 </DropdownMenuItem>

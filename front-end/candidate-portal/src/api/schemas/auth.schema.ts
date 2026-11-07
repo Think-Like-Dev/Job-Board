@@ -5,10 +5,10 @@ import { z } from 'zod';
 export const UserProfileSchema = z.object({
   id: z.string(),
   email: z.email(),
-  name: z.string().optional(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  avatarUrl: z.string().optional(),
+  name: z.string().nullish(),
+  firstName: z.string().nullish(),
+  lastName: z.string().nullish(),
+  avatarUrl: z.string().nullish(),
   role: z.string().optional(),
   principalType: z.enum(['candidate', 'user']).optional(),
 });

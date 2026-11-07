@@ -4,10 +4,7 @@ import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { Label } from '@ui/label';
 import { Checkbox } from '@ui/checkbox';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@api/apiClient';
-import { API_ENDPOINTS } from '@api/endpoints.config';
-import { QUERY_KEYS } from '@api/hooks/queryKeys';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 interface ApplyWorkflowModalProps {
@@ -23,17 +20,17 @@ enum ApplyWorkflowSteps{
   DECLARATION,
 }
 
-export function ApplyWorkflowModal({ jobId, isOpen, onClose, onApplied }: ApplyWorkflowModalProps) {
+export function ApplyWorkflowModal({ isOpen, onClose, onApplied }: ApplyWorkflowModalProps) {
   const [step, setStep] = useState<ApplyWorkflowSteps>(ApplyWorkflowSteps.RESUME);
-  const queryClient = useQueryClient();
 
+  // The applications API is not implemented yet. Keep the workflow UI working
+  // locally so the job detail page is usable; wire this to the real endpoint
+  // when the applications module lands.
   const applyMutation = useMutation({
-    mutationFn: async (isDraft: boolean) => {
-      await apiClient.post(API_ENDPOINTS.APPLICATIONS.APPLY(jobId), { isDraft });
+    mutationFn: async (_isDraft: boolean) => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
     },
     onSuccess: (_, isDraft) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.JOBS.ALL });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.APPLICATIONS.ALL });
       if (isDraft) {
         toast.success('Application saved as draft');
         onClose();

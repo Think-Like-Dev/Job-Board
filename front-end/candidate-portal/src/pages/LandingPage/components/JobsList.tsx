@@ -1,35 +1,51 @@
 import { useNavigate } from 'react-router-dom';
-import { useJobsList, useToggleBookmark } from '@api/hooks/useJobs';
-import type { Job } from '@/types/job.types';
+import {
+  Bookmark,
+  BookmarkCheck,
+  Briefcase,
+  Clock,
+  DollarSign,
+  MapPin,
+  Share2,
+} from 'lucide-react';
+import { useJobsList } from '@api/hooks/useJobs';
+import type { JobFilters, JobSummary } from '@/types/job.types';
+import { EmploymentType } from '@/types/job.types';
 import { Card } from '@ui/card';
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
 import { Skeleton } from '@ui/skeleton';
-import { Bookmark, BookmarkCheck, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-react';
+import { formatCompensation, formatIsoDate } from '@/lib/jobFormat';
+import { useLocalBookmarks } from '@/hooks/useLocalBookmarks';
 
-export function JobCard({ job }: { job: Job }) {
+const EMPLOYMENT_LABELS: Record<EmploymentType, string> = {
+  [EmploymentType.FULL_TIME]: 'Full time',
+  [EmploymentType.PART_TIME]: 'Part time',
+  [EmploymentType.CONTRACT]: 'Contract',
+  [EmploymentType.INTERN]: 'Internship',
+};
+
+export function JobCard({ job }: { job: JobSummary }) {
   const navigate = useNavigate();
-  const toggleBookmark = useToggleBookmark();
+  const { isBookmarked, toggleBookmark } = useLocalBookmarks();
+  const bookmarked = isBookmarked(job.id);
+  const compensation = formatCompensation(job.compensation);
+  const postedAt = job.publishedAt ?? job.createdAt;
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleShare = (event: React.MouseEvent) => {
+    event.stopPropagation();
     const url = `${window.location.origin}/jobs/${job.id}`;
-    navigator.clipboard.writeText(url);
-    // You could show a toast here
-  };
-
-  const handleCardClick = () => {
-    navigate(`/jobs/${job.id}`);
+    void navigator.clipboard.writeText(url);
   };
 
   return (
-    <Card 
-      onClick={handleCardClick}
+    <Card
+      onClick={() => navigate(`/jobs/${job.id}`)}
       className="p-6 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow cursor-pointer group"
     >
       <div className="flex-1 space-y-4">
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex justify-between items-start gap-4">
+          <div className="min-w-0">
             <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
               {job.title}
             </h3>
@@ -41,6 +57,7 @@ export function JobCard({ job }: { job: Job }) {
               size="icon"
               className="rounded-full text-muted-foreground hover:text-foreground"
               onClick={handleShare}
+              aria-label="Share job"
             >
               <Share2 className="w-5 h-5" />
             </Button>
@@ -48,12 +65,13 @@ export function JobCard({ job }: { job: Job }) {
               variant="ghost"
               size="icon"
               className="rounded-full text-muted-foreground hover:text-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleBookmark.mutate(job.id);
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleBookmark(job);
               }}
+              aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark job'}
             >
-              {job.isBookmarked ? (
+              {bookmarked ? (
                 <BookmarkCheck className="w-6 h-6 fill-primary text-primary" />
               ) : (
                 <Bookmark className="w-6 h-6" />
@@ -67,13 +85,21 @@ export function JobCard({ job }: { job: Job }) {
             <MapPin className="w-4 h-4" />
             {job.location}
           </div>
+          {job.yearsOfExperience && (
+            <div className="flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4" />
+              {job.yearsOfExperience}
+            </div>
+          )}
+          {compensation && (
+            <div className="flex items-center gap-1.5">
+              <DollarSign className="w-4 h-4" />
+              {compensation}
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
-            <Briefcase className="w-4 h-4" />
-            {job.experience}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <DollarSign className="w-4 h-4" />
-            {job.salaryRange}
+            <Clock className="w-4 h-4" />
+            {formatIsoDate(postedAt)}
           </div>
         </div>
 
@@ -81,17 +107,32 @@ export function JobCard({ job }: { job: Job }) {
           {job.description}
         </p>
 
-        <div className="flex gap-2">
-          <Badge variant="secondary">React</Badge>
-          <Badge variant="secondary">TypeScript</Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary">
+            {EMPLOYMENT_LABELS[job.employmentType]}
+          </Badge>
+          {job.keywords.slice(0, 4).map((keyword) => (
+            <Badge key={keyword} variant="secondary">
+              {keyword}
+            </Badge>
+          ))}
         </div>
       </div>
     </Card>
   );
 }
 
-export function JobsList() {
-  const { data: jobs, isLoading } = useJobsList({});
+interface JobsListProps {
+  filters: JobFilters;
+  onPageChange: (page: number) => void;
+}
+
+export function JobsList({ filters, onPageChange }: JobsListProps) {
+  const { data, isLoading } = useJobsList(filters);
+  const jobs = data?.data ?? [];
+  const pagination = data?.pagination;
+  const currentPage = pagination?.page ?? filters.page ?? 1;
+  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
 
   if (isLoading) {
     return (
@@ -114,19 +155,41 @@ export function JobsList() {
     );
   }
 
+  if (!jobs.length) {
+    return (
+      <Card className="p-12 text-center text-muted-foreground">
+        No jobs match your filters.
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {jobs?.map((job) => (
+      {jobs.map((job) => (
         <JobCard key={job.id} job={job} />
       ))}
-      
-      {/* Basic Pagination Placeholder */}
-      <div className="flex justify-center pt-8 pb-4">
-        <div className="flex gap-2">
-          <Button variant="outline" disabled>Previous</Button>
-          <Button variant="outline" className="bg-primary text-primary-foreground">1</Button>
-          <Button variant="outline">2</Button>
-          <Button variant="outline">Next</Button>
+
+      <div className="flex items-center justify-between gap-2 pt-4">
+        <p className="text-sm text-muted-foreground">
+          Page {currentPage} of {totalPages}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            Next
+          </Button>
         </div>
       </div>
     </div>

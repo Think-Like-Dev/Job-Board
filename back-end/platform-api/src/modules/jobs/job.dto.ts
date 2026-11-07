@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { Transform, Type, type TransformFnParams } from 'class-transformer';
 import {
   IsArray,
@@ -21,6 +21,12 @@ import {
 } from '@common/constants/enums';
 
 const CREATE_JOB_STATUSES: JobStatus[] = [JobStatus.DRAFT, JobStatus.PUBLISHED];
+
+/** Statuses a recruiter may request through the dedicated status endpoint. */
+export const MUTABLE_JOB_STATUSES: JobStatus[] = [
+  JobStatus.PUBLISHED,
+  JobStatus.ARCHIVED,
+];
 
 const SALARY_PERIODS = ['Yearly', 'Monthly', 'Hourly'] as const;
 
@@ -201,4 +207,42 @@ export class CreateJobDto {
   })
   @IsIn(CREATE_JOB_STATUSES)
   status!: JobStatus;
+}
+
+/**
+ * Full replacement of a draft's editable fields. `code`, `createdBy` and the
+ * lifecycle timestamps are intentionally excluded. `status` is optional: omit
+ * it to keep the current status, or send `PUBLISHED` to save-and-publish in
+ * one call. Archiving still goes through `PATCH /jobs/:id/status`.
+ */
+export class UpdateJobDto extends OmitType(CreateJobDto, [
+  'code',
+  'status',
+] as const) {
+  @ApiPropertyOptional({
+    enum: CREATE_JOB_STATUSES,
+    description:
+      'Omit to keep the current status; DRAFT or PUBLISHED only (no unpublish/archive here)',
+  })
+  @IsIn(CREATE_JOB_STATUSES)
+  @IsOptional()
+  status?: JobStatus;
+}
+
+export class UpdateJobStatusDto {
+  @ApiProperty({
+    enum: MUTABLE_JOB_STATUSES,
+    description:
+      'PUBLISHED moves a draft live; ARCHIVED is terminal and only allowed from PUBLISHED',
+  })
+  @IsIn(MUTABLE_JOB_STATUSES)
+  status!: JobStatus;
+
+  @ApiPropertyOptional({
+    description:
+      'Required when archiving a job with no accepted offers; the client must confirm the irreversible warning',
+  })
+  @IsBoolean()
+  @IsOptional()
+  acknowledgeNoConfirmedOffers?: boolean;
 }

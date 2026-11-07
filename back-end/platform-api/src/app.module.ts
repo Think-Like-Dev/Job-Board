@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from '@src/app.controller';
 import { AppService } from '@src/app.service';
 import configuration from '@src/config/configuration';
@@ -21,6 +22,7 @@ import { JobsModule } from '@modules/jobs/jobs.module';
     }),
     RedisModule,
     DatabaseModule,
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     CandidatesModule,

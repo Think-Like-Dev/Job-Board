@@ -58,7 +58,7 @@ const JobSummaryFieldsSchema = z.object({
   department: z.string().optional(),
   designation: z.string().optional(),
   benefits: z.array(z.string()).optional(),
-  totalInterviewRounds: z.number().optional(),
+  totalInterviewRounds: z.number().nullable().optional(),
   lastApplicationDate: z.string().optional(),
 });
 
@@ -143,8 +143,10 @@ export const JobFiltersSchema = z.object({
   orderBy: z.string().default("createdAt"),
   orderByDirection: z.enum(["ASC", "DESC"]).default("DESC"),
   status: z.enum(JobStatus).optional(),
+  compensationType: z.enum(["NEGOTIABLE", "NONE"]).optional(),
+  compensationMin: z.number().optional(),
+  compensationMax: z.number().optional(),
   recruiterId: z.string().optional(),
-  dateRange: z.string().optional(),
 });
 
 export type JobFilters = z.infer<typeof JobFiltersSchema>;
@@ -154,14 +156,20 @@ export type CreateJobRequest = JobFormValues & {
   status: JobStatus;
 };
 
-export type UpdateJobRequest = CreateJobRequest & {
-  id: string;
-  updatedAt: string;
+/**
+ * Edit payload. `status` is optional: omit it to keep the current status, or
+ * send `PUBLISHED` to save-and-publish in one PUT.
+ */
+export type UpdateJobRequest = JobFormValues & {
+  status?: JobStatus;
 };
 
 export const PatchJobRequestSchema = z.object({
-  id: z.string(),
-  status: z.enum(JobStatus),
+  status: z.union([
+    z.literal(JobStatus.PUBLISHED),
+    z.literal(JobStatus.ARCHIVED),
+  ]),
+  acknowledgeNoConfirmedOffers: z.boolean().optional(),
 });
 
 export type PatchJobRequest = z.infer<typeof PatchJobRequestSchema>;
@@ -174,6 +182,9 @@ export const JobSummarySchema = JobSummaryFieldsSchema.extend({
   id: z.string(),
   createdAt: z.string(),
   updatedAt: z.string().optional(),
+  publishedAt: z.string().optional(),
+  archivedAt: z.string().optional(),
+  createdBy: z.string().optional(),
 });
 
 export type JobSummary = z.infer<typeof JobSummarySchema>;
@@ -220,3 +231,28 @@ export const PatchJobResponseSchema = CommonServerResponseSchema(
 );
 
 export type PatchJobResponse = z.infer<typeof PatchJobResponseSchema>;
+
+export const ArchivePreviewSchema = z.object({
+  jobId: z.string(),
+  status: z.enum(JobStatus),
+  confirmedOffersCount: z.number(),
+  requiresNoConfirmedOffersAcknowledgement: z.boolean(),
+});
+
+export type ArchivePreview = z.infer<typeof ArchivePreviewSchema>;
+
+export const ArchivePreviewResponseSchema =
+  CommonServerResponseSchema(ArchivePreviewSchema);
+
+export type ArchivePreviewResponse = z.infer<
+  typeof ArchivePreviewResponseSchema
+>;
+
+export const DeleteJobResponseSchema = CommonServerResponseSchema(
+  z.object({
+    id: z.string(),
+    deletedAt: z.string(),
+  }),
+);
+
+export type DeleteJobResponse = z.infer<typeof DeleteJobResponseSchema>;

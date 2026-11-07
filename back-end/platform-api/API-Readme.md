@@ -269,6 +269,30 @@ When a recruiter initiates a round advancement:
 * **Endpoint:** `GET /api/notifications/stream`
 * **Mechanics:** Receives the session cookie (or a query token because `EventSource` cannot set headers), resolves it against the Redis session store, streams notification events via an RxJS `Observable` pipeline, and terminates/flushes connections gracefully.
 
+### 6.5 Jobs Lifecycle API
+
+All `/api/jobs` routes are session-guarded and require an internal user session (`principalType: "user"`). Reads are open to every internal user; writes are restricted to the recruiter who created the job (`jobs.created_by`).
+
+The candidate portal uses a separate **unauthenticated** read-only surface, `GET /api/public/jobs` and `GET /api/public/jobs/:id`. It reuses the same service functions with `publicOnly` enabled, so results are limited to `PUBLISHED` jobs whose `lastApplicationDate` is today or later. Public responses omit internal ownership/lifecycle fields and include the job `description` in the summary.
+
+* **`GET /api/jobs`** — paginated list. Query: `page`, `limit`, `search`, `status`, `recruiterId`, `category`, `location`, `yearsOfExperience`, `currency`, `compensationType` (`NEGOTIABLE` | `NONE`), `compensationMin` / `compensationMax` (salary-range overlap; a fixed salary counts as min = max), `orderBy` (`createdAt` | `updatedAt` | `title` | `status` | `code` | `location` | `category` | `compensation` | `publishedAt`), `orderByDirection` (`ASC` | `DESC`). `search` matches title, code, category or location; `compensation` sorting uses the fixed amount or range minimum with nulls last. Soft-deleted drafts are excluded. Each summary includes `createdBy`, `publishedAt`, and `archivedAt` so the client can gate creator-only actions and show lifecycle timestamps.
+* **`GET /api/public/jobs`** — same pagination, search, sorting and filters as `GET /api/jobs`, but unauthenticated and published-only. `status` and `recruiterId` are ignored. Each item is a `PublicJobSummaryDto` (no `createdBy`/`archivedAt`, includes `description`).
+* **`GET /api/public/jobs/:id`** — public job detail. Returns `404` when the job is not published, has been soft-deleted, or its application window has passed.
+* **`POST /api/jobs`** — create a `DRAFT` or `PUBLISHED` job.
+* **`GET /api/jobs/:id`** — full job detail, including the fields the edit page and detail drawer need. It also returns `createdBy` and the lifecycle timestamps.
+* **`PUT /api/jobs/:id`** — replace a draft's editable fields. `status` is optional: omit it to keep the draft, or send `PUBLISHED` to save-and-publish in one call. Published and archived jobs return `409 Conflict`.
+* **`PATCH /api/jobs/:id/status`** — `{ status: "PUBLISHED" | "ARCHIVED", acknowledgeNoConfirmedOffers?: boolean }`. `DRAFT -> PUBLISHED -> ARCHIVED` is the only path; archived is terminal and unpublishing is rejected.
+* **`GET /api/jobs/:id/archive-preview`** — `{ confirmedOffersCount, requiresNoConfirmedOffersAcknowledgement }`. When the count is zero the client must show the irreversible warning and resend the archive request with `acknowledgeNoConfirmedOffers: true`.
+* **`DELETE /api/jobs/:id`** — soft-delete a draft (`deleted_at`). Drafts only; the row is retained.
+
+**Lifecycle rules**
+
+* Drafts can be edited, published, or soft-deleted.
+* Published jobs cannot be edited or deleted; they can only be archived — manually, or automatically once `last_application_date` has passed. `JobsExpiryService` sweeps daily at midnight and on startup.
+* Archived jobs are immutable: no edits, status changes, or deletes.
+* Every delete operation in the application is a soft delete.
+* Publishing requires `category`, `location`, `description`, `workMode`, `skills`, `totalInterviewRounds`, and a `lastApplicationDate` that is today or later.
+
 ---
 
 ## 7. Swagger Documentation Standards
@@ -319,6 +343,8 @@ pnpm migration:down
 pnpm migration:create
 pnpm migration:check
 ```
+
+`Migration20261019000000` covers `users`, `candidates`, and `files`; `Migration20261021000000` adds `jobs`; `Migration20261104000000` adds the job lifecycle columns `published_at`, `archived_at`, and `deleted_at`.
 
 ## Seed data
 

@@ -1,105 +1,191 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { XIcon } from 'lucide-react';
 import { Label } from '@ui/label';
-import { Checkbox } from '@ui/checkbox';
+import { Input } from '@ui/input';
 import { Slider } from '@ui/slider';
+import { Button } from '@ui/button';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@ui/accordion';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui/select';
+import { Currency } from '@/types/job.types';
+import { formatAmount } from '@/lib/jobFormat';
+import {
+  SALARY_MAX,
+  SALARY_MIN,
+  SALARY_STEP,
+  type SalaryRange,
+} from '../useJobSearch';
 
-const SALARY_MIN = 0;
-const SALARY_MAX = 300;
-const SALARY_STEP = 5;
+const ANY_CURRENCY = 'ANY';
 
-const filterCategories = [
-  {
-    id: 'category',
-    title: 'Department',
-    options: ['Engineering', 'Design', 'Marketing', 'Sales', 'Product'],
-  },
-  {
-    id: 'location',
-    title: 'Location',
-    options: ['Remote', 'New York, NY', 'San Francisco, CA', 'London, UK'],
-  },
-  {
-    id: 'experience',
-    title: 'Experience Level',
-    options: ['Entry Level', '1-3 years', '3-5 years', '5+ years'],
-  },
-];
-
-function formatSalary(value: number): string {
-  if (value >= 1000) return `$${value}K`;
-  return `$${value}K`;
+interface SidebarFiltersProps {
+  category?: string;
+  onCategoryChange: (value?: string) => void;
+  location?: string;
+  onLocationChange: (value?: string) => void;
+  yearsOfExperience?: string;
+  onYearsOfExperienceChange: (value?: string) => void;
+  currency?: string;
+  onCurrencyChange: (value?: string) => void;
+  salaryRange: SalaryRange;
+  onSalaryRangeChange: (range: SalaryRange) => void;
+  onClear: () => void;
+  isFiltered: boolean;
 }
 
-export function SidebarFilters() {
-  const [salaryRange, setSalaryRange] = useState<number[]>([30, 150]);
+/** Converts an input's raw value to an optional filter value. */
+function toFilterValue(value: string): string | undefined {
+  return value === '' ? undefined : value;
+}
+
+export function SidebarFilters({
+  category,
+  onCategoryChange,
+  location,
+  onLocationChange,
+  yearsOfExperience,
+  onYearsOfExperienceChange,
+  currency,
+  onCurrencyChange,
+  salaryRange,
+  onSalaryRangeChange,
+  onClear,
+  isFiltered,
+}: SidebarFiltersProps) {
+  const [draftRange, setDraftRange] = useState<SalaryRange>(salaryRange);
+
+  useEffect(() => {
+    setDraftRange(salaryRange);
+  }, [salaryRange]);
 
   return (
     <aside className="w-full h-full">
       <div className="sticky top-24 space-y-6 bg-card border rounded-xl p-6 shadow-sm">
-        <h3 className="font-semibold text-lg tracking-tight">Filters</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-semibold text-lg tracking-tight">Filters</h3>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClear}
+            disabled={!isFiltered}
+          >
+            <XIcon data-icon="inline-start" />
+            Clear
+          </Button>
+        </div>
 
-        {/* ── Salary Range ─────────────────────────────────────────── */}
+        {/* Salary range */}
         <div className="space-y-4">
           <h4 className="font-medium text-sm">Salary Range</h4>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-            <span className="bg-muted px-2 py-1 rounded font-semibold text-foreground">
-              {formatSalary(salaryRange[0])}
+            <span className="bg-muted px-2 py-1 rounded font-semibold text-foreground tabular-nums">
+              {formatAmount(draftRange[0])}
             </span>
             <span className="text-muted-foreground/60">–</span>
-            <span className="bg-muted px-2 py-1 rounded font-semibold text-foreground">
-              {formatSalary(salaryRange[1])}
+            <span className="bg-muted px-2 py-1 rounded font-semibold text-foreground tabular-nums">
+              {formatAmount(draftRange[1])}
             </span>
           </div>
 
           <Slider
-            value={salaryRange}
+            value={draftRange}
             min={SALARY_MIN}
             max={SALARY_MAX}
             step={SALARY_STEP}
-            onValueChange={(val:any) => setSalaryRange(val)}
+            onValueChange={(value) => setDraftRange(value as SalaryRange)}
+            onValueCommitted={(value) =>
+              onSalaryRangeChange(value as SalaryRange)
+            }
             className="w-full"
           />
 
-          <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
-            <span>{formatSalary(SALARY_MIN)}</span>
-            <span>{formatSalary(SALARY_MAX)}+</span>
+          <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1 tabular-nums">
+            <span>{formatAmount(SALARY_MIN)}</span>
+            <span>{formatAmount(SALARY_MAX)}+</span>
           </div>
+        </div>
+
+        {/* Currency */}
+        <div className="space-y-2">
+          <h4 className="font-medium text-sm">Currency</h4>
+          <Select
+            value={currency ?? ANY_CURRENCY}
+            onValueChange={(value) =>
+              onCurrencyChange(
+                value === ANY_CURRENCY || value === null ? undefined : value,
+              )
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue>{currency ?? 'Any currency'}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ANY_CURRENCY}>Any currency</SelectItem>
+              {Object.values(Currency).map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="border-t" />
 
-        {/* ── Checkbox filters ─────────────────────────────────────── */}
-        <Accordion>
-          {filterCategories.map((category) => (
-            <AccordionItem value={category.id} key={category.id} className="border-b-0">
-              <AccordionTrigger className="hover:no-underline py-3">
-                <span className="font-medium text-sm">{category.title}</span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-3 pt-1">
-                  {category.options.map((option) => (
-                    <div key={option} className="flex items-center space-x-3">
-                      <Checkbox id={`${category.id}-${option}`} />
-                      <Label
-                        htmlFor={`${category.id}-${option}`}
-                        className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        {/* Free-text filters — the API matches these with a case-insensitive
+            contains query, so no fixed option list is needed. */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="filter-category" className="font-medium text-sm">
+              Category
+            </Label>
+            <Input
+              id="filter-category"
+              value={category ?? ''}
+              onChange={(event) =>
+                onCategoryChange(toFilterValue(event.target.value))
+              }
+              placeholder="e.g. Engineering"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="filter-location" className="font-medium text-sm">
+              Location
+            </Label>
+            <Input
+              id="filter-location"
+              value={location ?? ''}
+              onChange={(event) =>
+                onLocationChange(toFilterValue(event.target.value))
+              }
+              placeholder="e.g. Pune, India"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="filter-experience"
+              className="font-medium text-sm"
+            >
+              Experience
+            </Label>
+            <Input
+              id="filter-experience"
+              value={yearsOfExperience ?? ''}
+              onChange={(event) =>
+                onYearsOfExperienceChange(toFilterValue(event.target.value))
+              }
+              placeholder="e.g. 3-6 years"
+            />
+          </div>
+        </div>
       </div>
     </aside>
   );

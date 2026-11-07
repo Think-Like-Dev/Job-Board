@@ -8,6 +8,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import Jobs from '@/pages/Jobs';
 import CreateJob from '@pages/jobs/CreateJob';
+import EditJob from '@pages/jobs/EditJob';
+import Applications from '@pages/jobs/Applications';
 import Layout from '@/components/common/Layout';
 import { UserRole } from '@/types/auth.types';
 
@@ -43,6 +45,8 @@ const AppRoutes = () => {
           <Route index element={<Dashboard />} />
           <Route path="jobs" element={<Jobs />} />
           <Route path="jobs/new" element={<CreateJob />} />
+          <Route path="jobs/:id/edit" element={<EditJob />} />
+          <Route path="jobs/:id/applications" element={<Applications />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

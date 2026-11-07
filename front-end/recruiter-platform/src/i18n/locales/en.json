@@ -11,7 +11,13 @@
     "edited": "Edited",
     "delete": "Delete",
     "deleting": "Deleting...",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "close": "Close",
+    "table": {
+      "sortAscending": "Click to sort ascending",
+      "sortDescending": "Sorted ascending. Click to sort descending",
+      "clearSort": "Sorted descending. Click to clear sorting"
+    }
   },
   "job": {
     "saveAsDraft": "Save as Draft",
@@ -24,7 +30,120 @@
     "unarchiving":"Unarchiving...",
     "createJob": "Create Job",
     "updatingJob": "Updating Job...",
-    "listTitle": "Jobs"
+    "listTitle": "Jobs",
+    "actions": "Actions",
+    "edit": "Edit job",
+    "editDisabled": "Only draft jobs can be edited",
+    "clone": "Clone job",
+    "cloneConfirm": {
+      "message": "Create a copy of \"{{title}}\"? The copy opens as a new draft with the same details.",
+      "confirm": "Clone job"
+    },
+    "tabs": {
+      "DRAFT": "Drafts",
+      "PUBLISHED": "Published",
+      "ARCHIVED": "Archived"
+    },
+    "list": {
+      "code": "Job Code",
+      "title": "Title",
+      "category": "Category",
+      "status": "Status",
+      "compensation": "Compensation",
+      "location": "Location",
+      "createdAt": "Created Date",
+      "updatedAt": "Updated Date",
+      "empty": "No jobs in this tab yet.",
+      "searchPlaceholder": "Search by code, title, category or location",
+      "compensationFilter": "Compensation filter",
+      "clearFilters": "Clear filters",
+      "compensationOptions": {
+        "ALL": "Any compensation",
+        "RANGE": "Salary range",
+        "NEGOTIABLE": "Negotiable",
+        "NONE": "Not provided"
+      },
+      "compensationRange": {
+        "min": "Minimum salary",
+        "max": "Maximum salary"
+      }
+    },
+    "pagination": {
+      "pageOf": "Page {{page}} of {{total}}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "detail": {
+      "title": "Job details",
+      "loading": "Loading...",
+      "loadFailedTitle": "Could not load this job",
+      "loadFailed": "The job may have been deleted or the link is invalid.",
+      "readOnly": "Only the recruiter who created this job can change its status.",
+      "archivedReadOnly": "This job is archived and read-only.",
+      "sections": {
+        "overview": "Overview",
+        "description": "Description & Requirements",
+        "compensation": "Compensation & Benefits",
+        "hiring": "Hiring Process",
+        "settings": "Application Settings",
+        "lifecycle": "Lifecycle"
+      },
+      "fields": {
+        "status": "Status",
+        "code": "Job Code",
+        "category": "Category",
+        "department": "Department",
+        "designation": "Designation",
+        "employmentType": "Employment Type",
+        "location": "Location",
+        "workMode": "Work Mode",
+        "vacancies": "Vacancies",
+        "description": "Description",
+        "responsibilities": "Responsibilities",
+        "yearsOfExperience": "Years of Experience",
+        "skills": "Skills",
+        "keywords": "Keywords",
+        "compensation": "Compensation",
+        "benefits": "Benefits",
+        "workShiftTiming": "Work Shift Timing",
+        "totalInterviewRounds": "Total Interview Rounds",
+        "lastApplicationDate": "Last Application Date",
+        "coverLetterRequired": "Cover Letter Required",
+        "attachmentsAllowed": "Attachments Allowed",
+        "maximumAttachments": "Maximum Attachments",
+        "createdAt": "Created",
+        "updatedAt": "Updated",
+        "publishedAt": "Published",
+        "archivedAt": "Archived"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "publish": "Publish",
+        "archive": "Archive",
+        "viewApplications": "View Applications"
+      },
+      "dialogs": {
+        "archiveTitle": "Archive this job?",
+        "archiveDescription": "No candidates got confirmed in this Job. This archiving action cannot be reverted and it will make this job obsolete, i.e. no kind of status update for the job or candidate applications can be made.",
+        "deleteTitle": "Delete this draft?",
+        "deleteDescription": "This draft will be soft-deleted. The record is retained for history but hidden from the jobs list."
+      },
+      "toasts": {
+        "published": "Job published successfully",
+        "publishFailed": "Could not publish the job. Complete the required fields and try again.",
+        "archived": "Job archived successfully",
+        "archiveFailed": "Could not archive the job. Please try again.",
+        "deleted": "Draft deleted successfully",
+        "deleteFailed": "Could not delete the draft. Please try again."
+      }
+    },
+    "applications": {
+      "title": "Applications",
+      "back": "Back to jobs",
+      "comingSoonTitle": "Applications list coming soon",
+      "comingSoon": "The applications received for this job, with filters and candidate drawers, will be added with the applications module."
+    }
   },
   "nav": {
     "back": "Back",
@@ -62,12 +181,24 @@
   },
   "jobForm": {
     "createTitle": "Create Job",
+    "editTitle": "Edit Job",
+    "cloneTitle": "Clone Job",
+    "clone": {
+      "loadFailedTitle": "Could not load the job to clone",
+      "loadFailed": "The job may have been deleted or the link is invalid."
+    },
     "stepOf": "Step {{current}} of {{total}}",
     "questions": {
       "title": "Application Questions",
       "description": "Choose the questions candidates must answer when they apply for this role.",
       "addQuestion": "Add Question",
       "comingSoon": "The questions builder is coming soon."
+    },
+    "edit": {
+      "notEditableTitle": "This job cannot be edited",
+      "notEditable": "Only draft jobs can be edited. Published and archived jobs are read-only.",
+      "loadFailedTitle": "Could not load this job",
+      "loadFailed": "The job may have been deleted or the link is invalid."
     },
     "steps": {
       "basics": "Job Basics",
@@ -147,6 +278,8 @@
       "draftSaved": "Job saved as draft",
       "published": "Job published successfully",
       "createFailed": "Could not create the job. Please try again.",
+      "updated": "Job updated successfully",
+      "updateFailed": "Could not update the job. Please try again.",
       "titleRequired": "Add a job title before saving a draft"
     }
   }

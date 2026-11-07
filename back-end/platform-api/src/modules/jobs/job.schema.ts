@@ -36,14 +36,22 @@ export interface Job {
   code: string;
   title: string;
   category: string;
-  department?: string;
-  designation?: string;
+  department?: string | null;
+  designation?: string | null;
   employmentType: EmploymentType;
   location: string;
   description: string;
-  responsibilities?: string;
-  yearsOfExperience?: string;
+  responsibilities?: string | null;
+  yearsOfExperience?: string | null;
   compensation?: JobCompensation | null;
+  /** Denormalised compensation type used by the list filter. */
+  compensationType?: string | null;
+  /** Numeric sort value: fixed amount or the lower bound of a range. */
+  compensationMin?: number | null;
+  /** Upper bound used by the salary-range filter. */
+  compensationMax?: number | null;
+  /** Denormalised currency used by the public currency filter. */
+  compensationCurrency?: string | null;
   workMode: WorkMode[];
   workShiftTiming: string[];
   skills: string[];
@@ -51,11 +59,15 @@ export interface Job {
   benefits: string[];
   vacancies: number;
   totalInterviewRounds?: number;
-  lastApplicationDate?: string;
+  lastApplicationDate?: string | null;
   applicationSettings?: JobApplicationSettings | null;
   hiringProcess?: string[];
   status: JobStatus;
   createdBy?: string;
+  publishedAt?: Date | null;
+  archivedAt?: Date | null;
+  /** Soft-delete marker. Every delete in this application is a soft delete. */
+  deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -80,6 +92,10 @@ export const JobSchema = new EntitySchema<Job>({
     responsibilities: { type: 'text', nullable: true },
     yearsOfExperience: { type: 'string', nullable: true },
     compensation: { type: 'json', columnType: 'jsonb', nullable: true },
+    compensationType: { type: 'string', nullable: true },
+    compensationMin: { type: 'double', nullable: true },
+    compensationMax: { type: 'double', nullable: true },
+    compensationCurrency: { type: 'string', nullable: true },
     workMode: { type: 'json', columnType: 'jsonb' },
     workShiftTiming: { type: 'json', columnType: 'jsonb' },
     skills: { type: 'json', columnType: 'jsonb' },
@@ -110,6 +126,13 @@ export const JobSchema = new EntitySchema<Job>({
       foreignKeyName: 'fk_users_id_jobs',
     } as unknown as EntitySchemaProperty<string, Job>,
     createdAt: { type: 'datetime', nullable: true },
-    updatedAt: { type: 'datetime', nullable: true },
+    updatedAt: {
+      type: 'datetime',
+      nullable: true,
+      onUpdate: () => new Date(),
+    },
+    publishedAt: { type: 'datetime', nullable: true },
+    archivedAt: { type: 'datetime', nullable: true },
+    deletedAt: { type: 'datetime', nullable: true },
   },
 });

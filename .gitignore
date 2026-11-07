@@ -13,3 +13,7 @@ backend/secrets/*
 
 *.md
 !README.md
+
+# Agent memory (never commit)
+.agent-memory/
+PROJECT_MEMORY.md

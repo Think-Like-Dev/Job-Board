@@ -12,6 +12,7 @@ services:
 
     environment:
       NODE_ENV: staging
+      S3_ENDPOINT: http://garage:3900
 
     ports:
       - "5000:5000"
@@ -140,3 +141,6 @@ volumes:
 
   redis_data:
     name: job-board-staging-redis-data
+
+  garage_data:
+    name: job-board-staging-garage-data

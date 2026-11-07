@@ -99,3 +99,13 @@ export enum FileType {
   PROFILE_IMAGE = 'PROFILE_IMAGE',
   OTHER = 'OTHER',
 }
+
+/**
+ * Principal that uploaded a file. Mirrors `SessionPayload.principalType`
+ * (candidates are not users; internal users are recruiters/admins/hiring
+ * managers).
+ */
+export enum FileOwnerType {
+  CANDIDATE = 'CANDIDATE',
+  USER = 'USER',
+}

@@ -12,6 +12,9 @@ services:
 
     environment:
       NODE_ENV: local
+      # Inside Compose the API reaches Garage by service name. Host-run dev
+      # servers use http://localhost:3900 from .env.local instead.
+      S3_ENDPOINT: http://garage:3900
 
     volumes:
       - ./platform-api:/app
@@ -27,6 +30,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  garage:
+    ports:
+      - "3900:3900"
 
   # Migration
   migrate:
@@ -142,3 +149,6 @@ volumes:
 
   redis_data:
     name: job-board-local-redis-data
+
+  garage_data:
+    name: job-board-local-garage-data

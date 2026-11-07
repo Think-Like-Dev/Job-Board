@@ -1,0 +1,14 @@
+# The Garage image is distroless (no shell), so the one-shot initialiser
+# copies the static `garage` binary into a small Alpine image with a shell.
+FROM dxflrs/garage:v1.3.1 AS garage
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=garage /garage /garage
+COPY garage-init.sh /garage-init.sh
+
+RUN chmod +x /garage-init.sh
+
+ENTRYPOINT ["/bin/sh", "/garage-init.sh"]

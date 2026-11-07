@@ -1,0 +1,23 @@
+# Garage configuration for local development.
+#
+# These secrets are DEV-ONLY. Replace rpc_secret/admin_token and the S3
+# credentials before using this configuration outside a local machine.
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "lmdb"
+
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+rpc_secret = "0f9f4f4b9a5d4c6e8f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f70"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "dev-garage-admin-token-change-me"
+metrics_token = "dev-garage-metrics-token-change-me"

@@ -293,6 +293,93 @@ The candidate portal uses a separate **unauthenticated** read-only surface, `GET
 * Every delete operation in the application is a soft delete.
 * Publishing requires `category`, `location`, `description`, `workMode`, `skills`, `totalInterviewRounds`, and a `lastApplicationDate` that is today or later.
 
+### 6.6 Object Storage (Garage S3)
+
+Uploaded files (resumes, cover letters, offer letters, profile images) live in a **single Garage bucket**; PostgreSQL `files` rows only store metadata plus the object key in `storage_path`. One bucket is used per environment, and file kinds are separated by path prefix:
+
+| FileType | Object prefix |
+| :--- | :--- |
+| `RESUME` | `resumes/` |
+| `COVER_LETTER` | `cover-letters/` |
+| `OFFER_LETTER` | `offer-letters/` |
+| `PROFILE_IMAGE` | `profile-images/` |
+| `OTHER` | `other/` |
+
+**Code**
+
+* `S3StorageService` (`src/modules/files/s3-storage.service.ts`) wraps `@aws-sdk/client-s3`; `getFile(key)` opens an object stream.
+* `FilesService.registerAndUpload(file, fileType, session)` uploads the buffer, then inserts the `files` row with `owner_type`/`owner_id` taken from the session.
+* `FilesService.openFileForSession(id, session)` checks access and returns the object stream.
+* `FilesService.removeForSession(id, session)` checks ownership before deleting the row and the Garage object.
+* `S3StorageService.getSignedDownloadUrl(key)` is reserved for server-to-server use (for example the future AI service) and is **never** returned by a public route.
+
+**Files API and access control**
+
+Every `/api/files` route is session-guarded with `SessionAuthGuard`. There is no public file route, and no endpoint returns a raw Garage URL.
+
+| Route | Access |
+| :--- | :--- |
+| `POST /api/files` | Any authenticated principal; the owner is the session, never client input. Multipart `file` + `fileType`. |
+| `GET /api/files` | Candidate: own files plus files explicitly shared with them. Internal users: all files. |
+| `GET /api/files/:id` | Candidate: own files plus files explicitly shared with them. Internal users: all files. |
+| `GET /api/files/:id/content` | Same rule as metadata; bytes stream through the API. |
+| `DELETE /api/files/:id` | Uploader only. |
+| `POST /api/files/:id/grants` | Internal users only. Body `{ "candidateId": "<uuid>" }`. Shares the file with one candidate. |
+| `DELETE /api/files/:id/grants/:candidateId` | Internal users only. Revokes the candidate's read grant. |
+
+Ownership lives in `files.owner_type` (`CANDIDATE` | `USER`) and `files.owner_id`. The pair is polymorphic, so a check constraint enforces both-or-neither instead of a foreign key. Files with no owner are legacy/system rows: internal users may read and manage them; candidates cannot see them.
+
+Recruiter-provided files (for example offer letters) are shared through `file_access_grants` (`file_id`, `candidate_id`, `granted_by`, `created_at`). A grant is additive and revocable: it never changes the file owner. Candidates can read a granted file but still cannot delete or mutate it. When the Offers module lands, creating an offer can call `FileAccessGrantsService.grant()` for the offer document, or the read policy can be extended to check `offers.offer_file_id`.
+
+`GET /api/files/:id/content` streams the object through the API instead of redirecting to Garage, so every read is covered by the `session_token` cookie. The response uses `Content-Disposition: inline` with a sanitized filename. Metadata responses never expose `storage_path` or `owner_id`. Uploads are capped at 10 MB.
+
+**Environment**
+
+* `S3_ENDPOINT` — `http://garage:3900` inside Compose, `http://localhost:3900` for a host-run API.
+* `S3_REGION` — `garage`.
+* `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` — imported by `garage-init`.
+* `S3_BUCKET_NAME` — `jobboard-files`.
+* `S3_FORCE_PATH_STYLE` — `true` (Garage uses path-style S3).
+* `S3_SIGNED_URL_EXPIRY_SECONDS` — lifetime for internal presigned URLs (default `900`). User-facing reads stream through the API instead.
+
+**Compose services**
+
+* `garage` — Garage server (S3 API `3900`, admin API `3903`, RPC `3901`).
+* `garage-init` — one-shot bootstrap: assigns the single-node layout, imports the fixed S3 key, creates the bucket, and grants read/write/owner. Safe to re-run.
+* `garage-webui` — optional debug-profile file browser on `http://localhost:3909`.
+
+The official Garage image is **distroless** (no `/bin/sh`), so the multi-step bootstrap cannot run inside it. `garage/Dockerfile.init` copies the static `/garage` binary into a small Alpine image with a shell. `garage-init` shares Garage's network namespace so the CLI can reach the node on `127.0.0.1:3901`.
+
+**Volumes**
+
+Garage data is isolated per environment, matching Postgres/Redis:
+
+* local — `job-board-local-garage-data`
+* staging — `job-board-staging-garage-data`
+* production — `job-board-prod-garage-data`
+
+**Start / verify**
+
+```sh
+cd back-end
+docker compose --env-file ./env/.env.local -f compose.yml -f compose.local.yml up -d garage garage-init
+docker logs job-board-local-garage-init-1
+```
+
+**Web UI (debug profile)**
+
+```sh
+docker compose --env-file ./env/.env.local -f compose.yml -f compose.local.yml --profile debug up -d garage-webui
+```
+
+Open `http://localhost:3909`. It reads `garage/garage.toml` and connects to the admin API at `http://garage:3903`. Optional basic auth can be enabled with `GARAGE_WEBUI_AUTH` (`username:bcrypt-hash` from `htpasswd -nbBC 10 user pass`). The UI is not started by default.
+
+**Quirks**
+
+* A fresh Garage node has no layout; `garage-init` assigns `dc1` with 10G and applies version 1.
+* Buckets and keys are not auto-created by Garage; `garage-init` handles both.
+* `garage.toml` currently contains local-development secrets. Replace `rpc_secret`, `admin_token`, `metrics_token`, and the S3 credentials before using staging/production.
+
 ---
 
 ## 7. Swagger Documentation Standards

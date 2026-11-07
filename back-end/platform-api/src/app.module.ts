@@ -11,6 +11,7 @@ import { UsersModule } from '@modules/users/users.module';
 import { CandidatesModule } from '@modules/candidates/candidates.module';
 import { FilesModule } from '@modules/files/files.module';
 import { JobsModule } from '@modules/jobs/jobs.module';
+import { ApplicationsModule } from '@modules/applications/applications.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { JobsModule } from '@modules/jobs/jobs.module';
     CandidatesModule,
     FilesModule,
     JobsModule,
+    ApplicationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

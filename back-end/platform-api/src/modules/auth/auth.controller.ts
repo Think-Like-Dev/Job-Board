@@ -8,10 +8,8 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import {
-  ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -35,7 +33,7 @@ import {
   VerifyOtpDto,
 } from './auth.dto';
 import type { AppConfig } from '@src/config/configuration';
-import { SessionAuthGuard } from './session-auth.guard';
+import { SessionAuth } from './session-auth.decorator';
 import type { AuthenticatedRequest } from './auth.types';
 
 @ApiTags('auth')
@@ -135,11 +133,9 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(SessionAuthGuard)
-  @ApiCookieAuth('session_token')
+  @SessionAuth()
   @ApiOperation({ summary: 'Get the currently authenticated principal' })
   @ApiOkResponse({ type: AuthResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   async me(@Req() req: AuthenticatedRequest): Promise<AuthResponseDto> {
     if (req.session.principalType === 'candidate') {
       const candidate = await this.candidatesService.findByEmail(

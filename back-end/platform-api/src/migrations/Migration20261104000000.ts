@@ -89,12 +89,8 @@ export class Migration20261104000000 extends Migration {
     this.addSql(
       `ALTER TABLE "jobs" DROP COLUMN IF EXISTS "compensation_currency";`,
     );
-    this.addSql(
-      `ALTER TABLE "jobs" DROP COLUMN IF EXISTS "compensation_max";`,
-    );
-    this.addSql(
-      `ALTER TABLE "jobs" DROP COLUMN IF EXISTS "compensation_min";`,
-    );
+    this.addSql(`ALTER TABLE "jobs" DROP COLUMN IF EXISTS "compensation_max";`);
+    this.addSql(`ALTER TABLE "jobs" DROP COLUMN IF EXISTS "compensation_min";`);
     this.addSql(
       `ALTER TABLE "jobs" DROP COLUMN IF EXISTS "compensation_type";`,
     );

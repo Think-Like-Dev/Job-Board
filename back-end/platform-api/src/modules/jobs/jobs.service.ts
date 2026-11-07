@@ -22,7 +22,12 @@ import {
   EmploymentType,
   JobStatus,
   WorkMode,
+  ApplicationStatus,
 } from '@common/constants/enums';
+import {
+  JobApplicationStatsService,
+  type JobApplicationStats,
+} from '@modules/applications/job-application-stats.service';
 import { Job, JobSchema } from './job.schema';
 import {
   ApplicationSettingsDto,
@@ -75,6 +80,7 @@ export class JobsService extends GenericCrudService<Job> {
   constructor(
     @InjectRepository(JobSchema)
     repository: EntityRepository<Job>,
+    private readonly applicationStats: JobApplicationStatsService,
   ) {
     super(repository);
   }
@@ -300,13 +306,14 @@ export class JobsService extends GenericCrudService<Job> {
 
   /**
    * Tells the UI whether archiving needs the "no confirmed candidates" warning.
-   * The applications module does not exist yet, so the count is always zero.
+   * Counts applications with an accepted offer for this job.
    */
   async getArchivePreview(id: string): Promise<ArchivePreview> {
     const job = await this.findJobById(id);
-    // The applications module is not implemented yet. Once it exists, count
-    // applications with status OFFER_ACCEPTED for this job instead of zero.
-    const confirmedOffersCount = 0;
+    const confirmedOffersCount = await this.applicationStats.countByStatus(
+      job.id,
+      ApplicationStatus.OFFER_ACCEPTED,
+    );
 
     return {
       jobId: job.id,
@@ -314,6 +321,13 @@ export class JobsService extends GenericCrudService<Job> {
       confirmedOffersCount,
       requiresNoConfirmedOffersAcknowledgement: confirmedOffersCount === 0,
     };
+  }
+
+  /** Non-draft application stats for a page of jobs, keyed by job id. */
+  getApplicationStats(
+    jobIds: string[],
+  ): Promise<Map<string, JobApplicationStats>> {
+    return this.applicationStats.getStatsForJobs(jobIds);
   }
 
   /** Archives every published job whose application window has closed. */
@@ -452,9 +466,7 @@ export class JobsService extends GenericCrudService<Job> {
         : null;
     }
     if (compensation.type === CompensationType.RANGE) {
-      return Array.isArray(compensation.amount)
-        ? compensation.amount[0]
-        : null;
+      return Array.isArray(compensation.amount) ? compensation.amount[0] : null;
     }
     return null;
   }
@@ -470,9 +482,7 @@ export class JobsService extends GenericCrudService<Job> {
         : null;
     }
     if (compensation.type === CompensationType.RANGE) {
-      return Array.isArray(compensation.amount)
-        ? compensation.amount[1]
-        : null;
+      return Array.isArray(compensation.amount) ? compensation.amount[1] : null;
     }
     return null;
   }

@@ -3,7 +3,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -14,26 +13,25 @@ import {
   Res,
   StreamableFile,
   UploadedFile,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
+  ApiQuery,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 import { FileType } from '@common/constants/enums';
-import { SessionAuthGuard } from '@modules/auth/session-auth.guard';
+import { SessionAuth } from '@modules/auth/session-auth.decorator';
+import { assertInternalUserSession } from '@modules/auth/session-principal';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import {
   FileDeletedResponseDto,
@@ -52,8 +50,7 @@ import { UploadFileDto } from './upload-file.dto';
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 @ApiTags('files')
-@ApiCookieAuth('session_token')
-@UseGuards(SessionAuthGuard)
+@SessionAuth()
 @Controller('files')
 export class FilesController {
   constructor(
@@ -80,7 +77,6 @@ export class FilesController {
     summary: 'Upload a file; ownership is taken from the session',
   })
   @ApiCreatedResponse({ type: FileResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() dto: UploadFileDto,
@@ -106,7 +102,6 @@ export class FilesController {
   @Get()
   @ApiOperation({ summary: 'List files visible to the session (paginated)' })
   @ApiOkResponse({ type: FileListResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   async findAll(
     @Query() query: PaginationQueryDto,
     @Req() req: AuthenticatedRequest,
@@ -131,16 +126,22 @@ export class FilesController {
     summary: 'Stream a file through the API (session-guarded, never public)',
   })
   @ApiProduces('application/octet-stream')
+  @ApiQuery({
+    name: 'download',
+    required: false,
+    type: Boolean,
+    description: 'Set to true to send Content-Disposition: attachment',
+  })
   @ApiOkResponse({
     description: 'Raw file bytes',
     schema: { type: 'string', format: 'binary' },
   })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({
     description: 'Candidates may only read their own files',
   })
   async content(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('download') download: string | undefined,
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
@@ -151,10 +152,11 @@ export class FilesController {
 
     const filename = file.filename ?? file.id;
     const asciiFilename = sanitizeFilename(filename);
+    const disposition = download === 'true' ? 'attachment' : 'inline';
 
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      `${disposition}; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
     );
 
     return new StreamableFile(object.stream, {
@@ -166,7 +168,6 @@ export class FilesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get file metadata' })
   @ApiOkResponse({ type: FileResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({
     description: 'Candidates may only read their own files',
   })
@@ -186,7 +187,6 @@ export class FilesController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a file (uploader only)' })
   @ApiOkResponse({ type: FileDeletedResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({
     description: 'Only the session that uploaded the file may delete it',
   })
@@ -208,14 +208,13 @@ export class FilesController {
     summary: 'Share a file with a candidate (internal users only)',
   })
   @ApiCreatedResponse({ type: FileGrantResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({ description: 'Only internal users can share files' })
   async grant(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ShareFileDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileGrantResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
     await this.filesService.findFileForSession(id, req.session);
 
     const grant = await this.fileAccessGrants.grant(
@@ -236,7 +235,6 @@ export class FilesController {
     summary: 'Revoke a candidate file grant (internal users only)',
   })
   @ApiOkResponse({ type: FileGrantRevokedResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({
     description: 'Only internal users can revoke grants',
   })
@@ -245,7 +243,7 @@ export class FilesController {
     @Param('candidateId', new ParseUUIDPipe()) candidateId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileGrantRevokedResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
     await this.filesService.findFileForSession(id, req.session);
 
     const revoked = await this.fileAccessGrants.revoke(id, candidateId);
@@ -258,12 +256,6 @@ export class FilesController {
       message: 'File access revoked',
       data: { fileId: id, candidateId },
     };
-  }
-
-  private assertInternalUser(req: AuthenticatedRequest): void {
-    if (req.session.principalType !== 'user') {
-      throw new ForbiddenException('Only internal users can share files');
-    }
   }
 }
 

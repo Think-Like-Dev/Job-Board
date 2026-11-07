@@ -1,10 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SessionAuth } from '@modules/auth/session-auth.decorator';
 import { CandidatesService } from './candidates.service';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 
 @ApiTags('candidates')
-@ApiBearerAuth()
+@SessionAuth()
 @Controller('candidates')
 export class CandidatesController {
   constructor(private readonly candidatesService: CandidatesService) {}

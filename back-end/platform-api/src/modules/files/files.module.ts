@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { AuthModule } from '@modules/auth/auth.module';
+import { SessionModule } from '@modules/auth/session.module';
 import { CandidatesModule } from '@modules/candidates/candidates.module';
 import { FileSchema } from './file.schema';
 import { FileAccessGrantSchema } from './file-access-grant.schema';
@@ -12,7 +12,7 @@ import { S3StorageService } from './s3-storage.service';
 @Module({
   imports: [
     MikroOrmModule.forFeature([FileSchema, FileAccessGrantSchema]),
-    AuthModule,
+    SessionModule,
     CandidatesModule,
   ],
   controllers: [FilesController],

@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { SessionModule } from '@modules/auth/session.module';
 import { CandidateSchema } from './candidate.schema';
 import { CandidatesService } from './candidates.service';
 import { CandidatesController } from './candidates.controller';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([CandidateSchema])],
+  imports: [MikroOrmModule.forFeature([CandidateSchema]), SessionModule],
   controllers: [CandidatesController],
   providers: [CandidatesService],
   exports: [CandidatesService],

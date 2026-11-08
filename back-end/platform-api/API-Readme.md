@@ -275,7 +275,7 @@ All `/api/jobs` routes are session-guarded and require an internal user session 
 
 The candidate portal uses a separate **unauthenticated** read-only surface, `GET /api/public/jobs` and `GET /api/public/jobs/:id`. It reuses the same service functions with `publicOnly` enabled, so results are limited to `PUBLISHED` jobs whose `lastApplicationDate` is today or later. Public responses omit internal ownership/lifecycle fields and include the job `description` in the summary.
 
-* **`GET /api/jobs`** — paginated list. Query: `page`, `limit`, `search`, `status`, `recruiterId`, `category`, `location`, `yearsOfExperience`, `currency`, `compensationType` (`NEGOTIABLE` | `NONE`), `compensationMin` / `compensationMax` (salary-range overlap; a fixed salary counts as min = max), `orderBy` (`createdAt` | `updatedAt` | `title` | `status` | `code` | `location` | `category` | `compensation` | `publishedAt`), `orderByDirection` (`ASC` | `DESC`). `search` matches title, code, category or location; `compensation` sorting uses the fixed amount or range minimum with nulls last. Soft-deleted drafts are excluded. Each summary includes `createdBy`, `publishedAt`, and `archivedAt` so the client can gate creator-only actions and show lifecycle timestamps.
+* **`GET /api/jobs`** — paginated list. Query: `page`, `limit`, `search`, `status`, `recruiterId`, `category`, `location`, `yearsOfExperience`, `currency`, `compensationType` (`NEGOTIABLE` | `NONE`), `compensationMin` / `compensationMax` (salary-range overlap; a fixed salary counts as min = max), `orderBy` (`createdAt` | `updatedAt` | `title` | `status` | `code` | `location` | `category` | `compensation` | `publishedAt`), `orderByDirection` (`ASC` | `DESC`). `search` matches title, code, category or location; `compensation` sorting uses the fixed amount or range minimum with nulls last. Soft-deleted drafts are excluded. Each summary includes `createdBy`, `publishedAt`, and `archivedAt` so the client can gate creator-only actions and show lifecycle timestamps. Recruiter responses also include `totalApplications` and `candidateStatusCounts` (see §6.7).
 * **`GET /api/public/jobs`** — same pagination, search, sorting and filters as `GET /api/jobs`, but unauthenticated and published-only. `status` and `recruiterId` are ignored. Each item is a `PublicJobSummaryDto` (no `createdBy`/`archivedAt`, includes `description`).
 * **`GET /api/public/jobs/:id`** — public job detail. Returns `404` when the job is not published, has been soft-deleted, or its application window has passed.
 * **`POST /api/jobs`** — create a `DRAFT` or `PUBLISHED` job.
@@ -331,7 +331,7 @@ Ownership lives in `files.owner_type` (`CANDIDATE` | `USER`) and `files.owner_id
 
 Recruiter-provided files (for example offer letters) are shared through `file_access_grants` (`file_id`, `candidate_id`, `granted_by`, `created_at`). A grant is additive and revocable: it never changes the file owner. Candidates can read a granted file but still cannot delete or mutate it. When the Offers module lands, creating an offer can call `FileAccessGrantsService.grant()` for the offer document, or the read policy can be extended to check `offers.offer_file_id`.
 
-`GET /api/files/:id/content` streams the object through the API instead of redirecting to Garage, so every read is covered by the `session_token` cookie. The response uses `Content-Disposition: inline` with a sanitized filename. Metadata responses never expose `storage_path` or `owner_id`. Uploads are capped at 10 MB.
+`GET /api/files/:id/content` streams the object through the API instead of redirecting to Garage, so every read is covered by the `session_token` cookie. The response uses `Content-Disposition: inline` with a sanitized filename; add `?download=true` to force `Content-Disposition: attachment`. Metadata responses never expose `storage_path` or `owner_id`. Uploads are capped at 10 MB.
 
 **Environment**
 
@@ -379,6 +379,35 @@ Open `http://localhost:3909`. It reads `garage/garage.toml` and connects to the 
 * A fresh Garage node has no layout; `garage-init` assigns `dc1` with 10G and applies version 1.
 * Buckets and keys are not auto-created by Garage; `garage-init` handles both.
 * `garage.toml` currently contains local-development secrets. Replace `rpc_secret`, `admin_token`, `metrics_token`, and the S3 credentials before using staging/production.
+
+### 6.7 Applications API
+
+Application statuses use the native `application_status` enum: `DRAFT`, `APPLIED`, `IN_REVIEW`, `SHORTLISTED`, `INTERVIEW`, `OFFER_EXTENDED`, `OFFER_ACCEPTED`, `OFFER_REJECTED`, `REJECTED`, `WITHDRAWN`, `AUTO_REJECTED`. The `(candidate_id, job_id)` pair is unique: a draft and its submitted form are the same row.
+
+**Candidate routes** (`principalType: "candidate"`)
+
+* **`POST /api/jobs/:jobId/apply`** — `multipart/form-data`: optional `resumeFile`, `coverLetterFile`; fields `isDraft` (default `false`), `updateProfileResume` (default `false`), `existingResumeFileId` (UUID). Rules: the job must be `PUBLISHED` and not past `lastApplicationDate`; an existing `DRAFT` may be updated or submitted; any later status returns `409`. Resume: PDF/DOCX ≤ 2 MB; cover letter: PDF/DOCX ≤ 1 MB; `applicationSettings.coverLetterRequired` is enforced on submit. Resume resolution order: new upload, `existingResumeFileId`, the draft's resume, then `candidates.resume_file_id`; if none exists the request is `400`. `updateProfileResume` updates `candidates.resume_file_id` only on submit and only when a new resume was uploaded.
+* **`GET /api/applications/my`** — paginated (`page`, `limit`, optional `status`), newest first, includes drafts.
+* **`GET /api/applications/my/:id`** — the candidate's own application with `statusHistory`.
+* **`POST /api/applications/:id/withdraw`** — `{ reason?: string }`; only from `APPLIED`, sets `withdrawn_at`, writes a history row. Later statuses return `409`.
+* **`DELETE /api/applications/:id`** — hard-deletes a `DRAFT` and its history; files used only by the draft are removed unless the candidate profile or another application still references them.
+
+**Recruiter routes** (any internal user: `principalType: "user"`)
+
+* **`GET /api/jobs/:jobId/applications`** — paginated (`page`, `limit`, optional `status`, `search` over first name/last name/email), `appliedAt` newest first. Drafts are excluded; requesting `status=DRAFT` is `400`.
+* **`GET /api/applications/:id`** — candidate profile fields, resume/cover-letter references, and `statusHistory`. Returns `404` for a draft so it is not revealed.
+
+**File access and links**
+
+Application responses return `resumeFileId`, `resumeFileName`, `resumeFileUrl` (and cover-letter equivalents). URLs are API-relative (`/files/:id/content?download=true`) and remain session-guarded; the browser never receives a Garage URL. `GET /api/files/:id/content?download=true` sets `Content-Disposition: attachment`.
+
+**Job stats**
+
+`GET /api/jobs` and `GET /api/jobs/:id` attach `totalApplications` (every non-`DRAFT` application) and `candidateStatusCounts` (top three non-zero statuses by workflow importance: `OFFER_ACCEPTED`, `OFFER_EXTENDED`, `INTERVIEW`, `SHORTLISTED`, `IN_REVIEW`, `APPLIED`, `OFFER_REJECTED`, `REJECTED`, `WITHDRAWN`, `AUTO_REJECTED`). Stats are computed with one grouped query per page by `ApplicationStatsModule`, which depends only on the Application entity to avoid a cycle with `JobsModule`.
+
+**Deferred**
+
+Recruiter status mutations, extra attachments, email/notification sending, and dynamic question answers are not part of Phase 2.
 
 ---
 

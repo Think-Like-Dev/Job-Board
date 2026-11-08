@@ -1,4 +1,5 @@
 import type { Job } from './job.schema';
+import type { JobApplicationStats } from '@modules/applications/job-application-stats.service';
 import type { JobDetailDto, JobSummaryDto } from './job-response.dto';
 import type {
   PublicJobDetailDto,
@@ -15,7 +16,10 @@ function toDateOnly(value?: string | Date | null): string | undefined {
 }
 
 /** Maps the persisted job entity to the frontend-facing summary shape. */
-export function toJobSummaryDto(job: Job): JobSummaryDto {
+export function toJobSummaryDto(
+  job: Job,
+  stats?: JobApplicationStats,
+): JobSummaryDto {
   return {
     id: job.id,
     code: job.code,
@@ -36,13 +40,18 @@ export function toJobSummaryDto(job: Job): JobSummaryDto {
     publishedAt: toIsoString(job.publishedAt),
     archivedAt: toIsoString(job.archivedAt),
     createdBy: job.createdBy,
+    totalApplications: stats?.totalApplications,
+    candidateStatusCounts: stats?.candidateStatusCounts,
   };
 }
 
 /** Adds the fields the edit page and detail drawer need. */
-export function toJobDetailDto(job: Job): JobDetailDto {
+export function toJobDetailDto(
+  job: Job,
+  stats?: JobApplicationStats,
+): JobDetailDto {
   return {
-    ...toJobSummaryDto(job),
+    ...toJobSummaryDto(job, stats),
     description: job.description,
     responsibilities: job.responsibilities ?? '',
     yearsOfExperience: job.yearsOfExperience ?? '',

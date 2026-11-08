@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -11,21 +10,19 @@ import {
   Put,
   Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
-  ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
-  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { SessionAuthGuard } from '@modules/auth/session-auth.guard';
+import { ApiJobNotFound } from '@common/decorators/api-responses.decorator';
+import { SessionAuth } from '@modules/auth/session-auth.decorator';
+import { assertInternalUserSession } from '@modules/auth/session-principal';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { CreateJobDto, UpdateJobDto, UpdateJobStatusDto } from './job.dto';
 import {
@@ -41,16 +38,14 @@ import { toJobDetailDto, toJobSummaryDto } from './job.presenter';
 import { JobsService } from './jobs.service';
 
 @ApiTags('jobs')
-@ApiCookieAuth('session_token')
+@SessionAuth()
 @Controller('jobs')
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
   @Get()
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'List jobs with pagination, search and filters' })
   @ApiOkResponse({ type: JobListResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({
     description: 'Candidate sessions cannot list jobs',
   })
@@ -58,14 +53,17 @@ export class JobsController {
     @Query() query: ListJobsQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobListResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const result = await this.jobsService.listJobs(query);
+    const stats = await this.jobsService.getApplicationStats(
+      result.data.map((job) => job.id),
+    );
 
     return {
       success: true,
       message: 'Jobs fetched successfully',
-      data: result.data.map(toJobSummaryDto),
+      data: result.data.map((job) => toJobSummaryDto(job, stats.get(job.id))),
       pagination: {
         page: query.page,
         limit: query.limit,
@@ -76,17 +74,16 @@ export class JobsController {
   }
 
   @Get(':id/archive-preview')
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({
     summary: 'Check whether archiving needs the irreversible warning',
   })
   @ApiOkResponse({ type: JobArchivePreviewResponseDto })
-  @ApiNotFoundResponse({ description: 'Job not found' })
+  @ApiJobNotFound()
   async getArchivePreview(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobArchivePreviewResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const preview = await this.jobsService.getArchivePreview(id);
 
@@ -98,34 +95,32 @@ export class JobsController {
   }
 
   @Get(':id')
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Get a job with all editable fields' })
   @ApiOkResponse({ type: JobDetailResponseDto })
-  @ApiNotFoundResponse({ description: 'Job not found' })
+  @ApiJobNotFound()
   async findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobDetailResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const job = await this.jobsService.findJobById(id);
+    const stats = await this.jobsService.getApplicationStats([job.id]);
 
     return {
       success: true,
       message: 'Job fetched successfully',
-      data: toJobDetailDto(job),
+      data: toJobDetailDto(job, stats.get(job.id)),
     };
   }
 
   @Post()
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Create a job as a draft or published posting' })
   @ApiCreatedResponse({ type: JobResponseDto })
   @ApiBadRequestResponse({
     description:
       'Invalid payload, compensation shape, or missing publish fields',
   })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired session' })
   @ApiForbiddenResponse({
     description: 'Candidate sessions cannot create jobs',
   })
@@ -133,7 +128,7 @@ export class JobsController {
     @Body() dto: CreateJobDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const job = await this.jobsService.createJob(dto, req.session.principalId);
 
@@ -145,11 +140,10 @@ export class JobsController {
   }
 
   @Put(':id')
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Replace a draft job (creator only)' })
   @ApiOkResponse({ type: JobDetailResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  @ApiNotFoundResponse({ description: 'Job not found' })
+  @ApiJobNotFound()
   @ApiConflictResponse({ description: 'Only draft jobs can be edited' })
   @ApiForbiddenResponse({
     description: 'Only the recruiter who created the job can edit it',
@@ -159,7 +153,7 @@ export class JobsController {
     @Body() dto: UpdateJobDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobDetailResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const job = await this.jobsService.updateJob(
       id,
@@ -175,13 +169,12 @@ export class JobsController {
   }
 
   @Patch(':id/status')
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Publish or archive a job (creator only)' })
   @ApiOkResponse({ type: JobStatusResponseDto })
   @ApiBadRequestResponse({
     description: 'Missing publish fields or archive acknowledgement',
   })
-  @ApiNotFoundResponse({ description: 'Job not found' })
+  @ApiJobNotFound()
   @ApiConflictResponse({
     description:
       'Invalid status transition (no unpublish, archive is terminal)',
@@ -194,7 +187,7 @@ export class JobsController {
     @Body() dto: UpdateJobStatusDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobStatusResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const job = await this.jobsService.changeStatus(
       id,
@@ -216,10 +209,9 @@ export class JobsController {
   }
 
   @Delete(':id')
-  @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Soft-delete a draft job (creator only)' })
   @ApiOkResponse({ type: DeleteJobResponseDto })
-  @ApiNotFoundResponse({ description: 'Job not found' })
+  @ApiJobNotFound()
   @ApiConflictResponse({ description: 'Only draft jobs can be deleted' })
   @ApiForbiddenResponse({
     description: 'Only the recruiter who created the job can delete it',
@@ -228,7 +220,7 @@ export class JobsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<DeleteJobResponseDto> {
-    this.assertInternalUser(req);
+    assertInternalUserSession(req);
 
     const job = await this.jobsService.softDeleteJob(
       id,
@@ -243,11 +235,5 @@ export class JobsController {
         deletedAt: job.deletedAt?.toISOString() ?? new Date().toISOString(),
       },
     };
-  }
-
-  private assertInternalUser(req: AuthenticatedRequest): void {
-    if (req.session.principalType !== 'user') {
-      throw new ForbiddenException('Only internal users can access jobs');
-    }
   }
 }

@@ -30,8 +30,7 @@ export const JOB_COMPENSATION_FILTERS = ['NEGOTIABLE', 'NONE'] as const;
 
 export type JobSortField = (typeof JOB_SORT_FIELDS)[number];
 export type JobSortDirection = (typeof JOB_SORT_DIRECTIONS)[number];
-export type JobCompensationFilter =
-  (typeof JOB_COMPENSATION_FILTERS)[number];
+export type JobCompensationFilter = (typeof JOB_COMPENSATION_FILTERS)[number];
 
 /**
  * Query accepted by `GET /jobs`; mirrors the recruiter list page filters.

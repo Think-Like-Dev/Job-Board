@@ -13,6 +13,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
@@ -122,6 +123,33 @@ export class FilesService extends GenericCrudService<File> {
   }
 
   /**
+   * Loads a file that a candidate references as one of their own uploads.
+   * Guards against attaching another candidate's file to an application.
+   */
+  async findCandidateFile(
+    id: string,
+    candidateId: string,
+    expectedType?: FileType,
+  ): Promise<File> {
+    const file = await this.findOne({ id });
+
+    if (
+      file.ownerType !== FileOwnerType.CANDIDATE ||
+      file.ownerId !== candidateId
+    ) {
+      throw new BadRequestException('File does not belong to the candidate');
+    }
+
+    if (expectedType && file.fileType !== expectedType) {
+      throw new BadRequestException(
+        `File is not a ${expectedType.toLowerCase().replace('_', ' ')}`,
+      );
+    }
+
+    return file;
+  }
+
+  /**
    * Opens the stored object for streaming. Bytes travel through the API so
    * every read is covered by the session cookie; no public object URL is
    * handed to the browser.
@@ -179,6 +207,24 @@ export class FilesService extends GenericCrudService<File> {
     }
 
     return true;
+  }
+
+  /**
+   * Best-effort cleanup for files that may still be referenced elsewhere.
+   * Returns false instead of throwing when another row protects the file.
+   */
+  async removeIfUnreferenced(id: string): Promise<boolean> {
+    try {
+      return await this.remove({ id });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   /**

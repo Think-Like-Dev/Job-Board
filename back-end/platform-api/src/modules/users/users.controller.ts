@@ -8,13 +8,14 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SessionAuth } from '@modules/auth/session-auth.decorator';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 
 @ApiTags('users')
-@ApiBearerAuth()
+@SessionAuth()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ApplicationStatus,
   CompensationType,
   EmploymentType,
   JobStatus,
@@ -31,6 +32,15 @@ export class ApplicationSettingsResponseDto {
 
   @ApiProperty()
   maximumAttachments!: number;
+}
+
+/** One non-zero application status count for a job. */
+export class JobStatusCountDto {
+  @ApiProperty({ enum: ApplicationStatus })
+  status!: ApplicationStatus;
+
+  @ApiProperty()
+  count!: number;
 }
 
 /** Shape consumed by the recruiter frontend's job summary schema. */
@@ -94,6 +104,17 @@ export class JobSummaryDto {
 
   @ApiPropertyOptional({ description: 'User id of the creating recruiter' })
   createdBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Non-draft applications received by this job',
+  })
+  totalApplications?: number;
+
+  @ApiPropertyOptional({
+    type: [JobStatusCountDto],
+    description: 'Top three non-zero statuses by workflow importance',
+  })
+  candidateStatusCounts?: JobStatusCountDto[];
 }
 
 /** Full job payload used by the edit page and the detail drawer. */

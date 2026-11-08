@@ -1,8 +1,9 @@
+import type { ApplicationStatusCount } from "@/types/application.types";
+
 export enum JobStatus {
   DRAFT = "DRAFT",
   PUBLISHED = "PUBLISHED",
   ARCHIVED = "ARCHIVED",
-  CLOSED = "CLOSED",
 }
 
 export enum EmploymentType {
@@ -79,4 +80,6 @@ export interface Job {
   publishedAt?: string;
   archivedAt?: string;
   createdBy?: string;
+  totalApplications?: number;
+  candidateStatusCounts?: ApplicationStatusCount[];
 }

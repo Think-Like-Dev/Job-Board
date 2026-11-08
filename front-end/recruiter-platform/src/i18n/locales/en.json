@@ -53,6 +53,9 @@
       "location": "Location",
       "createdAt": "Created Date",
       "updatedAt": "Updated Date",
+      "applications": "Applications",
+      "totalApplications": "Total: {{count}}",
+      "noApplications": "No applications",
       "empty": "No jobs in this tab yet.",
       "searchPlaceholder": "Search by code, title, category or location",
       "compensationFilter": "Compensation filter",
@@ -141,13 +144,111 @@
     "applications": {
       "title": "Applications",
       "back": "Back to jobs",
-      "comingSoonTitle": "Applications list coming soon",
-      "comingSoon": "The applications received for this job, with filters and candidate drawers, will be added with the applications module."
+      "showJobDescription": "Show Job Description",
+      "hideJobDescription": "Hide Job Description",
+      "candidateCount_one": "{{count}} candidate",
+      "candidateCount_other": "{{count}} candidates",
+      "searchPlaceholder": "Search by candidate name or email",
+      "statusFilter": "Status filter",
+      "allStatuses": "All statuses",
+      "clearFilters": "Clear filters",
+      "empty": "No applications match your filters.",
+      "loadFailedTitle": "Could not load applications",
+      "loadFailed": "Please check your connection and try again.",
+      "retry": "Retry",
+      "aiScorePending": "AI ranking is not available yet",
+      "noResume": "Not provided",
+      "viewResume": "View resume",
+      "downloadResume": "Download resume",
+      "fileError": "Could not open the file. Please try again.",
+      "selection": {
+        "selectPage": "Select this page",
+        "selectAllFilteredCount": "Select all filtered ({{count}})",
+        "selectCandidate": "Select {{name}}",
+        "options": "Selection options",
+        "selected_one": "{{count}} candidate selected",
+        "selected_other": "{{count}} candidates selected",
+        "selectingAll": "Selecting all candidates…",
+        "selectAllFailed": "Could not select all candidates. Please try again.",
+        "clear": "Clear selection"
+      },
+      "viewer": {
+        "title": "Document preview",
+        "description": "Preview of the selected file",
+        "download": "Download file",
+        "previewUnavailable": "This file type cannot be previewed here. Download it to open it locally.",
+        "loadFailed": "Could not load this file. Please try again."
+      },
+      "columns": {
+        "candidate": "Candidate",
+        "contact": "Email / Phone",
+        "resume": "Resume",
+        "status": "Stage",
+        "aiScore": "AI Score",
+        "appliedAt": "Applied On"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "APPLIED": "Applied",
+        "IN_REVIEW": "In Review",
+        "SHORTLISTED": "Shortlisted",
+        "INTERVIEW": "Interview",
+        "OFFER_EXTENDED": "Offer Extended",
+        "OFFER_ACCEPTED": "Offer Accepted",
+        "OFFER_REJECTED": "Offer Rejected",
+        "REJECTED": "Rejected",
+        "WITHDRAWN": "Withdrawn",
+        "AUTO_REJECTED": "Auto Rejected"
+      },
+      "jobDescription": {
+        "title": "Job Description",
+        "overview": "Overview",
+        "compensation": "Compensation & Benefits",
+        "loadFailed": "Could not load the job description."
+      },
+      "drawer": {
+        "title": "Candidate details",
+        "loading": "Loading candidate…",
+        "loadFailedTitle": "Could not load this candidate",
+        "loadFailed": "The application may have been removed or the link is invalid.",
+        "sections": {
+          "documents": "Documents",
+          "profile": "Candidate Profile",
+          "ai": "AI Evaluation",
+          "timeline": "Recruitment Activity"
+        },
+        "documents": {
+          "resume": "Resume",
+          "coverLetter": "Cover letter",
+          "view": "View",
+          "download": "Download"
+        },
+        "profile": {
+          "education": "Education",
+          "experience": "Work Experience",
+          "skills": "Skills",
+          "noEducation": "No education details",
+          "noExperience": "No work experience",
+          "noSkills": "No skills listed",
+          "present": "Present",
+          "linkedin": "LinkedIn",
+          "portfolio": "Portfolio"
+        },
+        "ai": {
+          "pending": "AI Evaluation pending",
+          "description": "AI ranking and evaluation will be available in a later release."
+        },
+        "timeline": {
+          "applied": "Applied",
+          "empty": "No activity yet."
+        }
+      }
     }
   },
   "nav": {
     "back": "Back",
-    "logout": "Logout"
+    "logout": "Logout",
+    "loggingOut": "Logging out..."
   },
   "welcome": {
     "title": "Welcome {{name}}"
@@ -177,7 +278,8 @@
     "otpSendError": "Failed to send OTP. Please try again.",
     "otpVerifyError": "Invalid OTP. Please try again.",
     "loginSuccess": "Logged in successfully!",
-    "loginError": "Invalid email or password."
+    "loginError": "Invalid email or password.",
+    "logoutError": "Could not log out. Please try again."
   },
   "jobForm": {
     "createTitle": "Create Job",

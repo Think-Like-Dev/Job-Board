@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { QUERY_KEYS } from './queryKeys';
 import { login, verifyOtp, getMe, logoutUser } from '../services/auth.service';
 import { loginSuccess, logout, setInitialized } from '@store/slices/authSlice';
@@ -55,15 +58,27 @@ export function useVerifyOtp() {
   });
 }
 
+/**
+ * Destroys the server session (`POST /auth/logout` deletes the Redis session
+ * and clears the HttpOnly cookie), then clears all client state. The soft
+ * redirect avoids a full page reload; the router already renders the login
+ * screen once `isAuthenticated` is false.
+ */
 export function useLogout() {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
   return useMutation({
     mutationFn: () => logoutUser(),
     onSuccess: () => {
       dispatch(logout());
       queryClient.clear();
-      window.location.replace('/');
+      navigate('/login', { replace: true });
+    },
+    onError: () => {
+      toast.error(t('auth.logoutError'));
     },
   });
 }

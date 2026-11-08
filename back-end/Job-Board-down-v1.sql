@@ -1,5 +1,5 @@
+-- NOTE: Login sessions are not persisted in Postgres; they live in Redis.
 DROP TABLE "users";
-DROP TABLE "sessions";
 DROP TABLE "files";
 DROP TABLE "candidates";
 DROP TABLE "candidate_addresses";
@@ -28,8 +28,6 @@ DROP TABLE "notifications";
 DROP TABLE "resume_analysis";
 DROP TABLE "candidate_job_match";
 DROP TABLE "activity_logs";
-
-ALTER TABLE "sessions" DROP CONSTRAINT "fk_users_id_sessions";
 
 ALTER TABLE "candidates" DROP CONSTRAINT "fk_files_id_candidates";
 

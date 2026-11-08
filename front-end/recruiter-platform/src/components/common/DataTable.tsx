@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 export type DataTableSortDirection = "ASC" | "DESC"
 
@@ -50,6 +51,8 @@ interface DataTableProps<TData, TValue> {
   /** Controlled server-side sorting. Omit to render plain headers. */
   sorting?: DataTableSorting | null
   onSortingChange?: (sorting: DataTableSorting | null) => void
+  /** Extra classes for the scroll container (e.g. to bound the height). */
+  containerClassName?: string
 }
 
 function SortIcon({ direction }: { direction: DataTableSortDirection | null }) {
@@ -72,6 +75,7 @@ export function DataTable<TData, TValue>({
   emptyMessage = "No results.",
   sorting,
   onSortingChange,
+  containerClassName,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const table = useReactTable({
@@ -101,7 +105,12 @@ export function DataTable<TData, TValue>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div
+      className={cn(
+        "overflow-x-auto rounded-md border",
+        containerClassName,
+      )}
+    >
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

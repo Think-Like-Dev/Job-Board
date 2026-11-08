@@ -1,114 +1,487 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useIsMutating, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { Button } from '@ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card';
 import { Input } from '@ui/input';
 import { Label } from '@ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card';
 import { Skeleton } from '@ui/skeleton';
-import { EducationTable } from './components/EducationTable';
-import { ExperienceTable } from './components/ExperienceTable';
-import { validateImageSize, validatePassportAspectRatio, validateResume } from '@utils/validators';
+import { API_ENDPOINTS } from '@api/endpoints.config';
+import { QUERY_KEYS } from '@api/hooks/queryKeys';
+import { ProfileFormSchema } from '@api/schemas/profile.schema';
+import type { ProfileFormValues } from '@api/schemas/profile.schema';
 import { useProfile, useUpdateProfile } from '@api/hooks/useProfile';
-import { toast } from 'sonner';
+import { getErrorMessage } from '@utils/errorMessage';
+import {
+  validateCoverLetter,
+  validateResume,
+} from '@utils/validators';
+import type {
+  CandidateProfile,
+  CertificationPayload,
+  EducationPayload,
+  ExperiencePayload,
+  ProfileFile,
+  Skill,
+  UpdateProfilePayload,
+  UploadedFile,
+} from '../../types/profile.types';
+import { EducationTable } from './components/EducationTable';
+import { EducationModal } from './components/EducationModal';
+import { ExperienceTable } from './components/ExperienceTable';
+import { ExperienceModal } from './components/ExperienceModal';
+import { CertificationsTable } from './components/CertificationsTable';
+import { CertificationModal } from './components/CertificationModal';
+import { SkillsInput } from './components/SkillsInput';
+import { DocumentUploadCard } from './components/DocumentUploadCard';
+import { ProfileImageUpload } from './components/ProfileImageUpload';
+
+const EMPTY_FORM: ProfileFormValues = {
+  firstName: '',
+  lastName: '',
+  phone: '',
+  currentLocation: '',
+  address: '',
+  city: '',
+  state: '',
+  country: '',
+  postalCode: '',
+  linkedinUrl: '',
+  portfolioUrl: '',
+  education: [],
+  experience: [],
+  skillIds: [],
+  certifications: [],
+};
+
+/** Keeps `<input type="date">` working when the API returns a timestamp. */
+function toDateInput(value?: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.length > 10 ? trimmed.slice(0, 10) : trimmed;
+}
+
+function trimToNull(value?: string | null): string | null {
+  if (value === undefined || value === null) return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
+
+function toGpa(value?: string | null): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toFormValues(profile: CandidateProfile): ProfileFormValues {
+  return {
+    firstName: profile.firstName ?? '',
+    lastName: profile.lastName ?? '',
+    phone: profile.phone ?? '',
+    currentLocation: profile.currentLocation ?? '',
+    address: profile.address ?? '',
+    city: profile.city ?? '',
+    state: profile.state ?? '',
+    country: profile.country ?? '',
+    postalCode: profile.postalCode ?? '',
+    linkedinUrl: profile.linkedinUrl ?? '',
+    portfolioUrl: profile.portfolioUrl ?? '',
+    education: profile.education.map((item) => ({
+      ...item,
+      startDate: toDateInput(item.startDate) ?? '',
+      endDate: toDateInput(item.endDate),
+      grade: item.grade ?? '',
+      gpa: toGpa(item.gpa),
+      additionalDetails: item.additionalDetails ?? '',
+    })),
+    experience: profile.experience.map((item) => ({
+      ...item,
+      startDate: toDateInput(item.startDate) ?? '',
+      endDate: toDateInput(item.endDate),
+      salary: item.salary ?? '',
+      description: item.description ?? '',
+    })),
+    skillIds: profile.skills.map((skill) => skill.id),
+    certifications: profile.certifications.map((item) => ({
+      id: item.id,
+      title: item.title,
+      issuer: item.issuer ?? '',
+      skillId: item.skillId ?? null,
+      skillName: item.skillName ?? null,
+      credentialUrl: item.credentialUrl ?? '',
+      fileId: item.fileId ?? null,
+      fileName: item.fileName ?? null,
+      fileUrl: item.fileUrl ?? null,
+      issueDate: toDateInput(item.issueDate) ?? '',
+      expiryDate: toDateInput(item.expiryDate) ?? '',
+    })),
+  };
+}
+
+/** Converts empty form controls to the nulls the API expects. */
+function toUpdatePayload(values: ProfileFormValues): UpdateProfilePayload {
+  return {
+    firstName: (values.firstName ?? '').trim(),
+    lastName: (values.lastName ?? '').trim(),
+    phone: trimToNull(values.phone),
+    currentLocation: trimToNull(values.currentLocation),
+    address: trimToNull(values.address),
+    city: trimToNull(values.city),
+    state: trimToNull(values.state),
+    country: trimToNull(values.country),
+    postalCode: trimToNull(values.postalCode),
+    linkedinUrl: trimToNull(values.linkedinUrl),
+    portfolioUrl: trimToNull(values.portfolioUrl),
+    education: values.education.map((item) => ({
+      id: item.id,
+      institution: item.institution.trim(),
+      degree: item.degree.trim(),
+      fieldOfStudy: item.fieldOfStudy.trim(),
+      startDate: toDateInput(item.startDate) ?? '',
+      endDate: toDateInput(item.endDate),
+      grade: trimToNull(item.grade),
+      gpa: item.gpa ?? null,
+      additionalDetails: trimToNull(item.additionalDetails),
+    })),
+    experience: values.experience.map((item) => ({
+      id: item.id,
+      companyName: item.companyName.trim(),
+      jobTitle: item.jobTitle.trim(),
+      startDate: toDateInput(item.startDate) ?? '',
+      endDate: toDateInput(item.endDate),
+      salary: trimToNull(item.salary),
+      description: trimToNull(item.description),
+    })),
+    skillIds: values.skillIds,
+    certifications: values.certifications.map((item) => ({
+      id: item.id,
+      title: item.title.trim(),
+      issuer: trimToNull(item.issuer),
+      skillId: item.skillId ?? null,
+      credentialUrl: trimToNull(item.credentialUrl),
+      fileId: item.fileId ?? null,
+      issueDate: toDateInput(item.issueDate),
+      expiryDate: toDateInput(item.expiryDate),
+    })),
+  };
+}
+
+function toProfileFile(uploaded: UploadedFile): ProfileFile {
+  const contentUrl = API_ENDPOINTS.FILES.CONTENT(uploaded.id);
+  return {
+    id: uploaded.id,
+    filename: uploaded.filename ?? null,
+    mimeType: uploaded.mimeType ?? null,
+    size: uploaded.size ?? null,
+    url: contentUrl,
+    downloadUrl: `${contentUrl}?download=true`,
+  };
+}
+
+interface EducationModalState {
+  open: boolean;
+  index?: number;
+}
+
+interface ExperienceModalState {
+  open: boolean;
+  index?: number;
+}
+
+interface CertificationModalState {
+  open: boolean;
+  index?: number;
+}
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: profile, isLoading } = useProfile();
-  const updateProfileMutation = useUpdateProfile();
-  const [profilePic, setProfilePic] = useState<string | null>(null);
+  const updateProfile = useUpdateProfile();
+  const isUploading = useIsMutating({ mutationKey: ['profile', 'upload'] }) > 0;
+  const initialized = useRef(false);
 
-  const handlePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isDirty },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(ProfileFormSchema),
+    defaultValues: EMPTY_FORM,
+  });
 
-    if (!validateImageSize(file, 1)) {
-      toast.error('Image size must be less than 1MB');
-      return;
+  const [educationModal, setEducationModal] = useState<EducationModalState>({
+    open: false,
+  });
+  const [experienceModal, setExperienceModal] =
+    useState<ExperienceModalState>({ open: false });
+  const [certificationModal, setCertificationModal] =
+    useState<CertificationModalState>({ open: false });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  useEffect(() => {
+    if (!profile || initialized.current) return;
+    initialized.current = true;
+    reset(toFormValues(profile));
+  }, [profile, reset]);
+
+  const education = watch('education') ?? [];
+  const experience = watch('experience') ?? [];
+  const certifications = watch('certifications') ?? [];
+  const skillIds = watch('skillIds') ?? [];
+
+  const certificationSkills: Skill[] = [...(profile?.skills ?? [])];
+  for (const certification of profile?.certifications ?? []) {
+    if (
+      certification.skillId &&
+      certification.skillName &&
+      !certificationSkills.some((skill) => skill.id === certification.skillId)
+    ) {
+      certificationSkills.push({
+        id: certification.skillId,
+        name: certification.skillName,
+      });
+    }
+  }
+
+  async function persistFile(
+    patch: UpdateProfilePayload,
+    optimistic?: Partial<CandidateProfile>,
+  ): Promise<void> {
+    const previous = queryClient.getQueryData<CandidateProfile>(
+      QUERY_KEYS.PROFILE.ME,
+    );
+
+    // File inputs save immediately, even before the rest of the mandatory
+    // profile is complete. Update the cached profile first so the filename
+    // and preview appear as soon as the upload returns.
+    if (optimistic && previous) {
+      queryClient.setQueryData(QUERY_KEYS.PROFILE.ME, {
+        ...previous,
+        ...optimistic,
+      });
     }
 
-    const isPassportRatio = await validatePassportAspectRatio(file);
-    if (!isPassportRatio) {
-      toast.error('Image must be in passport dimensions (~35x45mm)');
-      return;
+    try {
+      await updateProfile.mutateAsync(patch);
+    } catch (error) {
+      if (previous) {
+        queryClient.setQueryData(QUERY_KEYS.PROFILE.ME, previous);
+      }
+      // The response parse can fail after the server saved; refetch to settle.
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PROFILE.ME });
+      toast.error(getErrorMessage(error, t('profile.saveFailed')));
     }
+  }
 
-    const reader = new FileReader();
-    reader.onload = (event) => setProfilePic(event.target?.result as string);
-    reader.readAsDataURL(file);
-    toast.success('Profile picture updated successfully');
-  };
+  const onSubmit = handleSubmit(
+    async (values) => {
+      setSubmitAttempted(true);
 
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+      if (!profile?.profileImage || !profile?.resume || education.length === 0) {
+        toast.error(t('profile.validation.mandatory'));
+        return;
+      }
 
-    if (!validateResume(file)) {
-      toast.error('Resume must be a PDF or DOCX file under 2MB');
-      return;
+      try {
+        const saved = await updateProfile.mutateAsync(toUpdatePayload(values));
+        reset(toFormValues(saved));
+        setSubmitAttempted(false);
+        toast.success(t('profile.saved'));
+      } catch (error) {
+        toast.error(getErrorMessage(error, t('profile.saveFailed')));
+      }
+    },
+    () => {
+      setSubmitAttempted(true);
+      toast.error(t('profile.validation.invalid'));
+    },
+  );
+
+  const profileImageError =
+    submitAttempted && !profile?.profileImage
+      ? t('profile.photo.required')
+      : null;
+  const resumeError =
+    submitAttempted && !profile?.resume
+      ? t('profile.documents.resume.required')
+      : null;
+  const educationError =
+    submitAttempted && education.length === 0
+      ? t('profile.education.required')
+      : null;
+
+  function saveEducation(value: EducationPayload) {
+    const next = [...education];
+    if (educationModal.index === undefined) {
+      next.push(value);
+    } else {
+      next[educationModal.index] = value;
     }
+    setValue('education', next, { shouldDirty: true, shouldValidate: true });
+  }
 
-    toast.success('Resume uploaded successfully');
-  };
+  function saveExperience(value: ExperiencePayload) {
+    const next = [...experience];
+    if (experienceModal.index === undefined) {
+      next.push(value);
+    } else {
+      next[experienceModal.index] = value;
+    }
+    setValue('experience', next, { shouldDirty: true, shouldValidate: true });
+  }
 
-  const handleSave = () => {
-    updateProfileMutation.mutate({}, {
-      onSuccess: () => toast.success('Profile saved successfully'),
+  function saveCertification(value: CertificationPayload) {
+    const next = [...certifications];
+    if (certificationModal.index === undefined) {
+      next.push(value);
+    } else {
+      next[certificationModal.index] = value;
+    }
+    setValue('certifications', next, {
+      shouldDirty: true,
+      shouldValidate: true,
     });
-  };
+  }
 
   if (isLoading) {
     return (
-      <div className="container max-w-4xl mx-auto py-12 px-4 space-y-8">
+      <div className="container mx-auto max-w-4xl space-y-8 px-4 py-12">
         <Skeleton className="h-10 w-1/3" />
         <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
+  const editingEducation =
+    educationModal.index === undefined
+      ? undefined
+      : education[educationModal.index];
+  const editingExperience =
+    experienceModal.index === undefined
+      ? undefined
+      : experience[experienceModal.index];
+  const editingCertification =
+    certificationModal.index === undefined
+      ? undefined
+      : certifications[certificationModal.index];
+
   return (
-    <div className="container max-w-4xl mx-auto py-12 px-4 space-y-8">
+    <div className="container mx-auto max-w-4xl space-y-8 px-4 py-12">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Your Profile</h1>
-        <p className="text-muted-foreground mt-2">Complete your profile to apply for jobs faster.</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('profile.title')}
+        </h1>
+        <p className="mt-2 text-muted-foreground">{t('profile.subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-          <CardDescription>Update your personal details and contact information.</CardDescription>
+          <CardTitle>{t('profile.basicInfo.title')}</CardTitle>
+          <CardDescription>{t('profile.basicInfo.description')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-8 items-start">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-32 h-40 bg-muted border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative">
-                {profilePic ? (
-                  <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xs text-muted-foreground text-center p-2">Passport Photo<br />(Max 1MB)</span>
+        <CardContent>
+          <div className="flex flex-col items-start gap-8 sm:flex-row">
+            <ProfileImageUpload
+              file={profile?.profileImage}
+              required
+              error={profileImageError}
+              onUploaded={(uploaded) =>
+                persistFile(
+                  { profileImageFileId: uploaded.id },
+                  { profileImage: toProfileFile(uploaded) },
+                )
+              }
+              onRemove={() =>
+                persistFile(
+                  { profileImageFileId: null },
+                  { profileImage: null },
+                )
+              }
+            />
+
+            <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>
+                  {t('profile.fields.firstName')}{' '}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Input {...register('firstName')} />
+                {errors.firstName && (
+                  <p className="text-xs text-destructive">
+                    {t('profile.validation.nameRequired')}
+                  </p>
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  onChange={handlePicUpload}
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>First Name <span className="text-destructive">*</span></Label>
-                <Input defaultValue={profile?.firstName ?? 'John'} />
               </div>
               <div className="space-y-2">
-                <Label>Last Name <span className="text-destructive">*</span></Label>
-                <Input defaultValue={profile?.lastName ?? 'Doe'} />
+                <Label>
+                  {t('profile.fields.lastName')}{' '}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Input {...register('lastName')} />
+                {errors.lastName && (
+                  <p className="text-xs text-destructive">
+                    {t('profile.validation.nameRequired')}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label>Email <span className="text-destructive">*</span></Label>
-                <Input defaultValue={profile?.email ?? 'candidate@example.com'} disabled />
+                <Label>{t('profile.fields.email')}</Label>
+                <Input value={profile?.email ?? ''} disabled />
               </div>
               <div className="space-y-2">
-                <Label>Phone Number</Label>
-                <Input defaultValue={profile?.phone ?? ''} placeholder="+1 (555) 000-0000" />
+                <Label>{t('profile.fields.phone')}</Label>
+                <Input {...register('phone')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.currentLocation')}</Label>
+                <Input {...register('currentLocation')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.address')}</Label>
+                <Input {...register('address')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.city')}</Label>
+                <Input {...register('city')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.state')}</Label>
+                <Input {...register('state')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.country')}</Label>
+                <Input {...register('country')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.postalCode')}</Label>
+                <Input {...register('postalCode')} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.linkedinUrl')}</Label>
+                <Input {...register('linkedinUrl')} placeholder="https://" />
+                {errors.linkedinUrl && (
+                  <p className="text-xs text-destructive">
+                    {t('validation.invalid')}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>{t('profile.fields.portfolioUrl')}</Label>
+                <Input {...register('portfolioUrl')} placeholder="https://" />
+                {errors.portfolioUrl && (
+                  <p className="text-xs text-destructive">
+                    {t('validation.invalid')}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -116,40 +489,160 @@ export default function ProfilePage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Resume</CardTitle>
-          <CardDescription>Upload your latest resume (PDF or DOCX, max 2MB).</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} className="max-w-sm" />
-            <Button variant="outline">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 mr-2" fill="#0A66C2">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-              </svg>
-              Sync from LinkedIn
-            </Button>
-          </div>
+        <CardContent className="grid gap-8 pt-6">
+          <DocumentUploadCard
+            title={t('profile.documents.resume.title')}
+            description={t('profile.documents.resume.description')}
+            file={profile?.resume}
+            fileType="RESUME"
+            accept=".pdf,.docx"
+            uploadLabel={t('profile.documents.resume.upload')}
+            replaceLabel={t('profile.documents.resume.replace')}
+            noneLabel={t('profile.documents.resume.none')}
+            invalidMessage={t('profile.documents.resume.invalid')}
+            required
+            error={resumeError}
+            validate={validateResume}
+            onUploaded={(uploaded) =>
+              persistFile(
+                { resumeFileId: uploaded.id },
+                { resume: toProfileFile(uploaded) },
+              )
+            }
+          />
+
+          <DocumentUploadCard
+            title={t('profile.documents.coverLetter.title')}
+            description={t('profile.documents.coverLetter.description')}
+            file={profile?.coverLetter}
+            fileType="COVER_LETTER"
+            accept=".pdf,.docx"
+            uploadLabel={t('profile.documents.coverLetter.upload')}
+            replaceLabel={t('profile.documents.coverLetter.replace')}
+            noneLabel={t('profile.documents.coverLetter.none')}
+            invalidMessage={t('profile.documents.coverLetter.invalid')}
+            validate={validateCoverLetter}
+            onUploaded={(uploaded) =>
+              persistFile(
+                { coverLetterFileId: uploaded.id },
+                { coverLetter: toProfileFile(uploaded) },
+              )
+            }
+            onRemove={() =>
+              persistFile(
+                { coverLetterFileId: null },
+                { coverLetter: null },
+              )
+            }
+          />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>History</CardTitle>
-          <CardDescription>Manage your educational background and work history.</CardDescription>
+          <CardTitle>{t('profile.skills.title')}</CardTitle>
+          <CardDescription>{t('profile.skills.description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <EducationTable />
-          <ExperienceTable />
+          <SkillsInput
+            value={skillIds}
+            onChange={(ids) =>
+              setValue('skillIds', ids, { shouldDirty: true, shouldValidate: true })
+            }
+            initialSkills={profile?.skills}
+          />
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-4">
-        <Button variant="outline">Cancel</Button>
-        <Button onClick={handleSave} disabled={updateProfileMutation.isPending}>
-          {updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+      <Card>
+        <CardContent className="space-y-10 pt-6">
+          <EducationTable
+            items={education}
+            required
+            error={educationError}
+            onAdd={() => setEducationModal({ open: true })}
+            onEdit={(index) => setEducationModal({ open: true, index })}
+            onDelete={(index) =>
+              setValue(
+                'education',
+                education.filter((_, current) => current !== index),
+                { shouldDirty: true, shouldValidate: true },
+              )
+            }
+          />
+
+          <ExperienceTable
+            items={experience}
+            onAdd={() => setExperienceModal({ open: true })}
+            onEdit={(index) => setExperienceModal({ open: true, index })}
+            onDelete={(index) =>
+              setValue(
+                'experience',
+                experience.filter((_, current) => current !== index),
+                { shouldDirty: true, shouldValidate: true },
+              )
+            }
+          />
+
+          <CertificationsTable
+            items={certifications}
+            skills={certificationSkills}
+            onAdd={() => setCertificationModal({ open: true })}
+            onEdit={(index) => setCertificationModal({ open: true, index })}
+            onDelete={(index) =>
+              setValue(
+                'certifications',
+                certifications.filter((_, current) => current !== index),
+                { shouldDirty: true, shouldValidate: true },
+              )
+            }
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-end gap-4">
+        {Object.keys(errors).length > 0 && (
+          <p className="mr-auto text-sm text-destructive">
+            {t('profile.validation.invalid')}
+          </p>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!isDirty || updateProfile.isPending}
+          onClick={() => profile && reset(toFormValues(profile))}
+        >
+          {t('common.cancel')}
+        </Button>
+        <Button
+          onClick={() => void onSubmit()}
+          disabled={updateProfile.isPending || isUploading}
+        >
+          {updateProfile.isPending
+            ? t('profile.actions.saving')
+            : t('profile.actions.save')}
         </Button>
       </div>
+
+      <EducationModal
+        open={educationModal.open}
+        onClose={() => setEducationModal({ open: false })}
+        onSave={saveEducation}
+        initialData={editingEducation}
+      />
+      <ExperienceModal
+        open={experienceModal.open}
+        onClose={() => setExperienceModal({ open: false })}
+        onSave={saveExperience}
+        initialData={editingExperience}
+      />
+      <CertificationModal
+        open={certificationModal.open}
+        onClose={() => setCertificationModal({ open: false })}
+        onSave={saveCertification}
+        initialData={editingCertification}
+        skills={certificationSkills}
+      />
     </div>
   );
 }

@@ -45,6 +45,16 @@ export class ApplyJobDto {
   updateProfileResume?: boolean;
 
   @ApiPropertyOptional({
+    default: false,
+    description:
+      'When submitting, replace the candidate profile cover letter with the resolved cover letter',
+  })
+  @Transform(toBoolean)
+  @IsBoolean()
+  @IsOptional()
+  updateProfileCoverLetter?: boolean;
+
+  @ApiPropertyOptional({
     format: 'uuid',
     description:
       'Existing resume file owned by the candidate (alternative to uploading)',

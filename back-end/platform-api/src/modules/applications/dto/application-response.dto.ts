@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApplicationStatus } from '@common/constants/enums';
+import { CandidateProfileDto } from '@modules/profiles/dto/profile-response.dto';
 
 export class ApplicationStatusHistoryDto {
   @ApiProperty({ format: 'uuid' })
@@ -140,6 +141,20 @@ export class RecruiterApplicationListItemDto {
 }
 
 export class RecruiterApplicationDetailDto extends RecruiterApplicationListItemDto {
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Immutable profile snapshot; absent when the application shows live profile data',
+  })
+  profileVersionId?: string;
+
+  @ApiProperty({
+    type: CandidateProfileDto,
+    description:
+      'Profile as submitted: immutable snapshot when profileVersionId is set, otherwise the live profile',
+  })
+  profile!: CandidateProfileDto;
+
   @ApiProperty({ description: 'Session-guarded streaming URL' })
   resumeFileUrl!: string;
 

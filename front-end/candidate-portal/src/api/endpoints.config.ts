@@ -17,12 +17,19 @@ export const API_ENDPOINTS = {
   PROFILE: {
     GET: '/profile',
     UPDATE: '/profile',
-    UPLOAD_PIC: '/profile/picture',
-    UPLOAD_RESUME: '/profile/resume',
+  },
+  FILES: {
+    UPLOAD: '/files',
+    CONTENT: (id: string) => `/files/${id}/content`,
+    DELETE: (id: string) => `/files/${id}`,
+  },
+  SKILLS: {
+    SEARCH: '/skills',
+    CREATE: '/skills',
   },
   APPLICATIONS: {
-    GET_ALL: '/applications',
-    GET_DETAILS: (id: string) => `/applications/${id}`,
+    GET_ALL: '/applications/my',
+    GET_DETAILS: (id: string) => `/applications/my/${id}`,
     APPLY: (jobId: string) => `/jobs/${jobId}/apply`,
     WITHDRAW: (id: string) => `/applications/${id}/withdraw`,
     RESPOND_OFFER: (id: string) => `/applications/${id}/offer-response`,
@@ -30,4 +37,4 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS: {
     STREAM: '/notifications/stream',
   },
-};
+} as const;

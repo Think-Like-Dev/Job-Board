@@ -5,7 +5,7 @@ import { CandidatesService } from './candidates.service';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 
 @ApiTags('candidates')
-@SessionAuth()
+@SessionAuth({ principalType: 'user' })
 @Controller('candidates')
 export class CandidatesController {
   constructor(private readonly candidatesService: CandidatesService) {}

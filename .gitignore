@@ -16,4 +16,3 @@ backend/secrets/*
 
 # Agent memory (never commit)
 .agent-memory/
-PROJECT_MEMORY.md

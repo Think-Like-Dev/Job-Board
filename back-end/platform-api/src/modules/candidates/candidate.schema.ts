@@ -17,11 +17,18 @@ export interface Candidate {
   email: string;
   firstName?: string;
   lastName?: string;
-  phone?: string;
-  profileImageFileId?: string; // FK -> files.id
+  phone?: string | null;
+  profileImageFileId?: string | null; // FK -> files.id
   resumeFileId?: string | null; // FK -> files.id (default application resume)
-  linkedinUrl?: string;
-  portfolioUrl?: string;
+  coverLetterFileId?: string | null; // FK -> files.id (default cover letter)
+  currentLocation?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
+  linkedinUrl?: string | null;
+  portfolioUrl?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -60,6 +67,23 @@ export const CandidateSchema = new EntitySchema<Candidate>({
       deferMode: DeferMode.INITIALLY_IMMEDIATE,
       foreignKeyName: 'fk_files_id_candidates_resume',
     } as unknown as EntitySchemaProperty<string, Candidate>,
+    coverLetterFileId: {
+      kind: 'm:1',
+      entity: () => FileSchema,
+      mapToPk: true,
+      joinColumn: 'cover_letter_file_id',
+      nullable: true,
+      deleteRule: 'set null',
+      updateRule: 'no action',
+      deferMode: DeferMode.INITIALLY_IMMEDIATE,
+      foreignKeyName: 'fk_files_id_candidates_cover',
+    } as unknown as EntitySchemaProperty<string, Candidate>,
+    currentLocation: { type: 'string', nullable: true },
+    address: { type: 'string', nullable: true },
+    city: { type: 'string', nullable: true },
+    state: { type: 'string', nullable: true },
+    country: { type: 'string', nullable: true },
+    postalCode: { type: 'string', nullable: true },
     linkedinUrl: { type: 'string', nullable: true },
     portfolioUrl: { type: 'string', nullable: true },
     createdAt: { type: 'datetime', nullable: true },

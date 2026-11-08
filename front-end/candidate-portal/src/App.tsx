@@ -8,6 +8,7 @@ import { Header } from './components/shared/Header';
 import { Footer } from './components/shared/Footer';
 import { useSSE } from './hooks/useSSE';
 import { useAuthBootstrap } from '@api/hooks/useAuth';
+import { Toaster } from 'sonner';
 import './i18n/config';
 import './App.css';
 
@@ -36,6 +37,7 @@ function AppContent() {
           </main>
           <Footer />
         </div>
+        <Toaster position="top-right" richColors />
       </TooltipProvider>
     </BrowserRouter>
   );

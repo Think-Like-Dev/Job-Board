@@ -55,12 +55,30 @@ httpClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // ─── Response interceptor ────────────────────────────────────────────────────
 
+/** Nest returns validation failures as `message: string[]`; flatten them. */
+function extractErrorMessage(data: unknown, fallback: string): string {
+  if (typeof data === 'string' && data.trim()) return data;
+  if (data && typeof data === 'object' && 'message' in data) {
+    const raw = (data as { message?: unknown }).message;
+    if (Array.isArray(raw)) {
+      const parts = raw.filter(
+        (part): part is string => typeof part === 'string' && part.trim().length > 0,
+      );
+      if (parts.length) return parts.join(', ');
+    }
+    if (typeof raw === 'string' && raw.trim()) return raw;
+  }
+  return fallback;
+}
+
 httpClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     const status = error.response?.status ?? 0;
-    const responseData = error.response?.data as Record<string, string> | undefined;
-    const message = responseData?.message ?? error.message ?? 'An unexpected error occurred';
+    const message = extractErrorMessage(
+      error.response?.data,
+      error.message || 'An unexpected error occurred',
+    );
 
     // Session expired or forbidden — clear Redux state and redirect to landing.
     // Auth endpoints are exempt: a 401 there means bad credentials / no session,

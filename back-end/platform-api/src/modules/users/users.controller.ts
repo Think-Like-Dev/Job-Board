@@ -15,7 +15,7 @@ import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 
 @ApiTags('users')
-@SessionAuth()
+@SessionAuth({ principalType: 'user' })
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

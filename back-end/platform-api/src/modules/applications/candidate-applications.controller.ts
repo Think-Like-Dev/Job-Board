@@ -20,7 +20,6 @@ import {
 } from '@nestjs/swagger';
 import { ApiApplicationNotFound } from '@common/decorators/api-responses.decorator';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
-import { assertCandidateSession } from '@modules/auth/session-principal';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { ApplicationsService } from './applications.service';
 import { CandidateApplicationsQueryDto } from './dto/application-query.dto';
@@ -32,7 +31,7 @@ import {
 import { WithdrawApplicationDto } from './dto/withdraw-application.dto';
 
 @ApiTags('applications')
-@SessionAuth({ forbiddenDescription: 'Candidate session required' })
+@SessionAuth({ principalType: 'candidate' })
 @Controller('applications')
 export class CandidateApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
@@ -46,8 +45,6 @@ export class CandidateApplicationsController {
     @Query() query: CandidateApplicationsQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<CandidateApplicationListResponseDto> {
-    assertCandidateSession(req);
-
     const result = await this.applicationsService.listCandidateApplications(
       query,
       req.session.principalId,
@@ -76,8 +73,6 @@ export class CandidateApplicationsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<CandidateApplicationDetailResponseDto> {
-    assertCandidateSession(req);
-
     const application = await this.applicationsService.getCandidateApplication(
       id,
       req.session.principalId,
@@ -103,8 +98,6 @@ export class CandidateApplicationsController {
     @Body() dto: WithdrawApplicationDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<CandidateApplicationDetailResponseDto> {
-    assertCandidateSession(req);
-
     const application = await this.applicationsService.withdraw(
       id,
       dto,
@@ -128,8 +121,6 @@ export class CandidateApplicationsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<DeleteApplicationResponseDto> {
-    assertCandidateSession(req);
-
     await this.applicationsService.deleteDraft(id, req.session.principalId);
 
     return {

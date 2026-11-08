@@ -7,6 +7,8 @@ import { QueryOrder, type FilterQuery } from '@mikro-orm/core';
 import { ApplicationStatus } from '@common/constants/enums';
 import type { IPaginatedResult } from '@common/interfaces/paginated-result.interface';
 import { JobsService } from '@modules/jobs/jobs.service';
+import { ProfileReadService } from '@modules/profiles/profile-read.service';
+import type { ProfileView } from '@modules/profiles/profile.types';
 import { ApplicationQueries } from './application-queries';
 import {
   toRecruiterApplicationDetailDto,
@@ -28,6 +30,7 @@ export class RecruiterApplicationsService {
   constructor(
     private readonly queries: ApplicationQueries,
     private readonly jobsService: JobsService,
+    private readonly profileRead: ProfileReadService,
   ) {}
 
   async listJobApplications(
@@ -67,6 +70,11 @@ export class RecruiterApplicationsService {
     const candidates = await this.queries.findCandidates(
       result.data.map((row) => row.candidateId),
     );
+    const versions = await this.queries.findProfileVersions(
+      result.data
+        .map((row) => row.profileVersionId)
+        .filter((id): id is string => Boolean(id)),
+    );
     const files = await this.queries.findFiles(
       result.data.map((row) => row.resumeFileId),
     );
@@ -77,10 +85,15 @@ export class RecruiterApplicationsService {
         if (!candidate) {
           throw new NotFoundException('Candidate not found');
         }
+        const profile = application.profileVersionId
+          ? (versions.get(application.profileVersionId)?.profileData as
+              ProfileView | undefined)
+          : undefined;
         return toRecruiterApplicationListItemDto(
           application,
           candidate,
           files.get(application.resumeFileId),
+          profile,
         );
       }),
       meta: result.meta,
@@ -93,14 +106,16 @@ export class RecruiterApplicationsService {
       throw new NotFoundException('Application not found');
     }
 
-    const [candidate, resume, coverLetter, history] = await Promise.all([
-      this.queries.findCandidate(application.candidateId),
-      this.queries.findFile(application.resumeFileId),
-      application.coverLetterFileId
-        ? this.queries.findFile(application.coverLetterFileId)
-        : Promise.resolve(null),
-      this.queries.findStatusHistory(application.id),
-    ]);
+    const [candidate, resume, coverLetter, history, profile] =
+      await Promise.all([
+        this.queries.findCandidate(application.candidateId),
+        this.queries.findFile(application.resumeFileId),
+        application.coverLetterFileId
+          ? this.queries.findFile(application.coverLetterFileId)
+          : Promise.resolve(null),
+        this.queries.findStatusHistory(application.id),
+        this.profileRead.getApplicationProfile(application),
+      ]);
 
     if (!candidate) {
       throw new NotFoundException('Candidate not found');
@@ -112,6 +127,7 @@ export class RecruiterApplicationsService {
       resume,
       coverLetter,
       history,
+      profile,
     );
   }
 }

@@ -11,6 +11,10 @@ import {
   Candidate,
   CandidateSchema,
 } from '@modules/candidates/candidate.schema';
+import {
+  CandidateProfileVersion,
+  CandidateProfileVersionSchema,
+} from '@modules/candidates/candidate-profile-version.schema';
 import { File, FileSchema } from '@modules/files/file.schema';
 import { Job, JobSchema } from '@modules/jobs/job.schema';
 import {
@@ -112,6 +116,19 @@ export class ApplicationQueries {
       id: { $in: uniqueIds },
     });
     return new Map(candidates.map((candidate) => [candidate.id, candidate]));
+  }
+
+  async findProfileVersions(
+    ids: string[],
+  ): Promise<Map<string, CandidateProfileVersion>> {
+    const uniqueIds = [...new Set(ids.filter(Boolean))];
+    if (!uniqueIds.length) {
+      return new Map();
+    }
+    const versions = await this.em.find(CandidateProfileVersionSchema, {
+      id: { $in: uniqueIds },
+    });
+    return new Map(versions.map((version) => [version.id, version]));
   }
 
   /** Candidate IDs whose first name, last name, or email matches `term`. */

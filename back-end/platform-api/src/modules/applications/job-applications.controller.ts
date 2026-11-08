@@ -24,10 +24,6 @@ import {
 } from '@nestjs/swagger';
 import { ApiJobNotFound } from '@common/decorators/api-responses.decorator';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
-import {
-  assertCandidateSession,
-  assertInternalUserSession,
-} from '@modules/auth/session-principal';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { MAX_APPLICATION_UPLOAD_BYTES } from '@modules/files/file-validation';
 import { ApplicationsService } from './applications.service';
@@ -49,6 +45,7 @@ export class JobApplicationsController {
   ) {}
 
   @Post(':jobId/apply')
+  @SessionAuth({ principalType: 'candidate' })
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -67,6 +64,7 @@ export class JobApplicationsController {
         coverLetterFile: { type: 'string', format: 'binary' },
         isDraft: { type: 'boolean', default: false },
         updateProfileResume: { type: 'boolean', default: false },
+        updateProfileCoverLetter: { type: 'boolean', default: false },
         existingResumeFileId: { type: 'string', format: 'uuid' },
       },
     },
@@ -91,8 +89,6 @@ export class JobApplicationsController {
     @UploadedFiles() files: Record<string, Express.Multer.File[]>,
     @Req() req: AuthenticatedRequest,
   ): Promise<CandidateApplicationDetailResponseDto> {
-    assertCandidateSession(req);
-
     const application = await this.applicationsService.apply(
       jobId,
       dto,
@@ -114,6 +110,7 @@ export class JobApplicationsController {
   }
 
   @Get(':jobId/applications')
+  @SessionAuth({ principalType: 'user' })
   @ApiOperation({
     summary: 'List non-draft applications for a job (internal users only)',
   })
@@ -123,10 +120,7 @@ export class JobApplicationsController {
   async findByJob(
     @Param('jobId', new ParseUUIDPipe()) jobId: string,
     @Query() query: JobApplicationsQueryDto,
-    @Req() req: AuthenticatedRequest,
   ): Promise<RecruiterApplicationListResponseDto> {
-    assertInternalUserSession(req);
-
     const result = await this.recruiterApplicationsService.listJobApplications(
       jobId,
       query,

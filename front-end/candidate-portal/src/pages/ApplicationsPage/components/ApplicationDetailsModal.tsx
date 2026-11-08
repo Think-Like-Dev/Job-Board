@@ -1,10 +1,18 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@ui/dialog';
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
 import { Textarea } from '@ui/textarea';
 import { Label } from '@ui/label';
 import { formatDateToLocale, formatDateTimeToLocale } from '@utils/date';
-import { useState } from 'react';
+import { openAuthenticatedFile } from '@utils/fileActions';
 import { useRespondToOffer } from '@api/hooks/useApplications';
 import { toast } from 'sonner';
 import type { Application } from '@/types/application.types';
@@ -16,7 +24,12 @@ interface ApplicationDetailsModalProps {
   onClose: () => void;
 }
 
-export function ApplicationDetailsModal({ app, isOpen, onClose }: ApplicationDetailsModalProps) {
+export function ApplicationDetailsModal({
+  app,
+  isOpen,
+  onClose,
+}: ApplicationDetailsModalProps) {
+  const { t } = useTranslation();
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
   const respondMutation = useRespondToOffer();
@@ -27,101 +40,138 @@ export function ApplicationDetailsModal({ app, isOpen, onClose }: ApplicationDet
       { id: app.id, payload: { accept, reason } },
       {
         onSuccess: () => {
-          toast.success(accept ? 'Offer Accepted!' : 'Offer Rejected');
+          toast.success(
+            accept
+              ? t('applications.details.offerAccepted')
+              : t('applications.details.offerRejected'),
+          );
           onClose();
         },
-      }
+      },
     );
   };
 
   if (!app) return null;
 
-  const details = app.details as Record<string, unknown>;
+  const details = (app.details ?? {}) as Record<string, unknown>;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="text-xl">{app.jobTitle}</DialogTitle>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary">{app.status}</Badge>
-            <span className="text-sm text-muted-foreground">Applied {formatDateToLocale(app.appliedAt)}</span>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge variant="secondary">
+              {t(`applications.status.${app.status}`)}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {t('applications.appliedOn', {
+                date: formatDateToLocale(app.appliedAt ?? app.createdAt),
+              })}
+            </span>
           </div>
         </DialogHeader>
 
-        <div className="py-4 space-y-6">
+        <div className="space-y-6 py-4">
           {app.status === ApplicationStatus.REJECTED && (
-            <div className="bg-red-500/10 border-red-500/20 border p-4 rounded-md">
-              <h4 className="font-semibold text-red-700 dark:text-red-400 mb-1">Application Update</h4>
-              <p className="text-sm text-red-600 dark:text-red-300">{details?.reason as string}</p>
+            <div className="rounded-md border border-red-500/20 bg-red-500/10 p-4">
+              <h4 className="mb-1 font-semibold text-red-700 dark:text-red-400">
+                {t('applications.details.applicationUpdate')}
+              </h4>
+              <p className="text-sm text-red-600 dark:text-red-300">
+                {details?.reason as string}
+              </p>
             </div>
           )}
 
-          {app.status === ApplicationStatus.INTERVIEW_SCHEDULED && (
-            <div className="bg-blue-500/10 border-blue-500/20 border p-4 rounded-md space-y-3">
+          {app.status === ApplicationStatus.INTERVIEW &&
+            Boolean(details.interviewRound) && (
+            <div className="space-y-3 rounded-md border border-blue-500/20 bg-blue-500/10 p-4">
               <h4 className="font-semibold text-blue-700 dark:text-blue-400">
-                Interview Scheduled (Round {details?.interviewRound as string})
+                {t('applications.details.interviewScheduled', {
+                  round: details?.interviewRound as string,
+                })}
               </h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground block mb-1">Date &amp; Time</span>
-                  <span className="font-medium">{formatDateTimeToLocale(details?.scheduledAt as string)}</span>
+                  <span className="mb-1 block text-muted-foreground">
+                    {t('applications.details.dateTime')}
+                  </span>
+                  <span className="font-medium">
+                    {formatDateTimeToLocale(details?.scheduledAt as string)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block mb-1">Mode</span>
-                  <span className="font-medium">{details?.mode as string}</span>
+                  <span className="mb-1 block text-muted-foreground">
+                    {t('applications.details.mode')}
+                  </span>
+                  <span className="font-medium">
+                    {details?.mode as string}
+                  </span>
                 </div>
               </div>
-              <div className="pt-2 border-t border-blue-500/20">
-                <span className="text-muted-foreground block mb-1 text-sm">Location / Link</span>
-                <span className="font-medium text-sm text-blue-700 dark:text-blue-400 break-all">
+              <div className="border-t border-blue-500/20 pt-2">
+                <span className="mb-1 block text-sm text-muted-foreground">
+                  {t('applications.details.location')}
+                </span>
+                <span className="break-all text-sm font-medium text-blue-700 dark:text-blue-400">
                   {details?.location as string}
                 </span>
               </div>
             </div>
           )}
 
-          {app.status === ApplicationStatus.OFFER_EXTENDED && (
-            <div className="bg-green-500/10 border-green-500/20 border p-4 rounded-md space-y-4">
+          {app.status === ApplicationStatus.OFFER_EXTENDED &&
+            Boolean(details.offerDeadline) && (
+            <div className="space-y-4 rounded-md border border-green-500/20 bg-green-500/10 p-4">
               <h4 className="font-semibold text-green-700 dark:text-green-400">
-                Congratulations! An offer has been extended.
+                {t('applications.details.offerCongratulations')}
               </h4>
               <div className="text-sm">
-                <span className="text-muted-foreground">Offer Extended on: </span>
-                <span className="font-medium">{formatDateToLocale(details?.offerExtendedAt as string)}</span>
+                <span className="text-muted-foreground">
+                  {t('applications.details.offerExtendedOn')}
+                </span>
+                <span className="font-medium">
+                  {formatDateToLocale(details?.offerExtendedAt as string)}
+                </span>
               </div>
               <div className="text-sm">
-                <span className="text-destructive font-medium">Respond by: </span>
-                <span className="font-medium">{formatDateToLocale(details?.offerDeadline as string)}</span>
+                <span className="font-medium text-destructive">
+                  {t('applications.details.respondByLabel')}
+                </span>
+                <span className="font-medium">
+                  {formatDateToLocale(details?.offerDeadline as string)}
+                </span>
               </div>
 
-              <div className="pt-4 flex gap-3">
+              <div className="flex gap-3 pt-4">
                 <Button
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 text-white hover:bg-green-700"
                   onClick={() => handleRespond(true)}
                   disabled={respondMutation.isPending || showRejectForm}
                 >
-                  Accept Offer (Requires Document)
+                  {t('applications.details.acceptOffer')}
                 </Button>
                 <Button
                   variant="outline"
-                  className="text-destructive hover:bg-destructive/10 border-destructive/20"
+                  className="border-destructive/20 text-destructive hover:bg-destructive/10"
                   onClick={() => setShowRejectForm(true)}
                   disabled={respondMutation.isPending || showRejectForm}
                 >
-                  Decline Offer
+                  {t('applications.details.declineOffer')}
                 </Button>
               </div>
 
               {showRejectForm && (
-                <div className="mt-4 pt-4 border-t border-green-500/20 space-y-3">
+                <div className="mt-4 space-y-3 border-t border-green-500/20 pt-4">
                   <Label>
-                    Reason for Declining <span className="text-destructive">*</span>
+                    {t('applications.details.reasonForDeclining')}{' '}
+                    <span className="text-destructive">*</span>
                   </Label>
                   <Textarea
-                    placeholder="Please let us know why you are declining the offer..."
+                    placeholder={t('applications.details.reasonPlaceholder')}
                     value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
+                    onChange={(event) => setRejectReason(event.target.value)}
                   />
                   <div className="flex gap-2">
                     <Button
@@ -129,10 +179,13 @@ export function ApplicationDetailsModal({ app, isOpen, onClose }: ApplicationDet
                       onClick={() => handleRespond(false, rejectReason)}
                       disabled={!rejectReason.trim()}
                     >
-                      Confirm Decline
+                      {t('applications.details.confirmDecline')}
                     </Button>
-                    <Button variant="ghost" onClick={() => setShowRejectForm(false)}>
-                      Cancel
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowRejectForm(false)}
+                    >
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
@@ -141,27 +194,57 @@ export function ApplicationDetailsModal({ app, isOpen, onClose }: ApplicationDet
           )}
 
           <div>
-            <h4 className="font-medium mb-3 border-b pb-2">Your Application Details</h4>
+            <h4 className="mb-3 border-b pb-2 font-medium">
+              {t('applications.details.yourApplication')}
+            </h4>
             <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2">
-                <span className="text-muted-foreground">Resume</span>
-                <span className="text-primary cursor-pointer hover:underline">view_resume.pdf</span>
+              <div className="grid grid-cols-2 gap-2">
+                <span className="text-muted-foreground">
+                  {t('applications.details.jobCategory')}
+                </span>
+                <span>{app.jobCategory}</span>
               </div>
-              <div className="grid grid-cols-2">
-                <span className="text-muted-foreground">Require Visa Sponsorship?</span>
-                <span>No</span>
+              <div className="grid grid-cols-2 gap-2">
+                <span className="text-muted-foreground">
+                  {t('applications.details.jobLocation')}
+                </span>
+                <span>{app.jobLocation}</span>
               </div>
-              <div className="grid grid-cols-2">
-                <span className="text-muted-foreground">Notice Period</span>
-                <span>2 Weeks</span>
+              <div className="grid grid-cols-2 gap-2">
+                <span className="text-muted-foreground">
+                  {t('applications.details.resume')}
+                </span>
+                <button
+                  type="button"
+                  className="text-left text-primary hover:underline"
+                  onClick={() => void openAuthenticatedFile(app.resumeFileId)}
+                >
+                  {app.resumeFileName}
+                </button>
               </div>
+              {app.coverLetterFileId && (
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="text-muted-foreground">
+                    {t('applications.details.coverLetter')}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-left text-primary hover:underline"
+                    onClick={() =>
+                      void openAuthenticatedFile(app.coverLetterFileId as string)
+                    }
+                  >
+                    {app.coverLetterFileName}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Close
+            {t('applications.details.close')}
           </Button>
         </DialogFooter>
       </DialogContent>

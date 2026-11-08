@@ -254,10 +254,11 @@ export function JobDetailsDrawer({
         </SheetContent>
       </Sheet>
 
-      {isAuthenticated && jobId && (
+      {isAuthenticated && jobId && isApplyModalOpen && (
         <ApplyWorkflowModal
           jobId={jobId}
           isOpen={isApplyModalOpen}
+          coverLetterRequired={job?.applicationSettings?.coverLetterRequired}
           onClose={() => setIsApplyModalOpen(false)}
           onApplied={() => {
             setHasApplied(true);

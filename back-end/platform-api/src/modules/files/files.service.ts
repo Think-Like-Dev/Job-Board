@@ -25,6 +25,7 @@ import type { SessionPayload } from '@modules/auth/auth.service';
 import { File, FileSchema } from './file.schema';
 import { FileAccessGrantsService } from './file-access-grants.service';
 import { canMutateFile, canReadFile, canReadSharedFile } from './files.access';
+import { assertUploadMatchesType } from './file-validation';
 import { S3StorageService, type StoredObject } from './s3-storage.service';
 
 /** Single-bucket path prefixes, one folder per file kind. */
@@ -33,6 +34,7 @@ const FILE_PREFIXES: Record<FileType, string> = {
   [FileType.COVER_LETTER]: 'cover-letters',
   [FileType.OFFER_LETTER]: 'offer-letters',
   [FileType.PROFILE_IMAGE]: 'profile-images',
+  [FileType.CERTIFICATION]: 'certifications',
   [FileType.OTHER]: 'other',
 };
 
@@ -64,6 +66,8 @@ export class FilesService extends GenericCrudService<File> {
     fileType: FileType,
     session: SessionContext,
   ): Promise<File> {
+    assertUploadMatchesType(file, fileType);
+
     if (!file?.buffer?.length) {
       throw new BadRequestException('Uploaded file is empty');
     }
@@ -188,6 +192,14 @@ export class FilesService extends GenericCrudService<File> {
     const file = await this.findOne(where);
     const storagePath = file.storagePath;
 
+    // JSONB profile snapshots have no FK to files, so their document ids must
+    // be checked explicitly before deleting the metadata row.
+    if (await this.isReferencedByProfileSnapshot(file.id)) {
+      throw new ConflictException(
+        'File is still referenced and cannot be deleted',
+      );
+    }
+
     const em = this.repository.getEntityManager();
     em.remove(file);
 
@@ -207,6 +219,22 @@ export class FilesService extends GenericCrudService<File> {
     }
 
     return true;
+  }
+
+  private async isReferencedByProfileSnapshot(
+    fileId: string,
+  ): Promise<boolean> {
+    const em = this.repository.getEntityManager();
+    const rows = (await em.getConnection().execute(
+      `select exists (
+         select 1
+           from "candidate_profile_versions"
+          where jsonb_exists("profile_data" -> 'documentFileIds', ?)
+       ) as "exists"`,
+      [fileId],
+    )) as Array<{ exists: boolean }>;
+
+    return Boolean(rows[0]?.exists);
   }
 
   /**

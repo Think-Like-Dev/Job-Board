@@ -22,6 +22,12 @@ export const QUERY_KEYS = {
   PROFILE: {
     ME: ['profile', 'me'] as const,
   },
+  SKILLS: {
+    SEARCH: (term: string) => ['skills', 'search', term] as const,
+  },
+  FILES: {
+    CONTENT: (id: string) => ['files', 'content', id] as const,
+  },
 } as const;
 
 // Legacy camelCase alias — keep until all hooks are migrated

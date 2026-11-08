@@ -31,7 +31,6 @@ import type { Response } from 'express';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 import { FileType } from '@common/constants/enums';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
-import { assertInternalUserSession } from '@modules/auth/session-principal';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import {
   FileDeletedResponseDto,
@@ -204,6 +203,7 @@ export class FilesController {
   }
 
   @Post(':id/grants')
+  @SessionAuth({ principalType: 'user' })
   @ApiOperation({
     summary: 'Share a file with a candidate (internal users only)',
   })
@@ -214,7 +214,6 @@ export class FilesController {
     @Body() dto: ShareFileDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileGrantResponseDto> {
-    assertInternalUserSession(req);
     await this.filesService.findFileForSession(id, req.session);
 
     const grant = await this.fileAccessGrants.grant(
@@ -231,6 +230,7 @@ export class FilesController {
   }
 
   @Delete(':id/grants/:candidateId')
+  @SessionAuth({ principalType: 'user' })
   @ApiOperation({
     summary: 'Revoke a candidate file grant (internal users only)',
   })
@@ -243,7 +243,6 @@ export class FilesController {
     @Param('candidateId', new ParseUUIDPipe()) candidateId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileGrantRevokedResponseDto> {
-    assertInternalUserSession(req);
     await this.filesService.findFileForSession(id, req.session);
 
     const revoked = await this.fileAccessGrants.revoke(id, candidateId);

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseUUIDPipe, Req } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -6,13 +6,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
-import { assertInternalUserSession } from '@modules/auth/session-principal';
-import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { RecruiterApplicationsService } from './recruiter-applications.service';
 import { RecruiterApplicationDetailResponseDto } from './dto/application-response.dto';
 
 @ApiTags('applications')
-@SessionAuth({ forbiddenDescription: 'Internal user session required' })
+@SessionAuth({ principalType: 'user' })
 @Controller('applications')
 export class RecruiterApplicationsController {
   constructor(
@@ -30,10 +28,7 @@ export class RecruiterApplicationsController {
   })
   async findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: AuthenticatedRequest,
   ): Promise<RecruiterApplicationDetailResponseDto> {
-    assertInternalUserSession(req);
-
     const application =
       await this.recruiterApplicationsService.getApplication(id);
 

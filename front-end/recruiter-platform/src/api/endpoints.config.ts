@@ -21,11 +21,11 @@ export const API_ENDPOINTS = {
     UPLOAD_RESUME: '/profile/resume',
   },
   APPLICATIONS: {
-    GET_ALL: '/applications',
+    LIST_BY_JOB: (jobId: string) => `/jobs/${jobId}/applications`,
     GET_DETAILS: (id: string) => `/applications/${id}`,
-    APPLY: (jobId: string) => `/jobs/${jobId}/apply`,
-    WITHDRAW: (id: string) => `/applications/${id}/withdraw`,
-    RESPOND_OFFER: (id: string) => `/applications/${id}/offer-response`,
+  },
+  FILES: {
+    CONTENT: (id: string) => `/files/${id}/content`,
   },
   NOTIFICATIONS: {
     STREAM: '/notifications/stream',

@@ -13,15 +13,12 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
-import {navMain} from '@lib/constants';
+import { useSelector } from "react-redux"
+import { navMain } from '@lib/constants';
+import type { RootState } from "@/store"
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Acme Inc",
@@ -176,6 +173,17 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const authUser = useSelector((state: RootState) => state.auth.user);
+
+  const displayName =
+    authUser?.name?.trim() ||
+    [authUser?.firstName, authUser?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    authUser?.email ||
+    "Recruiter";
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -187,7 +195,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={{
+            name: displayName,
+            email: authUser?.email ?? "",
+            avatar: authUser?.avatarUrl ?? "",
+          }}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

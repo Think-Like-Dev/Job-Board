@@ -9,6 +9,7 @@ import {
   CopyIcon,
   PencilIcon,
   PlusIcon,
+  UsersIcon,
 } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 
@@ -25,6 +26,7 @@ import { formatCompensation } from "@/lib/jobFormat";
 import { type RootState } from "@/store";
 import { type Job, JobStatus } from "@/types/job.types";
 import { JobDetailDrawer } from "./jobs/JobDetail/JobDetailDrawer";
+import { JobApplicationStatsCell } from "./jobs/JobList/JobApplicationStatsCell";
 import {
   JOB_TAB_STATUS,
   JobTabs,
@@ -48,7 +50,7 @@ const Jobs = () => {
     (state: RootState) => state.auth.user?.id,
   );
 
-  const [activeTab, setActiveTab] = useState<JobTabKey>("DRAFT");
+  const [activeTab, setActiveTab] = useState<JobTabKey>(JobStatus.PUBLISHED);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [compensationMode, setCompensationMode] =
@@ -107,6 +109,11 @@ const Jobs = () => {
     },
     { accessorKey: "location", header: t("job.list.location") },
     {
+      id: "applications",
+      header: t("job.list.applications"),
+      cell: ({ row }) => <JobApplicationStatsCell job={row.original} />,
+    },
+    {
       accessorKey: "createdAt",
       header: t("job.list.createdAt"),
       meta: { sortable: true },
@@ -133,7 +140,21 @@ const Jobs = () => {
         const canEdit = job.status === JobStatus.DRAFT && isOwner;
         return (
           <div className="flex items-center gap-1">
-            <Button
+            { activeTab !== JOB_TAB_STATUS.DRAFT && (<Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={!job.id || job.status === JobStatus.DRAFT}
+              title={t("job.detail.actions.viewApplications")}
+              aria-label={t("job.detail.actions.viewApplications")}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (job.id) navigate(`/jobs/${job.id}/applications`);
+              }}
+            >
+              <UsersIcon className="size-4" />
+            </Button>)}
+            {activeTab === JOB_TAB_STATUS.DRAFT && (<Button
               type="button"
               variant="ghost"
               size="icon"
@@ -146,7 +167,7 @@ const Jobs = () => {
               }}
             >
               <PencilIcon className="size-4" />
-            </Button>
+            </Button>)}
             <Button
               type="button"
               variant="ghost"

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { TFunction } from "i18next";
+import { ApplicationStatus } from "@/types/application.types";
 import {
   CompensationType,
   Currency,
@@ -185,6 +186,15 @@ export const JobSummarySchema = JobSummaryFieldsSchema.extend({
   publishedAt: z.string().optional(),
   archivedAt: z.string().optional(),
   createdBy: z.string().optional(),
+  totalApplications: z.number().optional(),
+  candidateStatusCounts: z
+    .array(
+      z.object({
+        status: z.enum(ApplicationStatus),
+        count: z.number(),
+      }),
+    )
+    .optional(),
 });
 
 export type JobSummary = z.infer<typeof JobSummarySchema>;

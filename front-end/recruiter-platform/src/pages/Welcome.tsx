@@ -26,7 +26,7 @@ export default function Welcome() {
         onClick={() => logoutMutation.mutate()}
         disabled={logoutMutation.isPending}
       >
-        {t('nav.logout')}
+        {logoutMutation.isPending ? t('nav.loggingOut') : t('nav.logout')}
       </Button>
     </section>
   );

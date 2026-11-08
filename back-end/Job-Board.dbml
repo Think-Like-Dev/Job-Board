@@ -92,19 +92,8 @@ Table users {
 }
 
 
-Table sessions {
-	id bigint [pk, increment]
-	user_id bigint [not null]
-	session_token varchar
-	expires_at timestamp
-	last_verified_at timestamp
-	created_at timestamp
-
-	indexes {
-		user_id [name: "sessions_index_0"]
-		session_token [name: "sessions_index_1"]
-	}
-}
+// NOTE: Login sessions are not stored in Postgres. They live in Redis with a
+// TTL and are managed by the platform-api AuthService.
 
 
 Table files {
@@ -405,10 +394,6 @@ Table activity_logs [headercolor: #175e7a] {
 	action varchar
 	metadata json
 	created_at timestamp
-}
-
-Ref fk_users_id_sessions {
-	users.id < sessions.user_id [delete: restrict, update: no action]
 }
 
 Ref fk_files_id_candidates {

@@ -22,7 +22,6 @@ import {
 } from '@nestjs/swagger';
 import { ApiJobNotFound } from '@common/decorators/api-responses.decorator';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
-import { assertInternalUserSession } from '@modules/auth/session-principal';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { CreateJobDto, UpdateJobDto, UpdateJobStatusDto } from './job.dto';
 import {
@@ -38,7 +37,7 @@ import { toJobDetailDto, toJobSummaryDto } from './job.presenter';
 import { JobsService } from './jobs.service';
 
 @ApiTags('jobs')
-@SessionAuth()
+@SessionAuth({ principalType: 'user' })
 @Controller('jobs')
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
@@ -49,12 +48,7 @@ export class JobsController {
   @ApiForbiddenResponse({
     description: 'Candidate sessions cannot list jobs',
   })
-  async findAll(
-    @Query() query: ListJobsQueryDto,
-    @Req() req: AuthenticatedRequest,
-  ): Promise<JobListResponseDto> {
-    assertInternalUserSession(req);
-
+  async findAll(@Query() query: ListJobsQueryDto): Promise<JobListResponseDto> {
     const result = await this.jobsService.listJobs(query);
     const stats = await this.jobsService.getApplicationStats(
       result.data.map((job) => job.id),
@@ -81,10 +75,7 @@ export class JobsController {
   @ApiJobNotFound()
   async getArchivePreview(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: AuthenticatedRequest,
   ): Promise<JobArchivePreviewResponseDto> {
-    assertInternalUserSession(req);
-
     const preview = await this.jobsService.getArchivePreview(id);
 
     return {
@@ -100,10 +91,7 @@ export class JobsController {
   @ApiJobNotFound()
   async findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: AuthenticatedRequest,
   ): Promise<JobDetailResponseDto> {
-    assertInternalUserSession(req);
-
     const job = await this.jobsService.findJobById(id);
     const stats = await this.jobsService.getApplicationStats([job.id]);
 
@@ -128,8 +116,6 @@ export class JobsController {
     @Body() dto: CreateJobDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobResponseDto> {
-    assertInternalUserSession(req);
-
     const job = await this.jobsService.createJob(dto, req.session.principalId);
 
     return {
@@ -153,8 +139,6 @@ export class JobsController {
     @Body() dto: UpdateJobDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobDetailResponseDto> {
-    assertInternalUserSession(req);
-
     const job = await this.jobsService.updateJob(
       id,
       dto,
@@ -187,8 +171,6 @@ export class JobsController {
     @Body() dto: UpdateJobStatusDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<JobStatusResponseDto> {
-    assertInternalUserSession(req);
-
     const job = await this.jobsService.changeStatus(
       id,
       dto,
@@ -220,8 +202,6 @@ export class JobsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<DeleteJobResponseDto> {
-    assertInternalUserSession(req);
-
     const job = await this.jobsService.softDeleteJob(
       id,
       req.session.principalId,

@@ -1,74 +1,183 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@ui/dialog';
 import { Button } from '@ui/button';
+import { Checkbox } from '@ui/checkbox';
 import { Input } from '@ui/input';
 import { Label } from '@ui/label';
-import type { Experience } from './ExperienceTable';
+import { Textarea } from '@ui/textarea';
+import { ExperiencePayloadSchema } from '@api/schemas/profile.schema';
+import type { ExperiencePayload } from '../../../types/profile.types';
+
+const EMPTY: ExperiencePayload = {
+  companyName: '',
+  jobTitle: '',
+  startDate: '',
+  endDate: null,
+  salary: '',
+  description: '',
+};
 
 interface ExperienceModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  onSave: (exp: Experience) => void;
-  initialData?: Experience;
+  onSave: (value: ExperiencePayload) => void;
+  initialData?: ExperiencePayload;
 }
 
-export function ExperienceModal({ isOpen, onClose, onSave, initialData }: ExperienceModalProps) {
-  const [formData, setFormData] = useState<Partial<Experience>>({});
+export function ExperienceModal({
+  open,
+  onClose,
+  onSave,
+  initialData,
+}: ExperienceModalProps) {
+  const { t } = useTranslation();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    setError,
+    formState: { errors },
+  } = useForm<ExperiencePayload>({
+    resolver: zodResolver(ExperiencePayloadSchema),
+    defaultValues: EMPTY,
+  });
 
   useEffect(() => {
-    if (isOpen) {
-      setFormData(initialData || {
-        id: Math.random().toString(36).substr(2, 9),
-        company: '',
-        title: '',
-        startDate: '',
-        endDate: '',
-      });
+    if (open) {
+      reset(initialData ?? EMPTY);
     }
-  }, [isOpen, initialData]);
+  }, [open, initialData, reset]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
-  };
-
-  const handleSave = () => {
-    if (!formData.company || !formData.title || !formData.startDate || !formData.endDate) {
-      return; // Basic validation
-    }
-    onSave(formData as Experience);
-    onClose();
-  };
+  const endDate = watch('endDate');
+  const isCurrent = endDate === null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>{initialData ? 'Edit Experience' : 'Add Experience'}</DialogTitle>
+          <DialogTitle>
+            {initialData
+              ? t('profile.experience.modalTitleEdit')
+              : t('profile.experience.modalTitleAdd')}
+          </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="company">Company Name <span className="text-destructive">*</span></Label>
-            <Input id="company" value={formData.company || ''} onChange={handleChange} placeholder="e.g. Tech Corp" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="title">Job Title <span className="text-destructive">*</span></Label>
-            <Input id="title" value={formData.title || ''} onChange={handleChange} placeholder="e.g. Frontend Engineer" />
-          </div>
+
+        <form
+          className="grid gap-4 py-2"
+          onSubmit={handleSubmit((value) => {
+            if (!isCurrent && !value.endDate) {
+              setError('endDate', {
+                type: 'required',
+                message: 'required',
+              });
+              return;
+            }
+            if (
+              value.endDate &&
+              value.startDate &&
+              value.endDate < value.startDate
+            ) {
+              setError('endDate', {
+                type: 'validate',
+                message: 'endBeforeStart',
+              });
+              return;
+            }
+            onSave(value);
+            onClose();
+          })}
+        >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date <span className="text-destructive">*</span></Label>
-              <Input id="startDate" type="date" value={formData.startDate || ''} onChange={handleChange} />
+              <Label>{t('profile.experience.companyName')}</Label>
+              <Input {...register('companyName')} />
+              {errors.companyName && (
+                <p className="text-xs text-destructive">
+                  {t('validation.required')}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date <span className="text-destructive">*</span></Label>
-              <Input id="endDate" type="date" value={formData.endDate || ''} onChange={handleChange} />
+              <Label>{t('profile.experience.jobTitle')}</Label>
+              <Input {...register('jobTitle')} />
+              {errors.jobTitle && (
+                <p className="text-xs text-destructive">
+                  {t('validation.required')}
+                </p>
+              )}
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save</Button>
-        </DialogFooter>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{t('profile.experience.startDate')}</Label>
+              <Input type="date" {...register('startDate')} />
+              {errors.startDate && (
+                <p className="text-xs text-destructive">
+                  {t('validation.required')}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>{t('profile.experience.endDate')}</Label>
+              <Input type="date" disabled={isCurrent} {...register('endDate')} />
+              {errors.endDate && (
+                <p className="text-xs text-destructive">
+                  {errors.endDate.type === 'required'
+                    ? t('validation.required')
+                    : t('profile.validation.endBeforeStart')}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={isCurrent}
+              onCheckedChange={(checked) => {
+                setValue('endDate', checked ? null : '', {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+            />
+            {t('profile.experience.currentlyWorking')}
+          </label>
+
+          <div className="space-y-2">
+            <Label>{t('profile.experience.salary')}</Label>
+            <Input
+              {...register('salary')}
+              placeholder={t('profile.experience.salaryPlaceholder')}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t('profile.experience.descriptionLabel')}</Label>
+            <Textarea
+              {...register('description')}
+              placeholder={t('profile.experience.descriptionPlaceholder')}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit">{t('common.save')}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

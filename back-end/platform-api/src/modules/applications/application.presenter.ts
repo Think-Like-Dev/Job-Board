@@ -1,6 +1,8 @@
 import type { Candidate } from '@modules/candidates/candidate.schema';
 import type { File } from '@modules/files/file.schema';
 import type { Job } from '@modules/jobs/job.schema';
+import type { ProfileView } from '@modules/profiles/profile.types';
+import { toProfileDto } from '@modules/profiles/profile.presenter';
 import type { ApplicationStatusHistory } from './application-status-history.schema';
 import type { Application } from './application.schema';
 import type {
@@ -81,24 +83,39 @@ export function toCandidateApplicationDetailDto(
 }
 
 export function candidateDisplayName(candidate: Candidate): string {
-  const name = [candidate.firstName, candidate.lastName]
+  return displayName(candidate.firstName, candidate.lastName, candidate.email);
+}
+
+function profileDisplayName(profile: ProfileView): string {
+  return displayName(profile.firstName, profile.lastName, profile.email);
+}
+
+function displayName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  email: string,
+): string {
+  const name = [firstName, lastName]
     .map((part) => part?.trim())
     .filter(Boolean)
     .join(' ');
-  return name || candidate.email;
+  return name || email;
 }
 
 export function toRecruiterApplicationListItemDto(
   application: Application,
   candidate: Candidate,
   resume: File | null | undefined,
+  profile?: ProfileView,
 ): RecruiterApplicationListItemDto {
   return {
     id: application.id,
     candidateId: application.candidateId,
-    candidateName: candidateDisplayName(candidate),
-    candidateEmail: candidate.email,
-    candidatePhone: candidate.phone ?? undefined,
+    candidateName: profile
+      ? profileDisplayName(profile)
+      : candidateDisplayName(candidate),
+    candidateEmail: profile?.email ?? candidate.email,
+    candidatePhone: profile?.phone ?? candidate.phone ?? undefined,
     resumeFileId: application.resumeFileId,
     resumeFileName: resume?.filename ?? '',
     status: application.status,
@@ -113,9 +130,15 @@ export function toRecruiterApplicationDetailDto(
   resume: File | null | undefined,
   coverLetter: File | null | undefined,
   history: ApplicationStatusHistory[],
+  profile: ProfileView,
 ): RecruiterApplicationDetailDto {
   return {
-    ...toRecruiterApplicationListItemDto(application, candidate, resume),
+    ...toRecruiterApplicationListItemDto(
+      application,
+      candidate,
+      resume,
+      profile,
+    ),
     resumeFileUrl: downloadUrl(application.resumeFileId),
     coverLetterFileId: application.coverLetterFileId ?? undefined,
     coverLetterFileName: coverLetter?.filename ?? undefined,
@@ -124,15 +147,17 @@ export function toRecruiterApplicationDetailDto(
       : undefined,
     withdrawnAt: toIso(application.withdrawnAt) ?? null,
     updatedAt: toIso(application.updatedAt),
+    profileVersionId: application.profileVersionId ?? undefined,
+    profile: toProfileDto(profile),
     candidate: {
-      firstName: candidate.firstName ?? undefined,
-      lastName: candidate.lastName ?? undefined,
-      email: candidate.email,
-      phone: candidate.phone ?? undefined,
-      linkedinUrl: candidate.linkedinUrl ?? undefined,
-      portfolioUrl: candidate.portfolioUrl ?? undefined,
-      profileImageFileId: candidate.profileImageFileId ?? undefined,
-      resumeFileId: candidate.resumeFileId ?? undefined,
+      firstName: profile.firstName ?? undefined,
+      lastName: profile.lastName ?? undefined,
+      email: profile.email,
+      phone: profile.phone ?? undefined,
+      linkedinUrl: profile.linkedinUrl ?? undefined,
+      portfolioUrl: profile.portfolioUrl ?? undefined,
+      profileImageFileId: profile.profileImage?.id,
+      resumeFileId: profile.resume?.id,
     },
     statusHistory: history.map(toStatusHistoryDto),
   };

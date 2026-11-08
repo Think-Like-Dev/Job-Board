@@ -14,7 +14,14 @@
     "edit": "Edit",
     "delete": "Delete",
     "apply": "Apply Now",
-    "applied": "Applied"
+    "applied": "Applied",
+    "view": "View",
+    "remove": "Remove",
+    "uploading": "Uploading..."
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalid": "Please check this field"
   },
   "nav": {
     "login": "Login / Signup",
@@ -31,5 +38,263 @@
     "otpTitle": "Verify your email",
     "otpLabel": "Enter OTP",
     "verify": "Verify"
+  },
+  "applications": {
+    "title": "My Activity",
+    "subtitle": "Track your job applications and saved opportunities.",
+    "tabs": {
+      "applications": "Applications",
+      "bookmarks": "Saved Jobs"
+    },
+    "empty": "No applications found.",
+    "appliedOn": "Applied on {{date}}",
+    "interviewRound": "Round {{round}}",
+    "actionRequired": "Action required:",
+    "respondBy": " Respond by {{date}}",
+    "viewOffer": "View offer",
+    "status": {
+      "DRAFT": "Draft",
+      "APPLIED": "Applied",
+      "IN_REVIEW": "In Review",
+      "SHORTLISTED": "Shortlisted",
+      "INTERVIEW": "Interview",
+      "OFFER_EXTENDED": "Offer Extended",
+      "OFFER_ACCEPTED": "Offer Accepted",
+      "OFFER_REJECTED": "Offer Rejected",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn",
+      "AUTO_REJECTED": "Auto Rejected"
+    },
+    "details": {
+      "applicationUpdate": "Application Update",
+      "interviewScheduled": "Interview Scheduled (Round {{round}})",
+      "dateTime": "Date & time",
+      "mode": "Mode",
+      "location": "Location / link",
+      "offerCongratulations": "Congratulations! An offer has been extended.",
+      "offerExtendedOn": "Offer extended on: ",
+      "respondByLabel": "Respond by: ",
+      "acceptOffer": "Accept offer (requires document)",
+      "declineOffer": "Decline offer",
+      "reasonForDeclining": "Reason for declining",
+      "reasonPlaceholder": "Please let us know why you are declining the offer…",
+      "confirmDecline": "Confirm decline",
+      "yourApplication": "Your application",
+      "resume": "Resume",
+      "coverLetter": "Cover letter",
+      "jobCategory": "Category",
+      "jobLocation": "Location",
+      "close": "Close",
+      "offerAccepted": "Offer accepted!",
+      "offerRejected": "Offer rejected"
+    }
+  },
+  "apply": {
+    "title": "Apply for Job",
+    "steps": {
+      "documents": "Step 1: Resume & Cover Letter",
+      "profile": "Step 2: Profile Review",
+      "declaration": "Step 3: Declaration"
+    },
+    "resume": {
+      "label": "Resume",
+      "central": "Use my central resume",
+      "noCentral": "You have no central resume. Upload one for this application or add one to your profile.",
+      "jobSpecific": "Upload a resume for this job (PDF/DOCX, max 2 MB)",
+      "required": "A resume is required",
+      "invalid": "Resume must be a PDF or DOCX file under 2 MB",
+      "updateCentral": "Also replace my central resume with this file"
+    },
+    "coverLetter": {
+      "label": "Cover letter",
+      "optional": "Optional",
+      "required": "This job requires a cover letter",
+      "central": "Use my central cover letter",
+      "noCentral": "You have no central cover letter",
+      "jobSpecific": "Upload a cover letter for this job (PDF/DOCX, max 1 MB)",
+      "invalid": "Cover letter must be a PDF or DOCX file under 1 MB",
+      "updateCentral": "Also replace my central cover letter with this file"
+    },
+    "profile": {
+      "description": "Review the profile that will be shown to the recruiter.",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "skills": "Skills",
+      "experience": "Experience",
+      "education": "Education",
+      "none": "Not provided",
+      "edit": "Edit profile"
+    },
+    "declaration": {
+      "text": "I hereby declare that the information provided is true and correct to the best of my knowledge. I understand that any willful dishonesty may result in refusal of this application or immediate termination of employment."
+    },
+    "actions": {
+      "draft": "Save as Draft",
+      "next": "Next",
+      "back": "Back",
+      "submit": "Submit Application",
+      "submitting": "Submitting…"
+    },
+    "draftSaved": "Application saved as draft",
+    "submitted": "Application submitted successfully",
+    "failed": "Could not submit your application"
+  },
+  "profile": {
+    "title": "Your Profile",
+    "subtitle": "Complete your profile to apply for jobs faster.",
+    "saved": "Profile saved successfully",
+    "saveFailed": "Could not save your profile",
+    "validation": {
+      "nameRequired": "First name and last name are required",
+      "mandatory": "Complete the required profile fields before saving",
+      "invalid": "Please check the highlighted fields",
+      "endBeforeStart": "End date cannot be before the start date",
+      "expiryBeforeIssue": "Expiry date cannot be before the issue date"
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone number",
+      "currentLocation": "Current location",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "country": "Country",
+      "postalCode": "Postal code",
+      "linkedinUrl": "LinkedIn URL",
+      "portfolioUrl": "Portfolio URL"
+    },
+    "basicInfo": {
+      "title": "Basic Information",
+      "description": "Update your personal details and contact information."
+    },
+    "photo": {
+      "title": "Profile photo",
+      "hint": "JPEG, PNG, or WebP. Max 1 MB.",
+      "uploaded": "Profile photo updated",
+      "invalid": "Choose a JPEG, PNG, or WebP image under 1 MB",
+      "tooLarge": "Profile photo must be 1 MB or smaller",
+      "passport": "Profile photo must be passport-sized (portrait or square)",
+      "uploadFailed": "Could not upload the profile photo",
+      "required": "A profile photo is required",
+      "upload": "Upload photo",
+      "replace": "Replace Photo"
+    },
+    "documents": {
+      "uploadFailed": "Could not upload the file",
+      "resume": {
+        "title": "Resume",
+        "description": "Your central resume is used for applications unless you upload a job-specific copy.",
+        "required": "A central resume is required before saving your profile.",
+        "upload": "Upload resume",
+        "replace": "Replace resume",
+        "invalid": "Resume must be a PDF or DOCX file under 2 MB",
+        "uploaded": "Resume uploaded",
+        "none": "No resume uploaded yet."
+      },
+      "coverLetter": {
+        "title": "Cover letter",
+        "description": "Optional. Used for applications that ask for a cover letter unless you upload a job-specific copy.",
+        "upload": "Upload cover letter",
+        "replace": "Replace cover letter",
+        "invalid": "Cover letter must be a PDF or DOCX file under 1 MB",
+        "uploaded": "Cover letter uploaded",
+        "none": "No cover letter uploaded yet."
+      }
+    },
+    "skills": {
+      "title": "Skills",
+      "description": "Add the skills you want recruiters and matching to see.",
+      "placeholder": "Search or add a skill…",
+      "searching": "Searching…",
+      "addNew": "Add “{{name}}” as a new skill",
+      "remove": "Remove {{name}}"
+    },
+    "education": {
+      "title": "Education",
+      "description": "Your academic qualifications.",
+      "add": "Add education",
+      "edit": "Edit education",
+      "delete": "Delete education",
+      "required": "Add at least one education entry",
+      "empty": "No education added yet.",
+      "institution": "Institution",
+      "degree": "Degree",
+      "field": "Field",
+      "duration": "Duration",
+      "present": "Present",
+      "modalTitleAdd": "Add education",
+      "modalTitleEdit": "Edit education",
+      "institutionName": "Institution name",
+      "fieldOfStudy": "Field of study",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "currentlyStudying": "I am currently studying here",
+      "grade": "Grade (optional)",
+      "gradePlaceholder": "e.g. A",
+      "gpa": "GPA (optional)",
+      "additionalDetails": "Additional details (optional)",
+      "additionalDetailsPlaceholder": "Thesis, honours, relevant coursework…"
+    },
+    "experience": {
+      "title": "Work experience",
+      "description": "Your professional history.",
+      "add": "Add experience",
+      "edit": "Edit experience",
+      "delete": "Delete experience",
+      "empty": "No work experience added yet.",
+      "company": "Company",
+      "role": "Role",
+      "duration": "Duration",
+      "present": "Present",
+      "modalTitleAdd": "Add experience",
+      "modalTitleEdit": "Edit experience",
+      "companyName": "Company name",
+      "jobTitle": "Job title",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "currentlyWorking": "I currently work here",
+      "salary": "Salary (optional)",
+      "salaryPlaceholder": "e.g. $90,000 / year",
+      "descriptionLabel": "Role description (optional)",
+      "descriptionPlaceholder": "Responsibilities, achievements, tech stack…"
+    },
+    "certifications": {
+      "title": "Certifications",
+      "description": "Credentials with a URL or an uploaded soft copy.",
+      "add": "Add certification",
+      "edit": "Edit certification",
+      "delete": "Delete certification",
+      "empty": "No certifications added yet.",
+      "columnTitle": "Title",
+      "columnIssuer": "Issuer",
+      "columnSkill": "Skill",
+      "columnCredential": "Credential",
+      "url": "URL",
+      "softCopy": "Soft copy",
+      "modalTitleAdd": "Add certification",
+      "modalTitleEdit": "Edit certification",
+      "titleLabel": "Certification title",
+      "titlePlaceholder": "e.g. AWS Solutions Architect",
+      "issuer": "Issuer (optional)",
+      "issuerPlaceholder": "e.g. Amazon Web Services",
+      "skill": "Skill acknowledged",
+      "skillPlaceholder": "Search or add the skill this certification proves…",
+      "credentialUrl": "Credential URL (optional)",
+      "credentialUrlPlaceholder": "https://example.com/credential/...",
+      "softCopyLabel": "Soft copy (optional, PDF/DOC/image ≤ 2 MB)",
+      "invalidFile": "Certification must be a PDF, DOC, or image under 2 MB",
+      "attached": "Attached: {{name}}",
+      "issueDate": "Issue date (optional)",
+      "expiryDate": "Expiry date (optional)",
+      "credentialRequired": "Add a credential URL or upload a soft copy",
+      "invalidUrl": "Enter a valid URL including https://"
+    },
+    "actions": {
+      "save": "Save profile",
+      "saving": "Saving…"
+    }
   }
 }

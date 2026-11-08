@@ -1,147 +1,332 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@ui/dialog';
 import { Button } from '@ui/button';
+import { Checkbox } from '@ui/checkbox';
 import { Input } from '@ui/input';
 import { Label } from '@ui/label';
-import { Checkbox } from '@ui/checkbox';
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useApplyForJob } from '@api/hooks/useApplications';
+import { useProfile } from '@api/hooks/useProfile';
+import { validateCoverLetter, validateResume } from '@utils/validators';
+import type { ApplyPayload } from '@/types/application.types';
 
 interface ApplyWorkflowModalProps {
   jobId: string;
   isOpen: boolean;
   onClose: () => void;
   onApplied: () => void;
-}
-enum ApplyWorkflowSteps{
-  RESUME,
-  PROFILE,
-  ADDITIONAL_QUESTIONS,
-  DECLARATION,
+  coverLetterRequired?: boolean;
 }
 
-export function ApplyWorkflowModal({ isOpen, onClose, onApplied }: ApplyWorkflowModalProps) {
-  const [step, setStep] = useState<ApplyWorkflowSteps>(ApplyWorkflowSteps.RESUME);
+const STEPS = {
+  DOCUMENTS: 0,
+  PROFILE: 1,
+  DECLARATION: 2,
+} as const;
 
-  // The applications API is not implemented yet. Keep the workflow UI working
-  // locally so the job detail page is usable; wire this to the real endpoint
-  // when the applications module lands.
-  const applyMutation = useMutation({
-    mutationFn: async (_isDraft: boolean) => {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-    },
-    onSuccess: (_, isDraft) => {
-      if (isDraft) {
-        toast.success('Application saved as draft');
-        onClose();
-      } else {
-        toast.success('Application submitted successfully!');
-        onApplied();
-      }
-    },
-    onError: () => {
-      toast.error('An error occurred. Please try again.');
-    },
-  });
+export function ApplyWorkflowModal({
+  jobId,
+  isOpen,
+  onClose,
+  onApplied,
+  coverLetterRequired = false,
+}: ApplyWorkflowModalProps) {
+  const { t } = useTranslation();
+  const { data: profile } = useProfile();
+  const applyMutation = useApplyForJob();
 
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
+  const [step, setStep] = useState<number>(STEPS.DOCUMENTS);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
+  const [updateCentralResume, setUpdateCentralResume] = useState(false);
+  const [updateCentralCoverLetter, setUpdateCentralCoverLetter] =
+    useState(false);
+  const [declared, setDeclared] = useState(false);
 
-  const handleDraft = () => applyMutation.mutate(true);
-  const handleSubmit = () => applyMutation.mutate(false);
+  const hasResume = Boolean(profile?.resume || resumeFile);
+  const hasCoverLetter = Boolean(profile?.coverLetter || coverLetterFile);
+
+  function handleResumeFile(selected: File | undefined) {
+    if (!selected) return;
+    if (!validateResume(selected)) {
+      toast.error(t('apply.resume.invalid'));
+      return;
+    }
+    setResumeFile(selected);
+  }
+
+  function handleCoverLetterFile(selected: File | undefined) {
+    if (!selected) return;
+    if (!validateCoverLetter(selected)) {
+      toast.error(t('apply.coverLetter.invalid'));
+      return;
+    }
+    setCoverLetterFile(selected);
+  }
+
+  function validateDocuments(forSubmit: boolean): boolean {
+    if (!hasResume) {
+      toast.error(t('apply.resume.required'));
+      return false;
+    }
+    if (forSubmit && coverLetterRequired && !hasCoverLetter) {
+      toast.error(t('apply.coverLetter.required'));
+      return false;
+    }
+    return true;
+  }
+
+  function nextStep() {
+    if (step === STEPS.DOCUMENTS && !validateDocuments(false)) return;
+    setStep((current) => Math.min(current + 1, STEPS.DECLARATION));
+  }
+
+  function previousStep() {
+    setStep((current) => Math.max(current - 1, STEPS.DOCUMENTS));
+  }
+
+  function buildPayload(isDraft: boolean): ApplyPayload {
+    return {
+      isDraft,
+      resumeFile: resumeFile ?? undefined,
+      coverLetterFile: coverLetterFile ?? undefined,
+      updateProfileResume:
+        !isDraft && Boolean(resumeFile) && updateCentralResume,
+      updateProfileCoverLetter:
+        !isDraft && Boolean(coverLetterFile) && updateCentralCoverLetter,
+    };
+  }
+
+  async function submit(isDraft: boolean) {
+    if (!validateDocuments(!isDraft)) return;
+
+    try {
+      await applyMutation.mutateAsync({
+        jobId,
+        payload: buildPayload(isDraft),
+      });
+      toast.success(
+        isDraft ? t('apply.draftSaved') : t('apply.submitted'),
+      );
+      if (!isDraft) onApplied();
+      onClose();
+    } catch {
+      toast.error(t('apply.failed'));
+    }
+  }
+
+  const profileName =
+    [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
+    t('apply.profile.none');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Apply for Job</DialogTitle>
+          <DialogTitle>{t('apply.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
-          {step === ApplyWorkflowSteps.RESUME && (
+          {step === STEPS.DOCUMENTS && (
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">Step 1: Resume &amp; Cover Letter</h3>
-              <div className="space-y-2">
-                <Label>Resume (PDF/DOCX, max 2MB) <span className="text-destructive">*</span></Label>
-                <Input type="file" accept=".pdf,.doc,.docx" />
+              <h3 className="text-lg font-medium">
+                {t('apply.steps.documents')}
+              </h3>
+
+              <div className="space-y-3">
+                <Label>
+                  {t('apply.resume.label')}{' '}
+                  <span className="text-destructive">*</span>
+                </Label>
+                {profile?.resume ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('apply.resume.central')}: {profile.resume.filename}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t('apply.resume.noCentral')}
+                  </p>
+                )}
+                <Input
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={(event) =>
+                    handleResumeFile(event.target.files?.[0])
+                  }
+                />
+                {resumeFile && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={updateCentralResume}
+                      onCheckedChange={(checked) =>
+                        setUpdateCentralResume(checked === true)
+                      }
+                    />
+                    {t('apply.resume.updateCentral')}
+                  </label>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label>Cover Letter (Optional, max 1MB)</Label>
-                <Input type="file" accept=".pdf,.doc,.docx" />
+
+              <div className="space-y-3">
+                <Label>
+                  {t('apply.coverLetter.label')}{' '}
+                  <span className="text-muted-foreground">
+                    ({t('apply.coverLetter.optional')})
+                  </span>
+                  {coverLetterRequired && (
+                    <span className="text-destructive"> *</span>
+                  )}
+                </Label>
+                {profile?.coverLetter ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('apply.coverLetter.central')}:{' '}
+                    {profile.coverLetter.filename}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t('apply.coverLetter.noCentral')}
+                  </p>
+                )}
+                <Input
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={(event) =>
+                    handleCoverLetterFile(event.target.files?.[0])
+                  }
+                />
+                {coverLetterFile && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={updateCentralCoverLetter}
+                      onCheckedChange={(checked) =>
+                        setUpdateCentralCoverLetter(checked === true)
+                      }
+                    />
+                    {t('apply.coverLetter.updateCentral')}
+                  </label>
+                )}
               </div>
             </div>
           )}
 
-          {step === ApplyWorkflowSteps.PROFILE && (
+          {step === STEPS.PROFILE && (
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">Step 2: Profile Review</h3>
+              <h3 className="text-lg font-medium">
+                {t('apply.steps.profile')}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Review your profile details below. These will be sent to the recruiter.
+                {t('apply.profile.description')}
               </p>
-              <div className="border rounded-md p-4 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Personal Info</span>
-                  <Button variant="outline" size="sm">Edit</Button>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-muted-foreground">Name:</div><div>John Doe</div>
-                  <div className="text-muted-foreground">Email:</div><div>candidate@example.com</div>
+
+              <div className="space-y-4 rounded-md border p-4">
+                <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
+                  <span className="text-muted-foreground">
+                    {t('apply.profile.name')}
+                  </span>
+                  <span>{profileName}</span>
+                  <span className="text-muted-foreground">
+                    {t('apply.profile.email')}
+                  </span>
+                  <span>{profile?.email ?? t('apply.profile.none')}</span>
+                  <span className="text-muted-foreground">
+                    {t('apply.profile.phone')}
+                  </span>
+                  <span>{profile?.phone ?? t('apply.profile.none')}</span>
+                  <span className="text-muted-foreground">
+                    {t('apply.profile.skills')}
+                  </span>
+                  <span>
+                    {profile?.skills.length
+                      ? profile.skills.map((skill) => skill.name).join(', ')
+                      : t('apply.profile.none')}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t('apply.profile.experience')}
+                  </span>
+                  <span>
+                    {profile?.experience.length
+                      ? profile.experience
+                          .map(
+                            (item) =>
+                              `${item.jobTitle} · ${item.companyName}`,
+                          )
+                          .join(', ')
+                      : t('apply.profile.none')}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t('apply.profile.education')}
+                  </span>
+                  <span>
+                    {profile?.education.length
+                      ? profile.education
+                          .map(
+                            (item) => `${item.degree} · ${item.institution}`,
+                          )
+                          .join(', ')
+                      : t('apply.profile.none')}
+                  </span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full">Sync from LinkedIn</Button>
             </div>
           )}
 
-          {step === ApplyWorkflowSteps.ADDITIONAL_QUESTIONS && (
+          {step === STEPS.DECLARATION && (
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">Step 3: Additional Questions</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Do you require visa sponsorship? <span className="text-destructive">*</span></Label>
-                  <div className="flex items-center space-x-2">
-                    <input type="radio" id="visa-yes" name="visa" value="yes" />
-                    <Label htmlFor="visa-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input type="radio" id="visa-no" name="visa" value="no" />
-                    <Label htmlFor="visa-no">No</Label>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Notice Period</Label>
-                  <Input placeholder="e.g. 2 weeks, Immediate" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === ApplyWorkflowSteps.DECLARATION && (
-            <div className="space-y-6">
-              <h3 className="text-lg font-medium">Step 4: Declaration</h3>
-              <div className="flex items-start space-x-3">
-                <Checkbox id="declaration" />
-                <Label htmlFor="declaration" className="font-normal leading-relaxed">
-                  I hereby declare that the information provided is true and correct to the best of my knowledge.
-                  I understand that any willful dishonesty may render for refusal of this application or immediate termination of employment.
+              <h3 className="text-lg font-medium">
+                {t('apply.steps.declaration')}
+              </h3>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="declaration"
+                  checked={declared}
+                  onCheckedChange={(checked) => setDeclared(checked === true)}
+                />
+                <Label
+                  htmlFor="declaration"
+                  className="font-normal leading-relaxed"
+                >
+                  {t('apply.declaration.text')}
                 </Label>
               </div>
             </div>
           )}
         </div>
 
-        <DialogFooter className="flex justify-between items-center sm:justify-between border-t pt-4">
+        <DialogFooter className="flex items-center justify-between border-t pt-4 sm:justify-between">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => void submit(true)}
+            disabled={applyMutation.isPending}
+          >
+            {t('apply.actions.draft')}
+          </Button>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={handleDraft} disabled={applyMutation.isPending}>
-              Save as Draft
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            {step > 1 && <Button variant="outline" onClick={prevStep}>Back</Button>}
-            {step < 4 ? (
-              <Button onClick={nextStep}>Next</Button>
+            {step > STEPS.DOCUMENTS && (
+              <Button type="button" variant="outline" onClick={previousStep}>
+                {t('apply.actions.back')}
+              </Button>
+            )}
+            {step < STEPS.DECLARATION ? (
+              <Button type="button" onClick={nextStep}>
+                {t('apply.actions.next')}
+              </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={applyMutation.isPending}>
-                {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
+              <Button
+                type="button"
+                onClick={() => void submit(false)}
+                disabled={!declared || applyMutation.isPending}
+              >
+                {applyMutation.isPending
+                  ? t('apply.actions.submitting')
+                  : t('apply.actions.submit')}
               </Button>
             )}
           </div>

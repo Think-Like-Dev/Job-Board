@@ -4,6 +4,7 @@ import { SessionModule } from '@modules/auth/session.module';
 import { CandidatesModule } from '@modules/candidates/candidates.module';
 import { FilesModule } from '@modules/files/files.module';
 import { JobsModule } from '@modules/jobs/jobs.module';
+import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { ApplicationStatusHistorySchema } from './application-status-history.schema';
 import { ApplicationQueries } from './application-queries';
 import { ApplicationsService } from './applications.service';
@@ -23,6 +24,7 @@ import { RecruiterApplicationsController } from './recruiter-applications.contro
     JobsModule,
     FilesModule,
     CandidatesModule,
+    ProfilesModule,
   ],
   // Candidate routes are registered first so `GET /applications/my` is matched
   // before the recruiter's `GET /applications/:id`.

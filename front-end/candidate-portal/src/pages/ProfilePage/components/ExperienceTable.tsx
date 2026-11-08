@@ -1,71 +1,106 @@
-import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@ui/button';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@ui/table';
+import type { ExperiencePayload } from '../../../types/profile.types';
 
-export interface Experience {
-  id: string;
-  company: string;
-  title: string;
-  startDate: string;
-  endDate: string;
+interface ExperienceTableProps {
+  items: ExperiencePayload[];
+  onAdd: () => void;
+  onEdit: (index: number) => void;
+  onDelete: (index: number) => void;
 }
 
-export function ExperienceTable() {
-  const [experiences] = useState<Experience[]>([
-    {
-      id: '1',
-      company: 'Tech Corp',
-      title: 'Frontend Engineer',
-      startDate: '2020-06-01',
-      endDate: '2023-01-01',
-    }
-  ]);
+export function ExperienceTable({
+  items,
+  onAdd,
+  onEdit,
+  onDelete,
+}: ExperienceTableProps) {
+  const { t } = useTranslation();
+
+  function formatRange(start: string, end?: string | null): string {
+    const startLabel = start ? new Date(start).getFullYear() : '—';
+    const endLabel = end
+      ? new Date(end).getFullYear()
+      : t('profile.experience.present');
+    return `${startLabel} – ${endLabel}`;
+  }
 
   return (
-    <div className="space-y-4 mt-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Work Experience</h3>
-        <Button variant="outline" size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Experience
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">
+            {t('profile.experience.title')}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {t('profile.experience.description')}
+          </p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={onAdd}>
+          <Plus className="mr-2 size-4" />
+          {t('profile.experience.add')}
         </Button>
       </div>
-      
-      {experiences.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No work experience added yet.</p>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {t('profile.experience.empty')}
+        </p>
       ) : (
-        <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Company</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('profile.experience.company')}</TableHead>
+              <TableHead>{t('profile.experience.role')}</TableHead>
+              <TableHead>{t('profile.experience.duration')}</TableHead>
+              <TableHead className="w-[90px] text-right">
+                {t('common.edit')}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item, index) => (
+              <TableRow key={item.id ?? `experience-${index}`}>
+                <TableCell className="font-medium">
+                  {item.companyName}
+                </TableCell>
+                <TableCell>{item.jobTitle}</TableCell>
+                <TableCell>{formatRange(item.startDate, item.endDate)}</TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(index)}
+                      aria-label={t('profile.experience.edit')}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(index)}
+                      aria-label={t('profile.experience.delete')}
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {experiences.map((exp) => (
-                <TableRow key={exp.id}>
-                  <TableCell className="font-medium">{exp.company}</TableCell>
-                  <TableCell>{exp.title}</TableCell>
-                  <TableCell>{new Date(exp.startDate).getFullYear()} - {new Date(exp.endDate).getFullYear()}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   );

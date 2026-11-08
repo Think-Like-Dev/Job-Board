@@ -25,6 +25,7 @@ import { CandidatesService } from '@modules/candidates/candidates.service';
 import { assertUploadMatchesType } from '@modules/files/file-validation';
 import { FilesService } from '@modules/files/files.service';
 import { JobsService } from '@modules/jobs/jobs.service';
+import { ProfileWriteService } from '@modules/profiles/profile-write.service';
 import { ApplicationQueries } from './application-queries';
 import {
   assertCanApply,
@@ -62,6 +63,7 @@ interface PersistResult {
   replacedResumeFileId: string | null;
   replacedCoverLetterFileId: string | null;
   previousProfileResumeId: string | null;
+  previousProfileCoverLetterId: string | null;
 }
 
 interface PersistInput {
@@ -72,6 +74,7 @@ interface PersistInput {
   coverLetterFileId: string | null;
   isDraft: boolean;
   updateProfileResume: boolean;
+  updateProfileCoverLetter: boolean;
   uploadedResumeId: string | null;
 }
 
@@ -89,6 +92,7 @@ export class ApplicationsService {
     private readonly jobsService: JobsService,
     private readonly candidatesService: CandidatesService,
     private readonly filesService: FilesService,
+    private readonly profileWriteService: ProfileWriteService,
   ) {}
 
   /**
@@ -121,7 +125,8 @@ export class ApplicationsService {
       !isDraft &&
       job.applicationSettings?.coverLetterRequired &&
       !uploads.coverLetterFile &&
-      !existing?.coverLetterFileId
+      !existing?.coverLetterFileId &&
+      !candidate.coverLetterFileId
     ) {
       throw new BadRequestException('A cover letter is required for this job');
     }
@@ -138,6 +143,7 @@ export class ApplicationsService {
       const coverLetterFileId = await this.resolveCoverLetter(
         uploads,
         existing,
+        candidate,
         session,
         createdFileIds,
       );
@@ -150,6 +156,7 @@ export class ApplicationsService {
         coverLetterFileId,
         isDraft,
         updateProfileResume: dto.updateProfileResume === true,
+        updateProfileCoverLetter: dto.updateProfileCoverLetter === true,
         uploadedResumeId: resume.uploadedFileId,
       });
       committed = true;
@@ -294,7 +301,7 @@ export class ApplicationsService {
       const ids = [
         ...new Set(
           [application.resumeFileId, application.coverLetterFileId].filter(
-            (fileId): fileId is string => Boolean(fileId),
+            (fileId): fileId is string => typeof fileId === 'string',
           ),
         ),
       ];
@@ -308,8 +315,14 @@ export class ApplicationsService {
       id: candidateId,
     });
 
+    const protectedFileIds = new Set(
+      [candidate.resumeFileId, candidate.coverLetterFileId].filter(
+        (fileId): fileId is string => Boolean(fileId),
+      ),
+    );
+
     for (const fileId of fileIds) {
-      if (fileId === candidate.resumeFileId) {
+      if (protectedFileIds.has(fileId)) {
         continue;
       }
       await this.filesService.removeIfUnreferenced(fileId);
@@ -355,6 +368,7 @@ export class ApplicationsService {
   private async resolveCoverLetter(
     uploads: ApplicationUploads,
     existing: Application | null,
+    candidate: Candidate,
     session: SessionPayload,
     createdFileIds: string[],
   ): Promise<string | null> {
@@ -369,7 +383,7 @@ export class ApplicationsService {
       return file.id;
     }
 
-    return existing?.coverLetterFileId ?? null;
+    return existing?.coverLetterFileId ?? candidate.coverLetterFileId ?? null;
   }
 
   private persistApplication(input: PersistInput): Promise<PersistResult> {
@@ -382,6 +396,7 @@ export class ApplicationsService {
       let replacedResumeFileId: string | null = null;
       let replacedCoverLetterFileId: string | null = null;
       let previousProfileResumeId: string | null = null;
+      let previousProfileCoverLetterId: string | null = null;
 
       if (input.existing) {
         application = await applicationRepository.findOneOrFail({
@@ -403,6 +418,7 @@ export class ApplicationsService {
 
         application.resumeFileId = input.resumeFileId;
         application.coverLetterFileId = input.coverLetterFileId;
+        application.profileVersionId = null;
         application.updatedAt = now;
 
         if (application.status === ApplicationStatus.DRAFT && !input.isDraft) {
@@ -422,6 +438,7 @@ export class ApplicationsService {
           id: randomUUID(),
           candidateId: input.candidateId,
           jobId: input.jobId,
+          profileVersionId: null,
           resumeFileId: input.resumeFileId,
           coverLetterFileId: input.coverLetterFileId,
           status: input.isDraft
@@ -446,16 +463,42 @@ export class ApplicationsService {
 
       if (
         !input.isDraft &&
-        input.updateProfileResume &&
-        input.uploadedResumeId
+        (input.updateProfileResume || input.updateProfileCoverLetter)
       ) {
         const candidate = await txEm.findOneOrFail(CandidateSchema, {
           id: input.candidateId,
         });
-        if (candidate.resumeFileId !== input.uploadedResumeId) {
+        const changes: {
+          resumeFileId?: string;
+          coverLetterFileId?: string | null;
+        } = {};
+
+        if (
+          input.updateProfileResume &&
+          candidate.resumeFileId !== input.resumeFileId
+        ) {
           previousProfileResumeId = candidate.resumeFileId ?? null;
-          candidate.resumeFileId = input.uploadedResumeId;
-          candidate.updatedAt = now;
+          changes.resumeFileId = input.resumeFileId;
+        }
+        if (
+          input.updateProfileCoverLetter &&
+          candidate.coverLetterFileId !== input.coverLetterFileId
+        ) {
+          previousProfileCoverLetterId = candidate.coverLetterFileId ?? null;
+          changes.coverLetterFileId = input.coverLetterFileId;
+        }
+
+        if (Object.keys(changes).length) {
+          await this.profileWriteService.updateCentralDocuments(
+            input.candidateId,
+            changes,
+            {
+              // Exclude the application being submitted so it keeps pointing
+              // at live profile data; only other live applications are snapshotted.
+              excludeApplicationId: application.id,
+              em: txEm,
+            },
+          );
         }
       }
 
@@ -466,6 +509,7 @@ export class ApplicationsService {
         replacedResumeFileId,
         replacedCoverLetterFileId,
         previousProfileResumeId,
+        previousProfileCoverLetterId,
       };
     });
   }
@@ -501,16 +545,21 @@ export class ApplicationsService {
       const candidate = await this.candidatesService.findOne({
         id: candidateId,
       });
-      const protectedFileId = candidate.resumeFileId ?? null;
+      const protectedFileIds = new Set(
+        [candidate.resumeFileId, candidate.coverLetterFileId].filter(
+          (fileId): fileId is string => Boolean(fileId),
+        ),
+      );
       const candidates = [
         ...new Set(
           [
             result.replacedResumeFileId,
             result.replacedCoverLetterFileId,
             result.previousProfileResumeId,
+            result.previousProfileCoverLetterId,
           ].filter(
             (fileId): fileId is string =>
-              Boolean(fileId) && fileId !== protectedFileId,
+              typeof fileId === 'string' && !protectedFileIds.has(fileId),
           ),
         ),
       ];

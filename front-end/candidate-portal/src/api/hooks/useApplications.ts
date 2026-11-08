@@ -24,6 +24,8 @@ export function useApplyForJob() {
       applyForJob(jobId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.APPLICATIONS.ALL });
+      // Applying can replace the central resume/cover letter.
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PROFILE.ME });
     },
   });
 }

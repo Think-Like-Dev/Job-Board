@@ -4,6 +4,7 @@ import {
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
 import { ApplicationStatus } from '@common/constants/enums';
+import { CandidateProfileVersionSchema } from '@modules/candidates/candidate-profile-version.schema';
 import { CandidateSchema } from '@modules/candidates/candidate.schema';
 import { FileSchema } from '@modules/files/file.schema';
 import { JobSchema } from '@modules/jobs/job.schema';
@@ -17,6 +18,8 @@ export interface Application {
   id: string;
   candidateId: string;
   jobId: string;
+  /** Null means the application displays the candidate's live profile. */
+  profileVersionId?: string | null;
   resumeFileId: string;
   coverLetterFileId?: string | null;
   status: ApplicationStatus;
@@ -37,6 +40,10 @@ export const ApplicationSchema = new EntitySchema<Application>({
   ],
   indexes: [
     { name: 'applications_job_id_index', properties: ['jobId'] },
+    {
+      name: 'applications_profile_version_id_index',
+      properties: ['profileVersionId'],
+    },
     {
       name: 'applications_candidate_id_index',
       properties: ['candidateId'],
@@ -65,6 +72,17 @@ export const ApplicationSchema = new EntitySchema<Application>({
       updateRule: 'no action',
       deferMode: DeferMode.INITIALLY_IMMEDIATE,
       foreignKeyName: 'fk_jobs_id_applications',
+    } as unknown as EntitySchemaProperty<string, Application>,
+    profileVersionId: {
+      kind: 'm:1',
+      entity: () => CandidateProfileVersionSchema,
+      mapToPk: true,
+      joinColumn: 'profile_version_id',
+      nullable: true,
+      deleteRule: 'restrict',
+      updateRule: 'no action',
+      deferMode: DeferMode.INITIALLY_IMMEDIATE,
+      foreignKeyName: 'fk_candidate_profile_versions_id_applications',
     } as unknown as EntitySchemaProperty<string, Application>,
     resumeFileId: {
       kind: 'm:1',

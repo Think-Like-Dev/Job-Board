@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApplications } from '@api/hooks/useApplications';
 import { ApplicationCard } from './ApplicationCard';
 import { ApplicationDetailsModal } from './ApplicationDetailsModal';
 import { Skeleton } from '@ui/skeleton';
+import type { Application } from '@/types/application.types';
 
 export function ApplicationsTab() {
-  const [selectedApp, setSelectedApp] = useState<any>(null);
+  const { t } = useTranslation();
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
   const { data: applications, isLoading } = useApplications();
 
@@ -23,7 +26,11 @@ export function ApplicationsTab() {
   }
 
   if (!applications || applications.length === 0) {
-    return <div className="text-center py-12 text-muted-foreground">No applications found.</div>;
+    return (
+      <div className="py-12 text-center text-muted-foreground">
+        {t('applications.empty')}
+      </div>
+    );
   }
 
   return (

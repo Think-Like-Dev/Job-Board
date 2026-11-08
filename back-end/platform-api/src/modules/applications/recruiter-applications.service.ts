@@ -3,13 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { QueryOrder, type FilterQuery } from '@mikro-orm/core';
+import { type FilterQuery } from '@mikro-orm/core';
 import { ApplicationStatus } from '@common/constants/enums';
 import type { IPaginatedResult } from '@common/interfaces/paginated-result.interface';
 import { JobsService } from '@modules/jobs/jobs.service';
 import { ProfileReadService } from '@modules/profiles/profile-read.service';
 import type { ProfileView } from '@modules/profiles/profile.types';
 import { ApplicationQueries } from './application-queries';
+import { parseApplicationSort } from './application-sort';
 import {
   toRecruiterApplicationDetailDto,
   toRecruiterApplicationListItemDto,
@@ -63,9 +64,12 @@ export class RecruiterApplicationsService {
       where.candidateId = { $in: candidateIds };
     }
 
-    const result = await this.queries.findPage(where, query.page, query.limit, {
-      appliedAt: QueryOrder.DESC,
-    });
+    const result = await this.queries.findPage(
+      where,
+      query.page,
+      query.limit,
+      parseApplicationSort(query.sortBy, 'appliedAt'),
+    );
 
     const candidates = await this.queries.findCandidates(
       result.data.map((row) => row.candidateId),

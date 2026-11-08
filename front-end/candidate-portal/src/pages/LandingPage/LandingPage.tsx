@@ -1,62 +1,62 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { HeroSection } from './components/HeroSection';
 import { SearchBar } from './components/SearchBar';
-import { SidebarFilters } from './components/SidebarFilters';
-import { JobsList } from './components/JobsList';
-import { JobDetailsDrawer } from './components/JobDetailsDrawer';
+import { FiltersDialog } from './components/FiltersDialog';
+import { JobBrowser } from './components/JobBrowser';
 import { useJobSearch } from './useJobSearch';
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   const { jobId } = useParams<{ jobId: string }>();
-  const navigate = useNavigate();
   const search = useJobSearch();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const handleSearch = () => {
+    document
+      .getElementById('job-browser')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
       <HeroSection />
-      <SearchBar value={search.search} onChange={search.setSearch} />
 
-      <div className="container mx-auto px-4 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="w-full lg:w-1/4 shrink-0">
-            <SidebarFilters
-              category={search.category}
-              onCategoryChange={search.setCategory}
-              location={search.location}
-              onLocationChange={search.setLocation}
-              yearsOfExperience={search.yearsOfExperience}
-              onYearsOfExperienceChange={search.setYearsOfExperience}
-              currency={search.currency}
-              onCurrencyChange={search.setCurrency}
-              salaryRange={search.salaryRange}
-              onSalaryRangeChange={search.setSalaryRange}
-              onClear={search.clearFilters}
-              isFiltered={search.isFiltered}
-            />
-          </div>
+      <SearchBar
+        value={search.search}
+        onChange={search.setSearch}
+        onFilterClick={() => setFiltersOpen(true)}
+        onSearch={handleSearch}
+        hasActiveFilters={search.hasActiveFilters}
+      />
 
-          <div className="w-full lg:w-3/4">
-            <div className="mb-6 flex justify-between items-end">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">
-                  Open Positions
-                </h2>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Browse published jobs that are still accepting applications
-                </p>
-              </div>
-            </div>
+      <FiltersDialog
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        value={search.filterValues}
+        onApply={search.applyFilters}
+        onClear={search.clearJobFilters}
+      />
 
-            <JobsList filters={search.filters} onPageChange={search.setPage} />
+      <div id="job-browser" className="2xl:container mx-auto min-w-10/12 px-4 py-12 ">
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {t('jobs.openPositions')}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t('jobs.openPositionsSubtitle')}
+            </p>
           </div>
         </div>
-      </div>
 
-      <JobDetailsDrawer
-        jobId={jobId || ''}
-        isOpen={!!jobId}
-        onClose={() => navigate('/')}
-      />
+        <JobBrowser
+          filters={search.filters}
+          initialJobId={jobId}
+          onPageChange={search.setPage}
+        />
+      </div>
     </div>
   );
 }

@@ -5,12 +5,14 @@ import {
   JobListResponseSchema,
   JobDetailResponseSchema,
   JobFiltersSchema,
+  BookmarkListResponseSchema,
   BookmarkResponseSchema,
 } from '../schemas/job.schema';
 import type {
   JobDetail,
   JobFilters,
   JobListResponse,
+  JobSummary,
   BookmarkResponse,
 } from '../../types/job.types';
 
@@ -36,13 +38,41 @@ export async function getJobDetails(id: string): Promise<JobDetail> {
   return parsed.data;
 }
 
-/**
- * Reserved for the future bookmarks module. The current UI keeps bookmarks in
- * local storage, so this function is not called yet.
- */
-export async function toggleBookmark(jobId: string): Promise<BookmarkResponse> {
-  const response = await api.post<unknown>(
-    API_ENDPOINTS.JOBS.BOOKMARK(jobId),
+export async function getBookmarks(): Promise<JobSummary[]> {
+  const response = await api.get<unknown>(API_ENDPOINTS.BOOKMARKS.GET_ALL);
+  const parsed = parseSchema(
+    BookmarkListResponseSchema,
+    response,
+    'getBookmarks Response',
   );
-  return parseSchema(BookmarkResponseSchema, response, 'toggleBookmark Response');
+  return parsed.data;
+}
+
+export async function addBookmark(jobId: string): Promise<BookmarkResponse> {
+  const response = await api.post<unknown>(API_ENDPOINTS.BOOKMARKS.ADD(jobId));
+  return toBookmarkResponse(
+    parseSchema(BookmarkResponseSchema, response, 'addBookmark Response'),
+  );
+}
+
+export async function removeBookmark(jobId: string): Promise<BookmarkResponse> {
+  const response = await api.delete<unknown>(
+    API_ENDPOINTS.BOOKMARKS.REMOVE(jobId),
+  );
+  return toBookmarkResponse(
+    parseSchema(BookmarkResponseSchema, response, 'removeBookmark Response'),
+  );
+}
+
+function toBookmarkResponse(parsed: {
+  success: boolean;
+  message: string;
+  data: { jobId: string; isBookmarked: boolean };
+}): BookmarkResponse {
+  return {
+    success: parsed.success,
+    message: parsed.message,
+    jobId: parsed.data.jobId,
+    isBookmarked: parsed.data.isBookmarked,
+  };
 }

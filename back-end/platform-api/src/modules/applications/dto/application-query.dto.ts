@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 import { ApplicationStatus } from '@common/constants/enums';
 
@@ -9,6 +9,15 @@ export class CandidateApplicationsQueryDto extends PaginationQueryDto {
   @IsEnum(ApplicationStatus)
   @IsOptional()
   status?: ApplicationStatus;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Only return the candidate application for this job (used by the apply drawer)',
+  })
+  @IsUUID()
+  @IsOptional()
+  jobId?: string;
 }
 
 /**

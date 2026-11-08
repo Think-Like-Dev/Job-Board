@@ -78,9 +78,19 @@ export const JobDetailResponseSchema = z.object({
   data: JobDetailSchema,
 });
 
+export const BookmarkListResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  data: z.array(JobSummarySchema),
+});
+
 export const BookmarkResponseSchema = z.object({
   success: z.boolean(),
-  isBookmarked: z.boolean(),
+  message: z.string(),
+  data: z.object({
+    jobId: z.string(),
+    isBookmarked: z.boolean(),
+  }),
 });
 
 // ─── Request payload schemas ────────────────────────────────────────────────

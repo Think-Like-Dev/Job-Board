@@ -116,11 +116,15 @@ export interface JobFilters {
   orderByDirection?: 'ASC' | 'DESC';
 }
 
-export interface BookmarkPayload {
-  jobId: string;
+export interface BookmarkListResponse {
+  success: boolean;
+  message: string;
+  data: JobSummary[];
 }
 
 export interface BookmarkResponse {
   success: boolean;
+  message?: string;
+  jobId: string;
   isBookmarked: boolean;
 }

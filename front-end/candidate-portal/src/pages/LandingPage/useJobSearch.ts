@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { JobFilters } from '@/types/job.types';
 
@@ -12,6 +12,15 @@ export const SALARY_STEP = 5_000;
 export type SalaryRange = [number, number];
 
 export const DEFAULT_SALARY_RANGE: SalaryRange = [SALARY_MIN, SALARY_MAX];
+
+/** The subset of filters edited in the filter popup. */
+export interface JobFilterDraft {
+  category?: string;
+  location?: string;
+  yearsOfExperience?: string;
+  currency?: string;
+  salaryRange: SalaryRange;
+}
 
 /** Owns the landing-page search, filter and pagination state. */
 export function useJobSearch() {
@@ -32,16 +41,34 @@ export function useJobSearch() {
     SEARCH_DEBOUNCE_MS,
   );
 
-  useEffect(() => {
+  // Filter changes start a new result set, so the page resets to 1. Adjusting
+  // state during render (rather than in an effect) avoids a wasted render.
+  const filterKey = useMemo(
+    () =>
+      [
+        debouncedSearch,
+        debouncedCategory,
+        debouncedLocation,
+        debouncedExperience,
+        currency,
+        salaryRange[0],
+        salaryRange[1],
+      ].join('|'),
+    [
+      debouncedSearch,
+      debouncedCategory,
+      debouncedLocation,
+      debouncedExperience,
+      currency,
+      salaryRange,
+    ],
+  );
+  const [pageFilterKey, setPageFilterKey] = useState(filterKey);
+
+  if (pageFilterKey !== filterKey) {
+    setPageFilterKey(filterKey);
     setPage(1);
-  }, [
-    debouncedSearch,
-    debouncedCategory,
-    debouncedLocation,
-    debouncedExperience,
-    currency,
-    salaryRange,
-  ]);
+  }
 
   const filters = useMemo<JobFilters>(() => {
     const [min, max] = salaryRange;
@@ -78,15 +105,42 @@ export function useJobSearch() {
     setSalaryRange(DEFAULT_SALARY_RANGE);
   };
 
-  const isFiltered = Boolean(
-    search.trim() ||
-      category?.trim() ||
+  /** Clears only the filters edited in the popup, leaving the search text intact. */
+  const clearJobFilters = () => {
+    setCategory(undefined);
+    setLocation(undefined);
+    setYearsOfExperience(undefined);
+    setCurrency(undefined);
+    setSalaryRange(DEFAULT_SALARY_RANGE);
+  };
+
+  const applyFilters = (next: JobFilterDraft) => {
+    setCategory(next.category);
+    setLocation(next.location);
+    setYearsOfExperience(next.yearsOfExperience);
+    setCurrency(next.currency);
+    setSalaryRange(next.salaryRange);
+    setPage(1);
+  };
+
+  const filterValues: JobFilterDraft = {
+    category,
+    location,
+    yearsOfExperience,
+    currency,
+    salaryRange,
+  };
+
+  const hasActiveFilters = Boolean(
+    category?.trim() ||
       location?.trim() ||
       yearsOfExperience?.trim() ||
       currency ||
       salaryRange[0] > SALARY_MIN ||
       salaryRange[1] < SALARY_MAX,
   );
+
+  const isFiltered = Boolean(search.trim() || hasActiveFilters);
 
   return {
     search,
@@ -105,6 +159,10 @@ export function useJobSearch() {
     setPage,
     filters,
     clearFilters,
+    clearJobFilters,
+    applyFilters,
+    filterValues,
+    hasActiveFilters,
     isFiltered,
   };
 }

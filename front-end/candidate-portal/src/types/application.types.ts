@@ -16,40 +16,6 @@ export enum ApplicationStatus {
   AUTO_REJECTED = 'AUTO_REJECTED',
 }
 
-export enum InterviewMode {
-  ONLINE = 'ONLINE',
-  IN_PERSON = 'IN_PERSON',
-  PHONE_CALL = 'PHONE_CALL',
-}
-
-export interface InterviewDetails {
-  interviewRound: string; // e.g. "1 of 4"
-  scheduledAt: string;
-  mode: InterviewMode;
-  location: string; // address for in-person, meet link for online, interviewer name for phone
-}
-
-export interface OfferDetails {
-  offerExtendedAt: string;
-  offerDeadline: string;
-  offerLink?: string;
-}
-
-export interface RejectionDetails {
-  reason: string;
-}
-
-export interface WithdrawnDetails {
-  withdrawnAt: string;
-}
-
-export type ApplicationDetails =
-  | InterviewDetails
-  | OfferDetails
-  | RejectionDetails
-  | WithdrawnDetails
-  | Record<string, unknown>;
-
 export interface ApplicationStatusHistory {
   id: string;
   oldStatus?: ApplicationStatus | null;
@@ -76,8 +42,6 @@ export interface Application {
   coverLetterFileId?: string;
   coverLetterFileName?: string;
   coverLetterFileUrl?: string;
-  /** Not part of the list payload; present on the detail endpoint. */
-  details?: ApplicationDetails;
 }
 
 export interface ApplicationDetail extends Application {
@@ -96,14 +60,28 @@ export interface ApplyPayload {
   updateProfileResume?: boolean;
   /** Submit-time only: replace the central cover letter with the job-specific upload. */
   updateProfileCoverLetter?: boolean;
-  answers?: Record<string, unknown>;
   isDraft?: boolean;
 }
 
-export interface OfferResponsePayload {
-  accept: boolean;
-  reason?: string;
-  acceptanceDocFile?: File;
+/** Query parameters accepted by the candidate application list endpoint. */
+export interface ApplicationQueryParams {
+  page?: number;
+  limit?: number;
+  status?: ApplicationStatus;
+  jobId?: string;
+}
+
+/** Paginated envelope returned by `GET /applications/my`. */
+export interface ApplicationListResponse {
+  success: boolean;
+  message: string;
+  data: Application[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface ApplicationActionResponse {

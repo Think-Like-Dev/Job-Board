@@ -8,7 +8,6 @@ import { randomUUID } from 'node:crypto';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import {
   DriverException,
-  QueryOrder,
   UniqueConstraintViolationException,
   type EntityManager,
   type FilterQuery,
@@ -27,6 +26,7 @@ import { FilesService } from '@modules/files/files.service';
 import { JobsService } from '@modules/jobs/jobs.service';
 import { ProfileWriteService } from '@modules/profiles/profile-write.service';
 import { ApplicationQueries } from './application-queries';
+import { parseApplicationSort } from './application-sort';
 import {
   assertCanApply,
   assertDraftDeletable,
@@ -186,10 +186,16 @@ export class ApplicationsService {
     if (query.status) {
       where.status = query.status;
     }
+    if (query.jobId) {
+      where.jobId = query.jobId;
+    }
 
-    const result = await this.queries.findPage(where, query.page, query.limit, {
-      createdAt: QueryOrder.DESC,
-    });
+    const result = await this.queries.findPage(
+      where,
+      query.page,
+      query.limit,
+      parseApplicationSort(query.sortBy, 'createdAt'),
+    );
 
     const jobs = await this.queries.findJobs(
       result.data.map((row) => row.jobId),

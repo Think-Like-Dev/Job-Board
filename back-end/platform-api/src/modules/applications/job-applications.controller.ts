@@ -36,7 +36,6 @@ import {
 } from './dto/application-response.dto';
 
 @ApiTags('applications')
-@SessionAuth()
 @Controller('jobs')
 export class JobApplicationsController {
   constructor(

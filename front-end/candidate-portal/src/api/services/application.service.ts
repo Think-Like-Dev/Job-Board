@@ -2,28 +2,30 @@ import { api } from '../httpClient';
 import { API_ENDPOINTS } from '../endpoints.config';
 import { parseSchema } from '../../utils/schemaValidation';
 import {
-  ApplicationActionResponseSchema,
   ApplicationDetailResponseSchema,
   ApplicationListResponseSchema,
 } from '../schemas/application.schema';
 import type {
-  Application,
   ApplicationActionResponse,
   ApplicationDetail,
+  ApplicationListResponse,
+  ApplicationQueryParams,
   ApplyPayload,
-  OfferResponsePayload,
 } from '../../types/application.types';
 
-export async function getApplications(): Promise<Application[]> {
+export async function getApplications(
+  params: ApplicationQueryParams = {},
+): Promise<ApplicationListResponse> {
   const response = await api.get<unknown>(
     API_ENDPOINTS.APPLICATIONS.GET_ALL,
+    { params },
   );
   const parsed = parseSchema(
     ApplicationListResponseSchema,
     response,
     'getApplications Response',
   );
-  return parsed.data;
+  return parsed;
 }
 
 export async function getApplicationDetails(
@@ -66,9 +68,6 @@ export async function applyForJob(
     if (payload.updateProfileCoverLetter) {
       formData.append('updateProfileCoverLetter', 'true');
     }
-    if (payload.answers) {
-      formData.append('answers', JSON.stringify(payload.answers));
-    }
     if (payload.isDraft) formData.append('isDraft', 'true');
     data = formData;
     headers = { 'Content-Type': 'multipart/form-data' };
@@ -94,9 +93,11 @@ export async function applyForJob(
 
 export async function withdrawApplication(
   id: string,
+  reason?: string,
 ): Promise<ApplicationActionResponse> {
   const response = await api.post<unknown>(
     API_ENDPOINTS.APPLICATIONS.WITHDRAW(id),
+    reason ? { reason } : undefined,
   );
   const parsed = parseSchema(
     ApplicationDetailResponseSchema,
@@ -111,30 +112,9 @@ export async function withdrawApplication(
   };
 }
 
-export async function respondToOffer(
-  id: string,
-  payload: OfferResponsePayload,
-): Promise<ApplicationActionResponse> {
-  let data: FormData | OfferResponsePayload = payload;
-  let headers = {};
-
-  if (payload.acceptanceDocFile) {
-    const formData = new FormData();
-    formData.append('acceptanceDocFile', payload.acceptanceDocFile);
-    formData.append('accept', String(payload.accept));
-    if (payload.reason) formData.append('reason', payload.reason);
-    data = formData;
-    headers = { 'Content-Type': 'multipart/form-data' };
-  }
-
-  const response = await api.post<unknown>(
-    API_ENDPOINTS.APPLICATIONS.RESPOND_OFFER(id),
-    data,
-    { headers },
-  );
-  return parseSchema(
-    ApplicationActionResponseSchema,
-    response,
-    'respondToOffer Response',
-  );
+/** Hard-deletes a draft application. Submitted applications are immutable. */
+export async function deleteApplication(id: string): Promise<void> {
+  await api.delete(API_ENDPOINTS.APPLICATIONS.DELETE(id));
 }
+
+

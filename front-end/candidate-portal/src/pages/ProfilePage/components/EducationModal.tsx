@@ -66,7 +66,7 @@ export function EducationModal({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="sm:max-w-140">
         <DialogHeader>
           <DialogTitle>
             {initialData

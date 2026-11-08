@@ -1,36 +1,61 @@
-import { useNavigate } from 'react-router-dom';
 import {
   Bookmark,
   BookmarkCheck,
   Briefcase,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Clock,
-  DollarSign,
   MapPin,
   Share2,
 } from 'lucide-react';
-import { useJobsList } from '@api/hooks/useJobs';
-import type { JobFilters, JobSummary } from '@/types/job.types';
+import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { useBookmarkedJobIds, useToggleBookmark } from '@api/hooks/useJobs';
+import { getErrorMessage } from '@utils/errorMessage';
+import type { JobSummary } from '@/types/job.types';
 import { EmploymentType } from '@/types/job.types';
+import { ApplicationStatus } from '@/types/application.types';
+import type { RootState } from '@store/index';
+import { AuthModal } from '@components/auth/AuthModal';
 import { Card } from '@ui/card';
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
 import { Skeleton } from '@ui/skeleton';
 import { formatCompensation, formatIsoDate } from '@/lib/jobFormat';
-import { useLocalBookmarks } from '@/hooks/useLocalBookmarks';
+import { cn } from '@/lib/utils';
 
-const EMPLOYMENT_LABELS: Record<EmploymentType, string> = {
-  [EmploymentType.FULL_TIME]: 'Full time',
-  [EmploymentType.PART_TIME]: 'Part time',
-  [EmploymentType.CONTRACT]: 'Contract',
-  [EmploymentType.INTERN]: 'Internship',
+const EMPLOYMENT_LABEL_KEYS: Record<EmploymentType, string> = {
+  [EmploymentType.FULL_TIME]: 'jobs.employmentType.fullTime',
+  [EmploymentType.PART_TIME]: 'jobs.employmentType.partTime',
+  [EmploymentType.CONTRACT]: 'jobs.employmentType.contract',
+  [EmploymentType.INTERN]: 'jobs.employmentType.intern',
 };
 
-export function JobCard({ job }: { job: JobSummary }) {
-  const navigate = useNavigate();
-  const { isBookmarked, toggleBookmark } = useLocalBookmarks();
-  const bookmarked = isBookmarked(job.id);
+interface JobCardProps {
+  job: JobSummary;
+  isSelected?: boolean;
+  onSelect?: (jobId: string) => void;
+  applicationStatus?: ApplicationStatus;
+}
+
+export function JobCard({
+  job,
+  isSelected = false,
+  onSelect,
+  applicationStatus,
+}: JobCardProps) {
+  const { t } = useTranslation();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const bookmarkedIds = useBookmarkedJobIds();
+  const bookmarkMutation = useToggleBookmark();
+  const bookmarked = bookmarkedIds.has(job.id);
   const compensation = formatCompensation(job.compensation);
   const postedAt = job.publishedAt ?? job.createdAt;
+  const applied =
+    applicationStatus !== undefined &&
+    applicationStatus !== ApplicationStatus.DRAFT;
+  const draft = applicationStatus === ApplicationStatus.DRAFT;
 
   const handleShare = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -38,140 +63,183 @@ export function JobCard({ job }: { job: JobSummary }) {
     void navigator.clipboard.writeText(url);
   };
 
+  const handleBookmark = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!isAuthenticated) return;
+
+    bookmarkMutation.mutate(
+      { job, isBookmarked: bookmarked },
+      {
+        onError: (error) => {
+          toast.error(getErrorMessage(error, t('jobs.bookmarkFailed')));
+        },
+      },
+    );
+  };
+
+  const bookmarkButton = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="rounded-full text-muted-foreground hover:text-primary"
+      onClick={handleBookmark}
+      disabled={bookmarkMutation.isPending}
+      aria-label={bookmarked ? t('jobs.removeBookmark') : t('jobs.bookmark')}
+    >
+      {bookmarked ? (
+        <BookmarkCheck className="h-5 w-5 fill-primary text-primary" />
+      ) : (
+        <Bookmark className="h-5 w-5" />
+      )}
+    </Button>
+  );
+
   return (
     <Card
-      onClick={() => navigate(`/jobs/${job.id}`)}
-      className="p-6 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow cursor-pointer group"
+      onClick={() => onSelect?.(job.id)}
+      className={cn(
+        'group cursor-pointer gap-3 p-5 transition-shadow hover:shadow-md max-h-55',
+        isSelected && 'border-primary bg-primary/5 ring-2 ring-primary',
+      )}
     >
-      <div className="flex-1 space-y-4">
-        <div className="flex justify-between items-start gap-4">
-          <div className="min-w-0">
-            <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
-              {job.title}
-            </h3>
-            <p className="text-muted-foreground mt-1">{job.category}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full text-muted-foreground hover:text-foreground"
-              onClick={handleShare}
-              aria-label="Share job"
-            >
-              <Share2 className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full text-muted-foreground hover:text-primary"
-              onClick={(event) => {
-                event.stopPropagation();
-                toggleBookmark(job);
-              }}
-              aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark job'}
-            >
-              {bookmarked ? (
-                <BookmarkCheck className="w-6 h-6 fill-primary text-primary" />
-              ) : (
-                <Bookmark className="w-6 h-6" />
-              )}
-            </Button>
-          </div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold transition-colors group-hover:text-primary truncate">
+            {job.title}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">{job.category}</p>
         </div>
-
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4" />
-            {job.location}
-          </div>
-          {job.yearsOfExperience && (
-            <div className="flex items-center gap-1.5">
-              <Briefcase className="w-4 h-4" />
-              {job.yearsOfExperience}
-            </div>
+        <div className="flex shrink-0 gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full text-muted-foreground hover:text-foreground"
+            onClick={handleShare}
+            aria-label={t('jobs.share')}
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+          {isAuthenticated ? (
+            bookmarkButton
+          ) : (
+            <AuthModal>{bookmarkButton}</AuthModal>
           )}
-          {compensation && (
-            <div className="flex items-center gap-1.5">
-              <DollarSign className="w-4 h-4" />
-              {compensation}
-            </div>
-          )}
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4" />
-            {formatIsoDate(postedAt)}
-          </div>
         </div>
+      </div>
 
-        <p className="text-sm line-clamp-2 text-foreground/80">
-          {job.description}
-        </p>
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="h-4 w-4" />
+          {job.location}
+        </div>
+        {job.yearsOfExperience && (
+          <div className="flex items-center gap-1.5">
+            <Briefcase className="h-4 w-4" />
+            {job.yearsOfExperience}
+          </div>
+        )}
+        {compensation && (
+          <div className="flex items-center gap-1.5">
+            {compensation}
+          </div>
+        )}
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-4 w-4" />
+          {formatIsoDate(postedAt)}
+        </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">
-            {EMPLOYMENT_LABELS[job.employmentType]}
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="secondary">
+          {t(EMPLOYMENT_LABEL_KEYS[job.employmentType])}
+        </Badge>
+        {job.keywords.slice(0, 3).map((keyword) => (
+          <Badge key={keyword} variant="secondary">
+            {keyword}
           </Badge>
-          {job.keywords.slice(0, 4).map((keyword) => (
-            <Badge key={keyword} variant="secondary">
-              {keyword}
-            </Badge>
-          ))}
-        </div>
+        ))}
+        {applied && <Badge variant="outline">{t('jobs.applied')}</Badge>}
+        {draft && <Badge variant="outline">{t('jobs.draft')}</Badge>}
       </div>
     </Card>
   );
 }
 
 interface JobsListProps {
-  filters: JobFilters;
+  jobs: JobSummary[];
+  isLoading: boolean;
+  isError?: boolean;
+  currentPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
+  selectedJobId?: string;
+  onSelect: (jobId: string) => void;
+  applicationStatusByJobId?: Map<string, ApplicationStatus>;
 }
 
-export function JobsList({ filters, onPageChange }: JobsListProps) {
-  const { data, isLoading } = useJobsList(filters);
-  const jobs = data?.data ?? [];
-  const pagination = data?.pagination;
-  const currentPage = pagination?.page ?? filters.page ?? 1;
-  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
+export function JobsList({
+  jobs,
+  isLoading,
+  isError = false,
+  currentPage,
+  totalPages,
+  onPageChange,
+  selectedJobId,
+  onSelect,
+  applicationStatusByJobId,
+}: JobsListProps) {
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="p-6">
-            <div className="space-y-3">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-1/4" />
-              <div className="flex gap-4 pt-4">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-20" />
-              </div>
-              <Skeleton className="h-16 w-full mt-4" />
+        {[1, 2, 3].map((index) => (
+          <Card key={index} className="gap-3 p-5">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+            <div className="flex gap-4 pt-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
             </div>
+            <Skeleton className="mt-2 h-12 w-full" />
           </Card>
         ))}
       </div>
     );
   }
 
+  if (isError) {
+    return (
+      <Card className="p-10 text-center text-muted-foreground">
+        {t('jobs.loadFailed')}
+      </Card>
+    );
+  }
+
   if (!jobs.length) {
     return (
-      <Card className="p-12 text-center text-muted-foreground">
-        No jobs match your filters.
+      <Card className="p-10 text-center text-muted-foreground">
+        {t('jobs.empty')}
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-1">
       {jobs.map((job) => (
-        <JobCard key={job.id} job={job} />
+        <JobCard
+          key={job.id}
+          job={job}
+          isSelected={job.id === selectedJobId}
+          onSelect={onSelect}
+          applicationStatus={applicationStatusByJobId?.get(job.id)}
+        />
       ))}
 
-      <div className="flex items-center justify-between gap-2 pt-4">
+      <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t bg-background/95 py-3 backdrop-blur">
         <p className="text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
+          {t('jobs.pageOf', { page: currentPage, total: totalPages })}
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -180,7 +248,8 @@ export function JobsList({ filters, onPageChange }: JobsListProps) {
             disabled={currentPage <= 1}
             onClick={() => onPageChange(currentPage - 1)}
           >
-            Previous
+            <ChevronLeftIcon />
+            {t('jobs.previous')}
           </Button>
           <Button
             variant="outline"
@@ -188,7 +257,8 @@ export function JobsList({ filters, onPageChange }: JobsListProps) {
             disabled={currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
           >
-            Next
+            {t('jobs.next')}
+            <ChevronRightIcon />
           </Button>
         </div>
       </div>

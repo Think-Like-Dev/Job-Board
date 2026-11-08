@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -9,244 +10,260 @@ import {
 } from '@ui/dialog';
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
-import { Textarea } from '@ui/textarea';
 import { Label } from '@ui/label';
-import { formatDateToLocale, formatDateTimeToLocale } from '@utils/date';
+import { Skeleton } from '@ui/skeleton';
+import { Textarea } from '@ui/textarea';
+import { formatDateToLocale } from '@utils/date';
+import { getErrorMessage } from '@utils/errorMessage';
 import { openAuthenticatedFile } from '@utils/fileActions';
-import { useRespondToOffer } from '@api/hooks/useApplications';
-import { toast } from 'sonner';
-import type { Application } from '@/types/application.types';
+import {
+  useApplicationDetails,
+  useWithdrawApplication,
+} from '@api/hooks/useApplications';
 import { ApplicationStatus } from '@/types/application.types';
 
 interface ApplicationDetailsModalProps {
-  app: Application | null;
+  applicationId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function ApplicationDetailsModal({
-  app,
+  applicationId,
   isOpen,
   onClose,
 }: ApplicationDetailsModalProps) {
   const { t } = useTranslation();
-  const [rejectReason, setRejectReason] = useState('');
-  const [showRejectForm, setShowRejectForm] = useState(false);
-  const respondMutation = useRespondToOffer();
+  const { data: app, isLoading, isError } = useApplicationDetails(
+    applicationId ?? undefined,
+  );
+  const withdrawMutation = useWithdrawApplication();
+  const [reason, setReason] = useState('');
+  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
 
-  const handleRespond = (accept: boolean, reason?: string) => {
+  const close = () => {
+    setReason('');
+    setShowWithdrawForm(false);
+    onClose();
+  };
+
+  const handleWithdraw = () => {
     if (!app) return;
-    respondMutation.mutate(
-      { id: app.id, payload: { accept, reason } },
+    withdrawMutation.mutate(
+      { id: app.id, reason: reason.trim() || undefined },
       {
         onSuccess: () => {
-          toast.success(
-            accept
-              ? t('applications.details.offerAccepted')
-              : t('applications.details.offerRejected'),
+          toast.success(t('applications.withdrawn'));
+          close();
+        },
+        onError: (error) => {
+          toast.error(
+            getErrorMessage(error, t('applications.withdrawFailed')),
           );
-          onClose();
         },
       },
     );
   };
 
-  if (!app) return null;
-
-  const details = (app.details ?? {}) as Record<string, unknown>;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl">{app.jobTitle}</DialogTitle>
-          <div className="mt-2 flex items-center gap-2">
-            <Badge variant="secondary">
-              {t(`applications.status.${app.status}`)}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              {t('applications.appliedOn', {
-                date: formatDateToLocale(app.appliedAt ?? app.createdAt),
-              })}
-            </span>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-150">
+        {isLoading && (
+          <div className="space-y-4 py-6">
+            <DialogTitle className="sr-only">
+              {t('applications.loadingDetails')}
+            </DialogTitle>
+            <Skeleton className="h-7 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="mt-6 h-24 w-full" />
+            <Skeleton className="h-32 w-full" />
           </div>
-        </DialogHeader>
+        )}
 
-        <div className="space-y-6 py-4">
-          {app.status === ApplicationStatus.REJECTED && (
-            <div className="rounded-md border border-red-500/20 bg-red-500/10 p-4">
-              <h4 className="mb-1 font-semibold text-red-700 dark:text-red-400">
-                {t('applications.details.applicationUpdate')}
-              </h4>
-              <p className="text-sm text-red-600 dark:text-red-300">
-                {details?.reason as string}
-              </p>
-            </div>
-          )}
+        {!isLoading && isError && (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {t('applications.detailsLoadFailed')}
+              </DialogTitle>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={close}>
+                {t('applications.details.close')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
 
-          {app.status === ApplicationStatus.INTERVIEW &&
-            Boolean(details.interviewRound) && (
-            <div className="space-y-3 rounded-md border border-blue-500/20 bg-blue-500/10 p-4">
-              <h4 className="font-semibold text-blue-700 dark:text-blue-400">
-                {t('applications.details.interviewScheduled', {
-                  round: details?.interviewRound as string,
-                })}
-              </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="mb-1 block text-muted-foreground">
-                    {t('applications.details.dateTime')}
-                  </span>
-                  <span className="font-medium">
-                    {formatDateTimeToLocale(details?.scheduledAt as string)}
-                  </span>
+        {!isLoading && !isError && app && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-xl">{app.jobTitle}</DialogTitle>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  {t(`applications.status.${app.status}`)}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {app.status === ApplicationStatus.DRAFT
+                    ? t('applications.createdOn', {
+                        date: formatDateToLocale(app.createdAt),
+                      })
+                    : t('applications.appliedOn', {
+                        date: formatDateToLocale(
+                          app.appliedAt ?? app.createdAt,
+                        ),
+                      })}
+                </span>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              <div>
+                <h4 className="mb-3 border-b pb-2 font-medium">
+                  {t('applications.details.yourApplication')}
+                </h4>
+                <div className="space-y-4 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-muted-foreground">
+                      {t('applications.details.jobCategory')}
+                    </span>
+                    <span>{app.jobCategory}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-muted-foreground">
+                      {t('applications.details.jobLocation')}
+                    </span>
+                    <span>{app.jobLocation}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-muted-foreground">
+                      {t('applications.details.resume')}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-left text-primary hover:underline"
+                      onClick={() => void openAuthenticatedFile(app.resumeFileId)}
+                    >
+                      {app.resumeFileName}
+                    </button>
+                  </div>
+                  {app.coverLetterFileId && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="text-muted-foreground">
+                        {t('applications.details.coverLetter')}
+                      </span>
+                      <button
+                        type="button"
+                        className="text-left text-primary hover:underline"
+                        onClick={() =>
+                          void openAuthenticatedFile(
+                            app.coverLetterFileId as string,
+                          )
+                        }
+                      >
+                        {app.coverLetterFileName}
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <span className="mb-1 block text-muted-foreground">
-                    {t('applications.details.mode')}
-                  </span>
-                  <span className="font-medium">
-                    {details?.mode as string}
-                  </span>
-                </div>
-              </div>
-              <div className="border-t border-blue-500/20 pt-2">
-                <span className="mb-1 block text-sm text-muted-foreground">
-                  {t('applications.details.location')}
-                </span>
-                <span className="break-all text-sm font-medium text-blue-700 dark:text-blue-400">
-                  {details?.location as string}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {app.status === ApplicationStatus.OFFER_EXTENDED &&
-            Boolean(details.offerDeadline) && (
-            <div className="space-y-4 rounded-md border border-green-500/20 bg-green-500/10 p-4">
-              <h4 className="font-semibold text-green-700 dark:text-green-400">
-                {t('applications.details.offerCongratulations')}
-              </h4>
-              <div className="text-sm">
-                <span className="text-muted-foreground">
-                  {t('applications.details.offerExtendedOn')}
-                </span>
-                <span className="font-medium">
-                  {formatDateToLocale(details?.offerExtendedAt as string)}
-                </span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium text-destructive">
-                  {t('applications.details.respondByLabel')}
-                </span>
-                <span className="font-medium">
-                  {formatDateToLocale(details?.offerDeadline as string)}
-                </span>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  className="bg-green-600 text-white hover:bg-green-700"
-                  onClick={() => handleRespond(true)}
-                  disabled={respondMutation.isPending || showRejectForm}
-                >
-                  {t('applications.details.acceptOffer')}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-destructive/20 text-destructive hover:bg-destructive/10"
-                  onClick={() => setShowRejectForm(true)}
-                  disabled={respondMutation.isPending || showRejectForm}
-                >
-                  {t('applications.details.declineOffer')}
-                </Button>
+              <div>
+                <h4 className="mb-3 border-b pb-2 font-medium">
+                  {t('applications.statusHistory')}
+                </h4>
+                {app.statusHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('applications.statusHistoryEmpty')}
+                  </p>
+                ) : (
+                  <ol className="space-y-4">
+                    {app.statusHistory.map((entry) => (
+                      <li key={entry.id} className="flex gap-3 text-sm">
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">
+                              {t(`applications.status.${entry.newStatus}`)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDateToLocale(entry.createdAt)}
+                            </span>
+                          </div>
+                          {entry.reason && (
+                            <p className="mt-1 text-muted-foreground">
+                              {entry.reason}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </div>
 
-              {showRejectForm && (
-                <div className="mt-4 space-y-3 border-t border-green-500/20 pt-4">
-                  <Label>
-                    {t('applications.details.reasonForDeclining')}{' '}
-                    <span className="text-destructive">*</span>
-                  </Label>
-                  <Textarea
-                    placeholder={t('applications.details.reasonPlaceholder')}
-                    value={rejectReason}
-                    onChange={(event) => setRejectReason(event.target.value)}
-                  />
-                  <div className="flex gap-2">
+              {app.status === ApplicationStatus.APPLIED && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4">
+                  <h4 className="font-medium">
+                    {t('applications.withdrawTitle')}
+                  </h4>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t('applications.withdrawDescription')}
+                  </p>
+
+                  {showWithdrawForm ? (
+                    <div className="mt-4 space-y-3">
+                      <Label htmlFor="withdraw-reason">
+                        {t('applications.withdrawReason')}
+                      </Label>
+                      <Textarea
+                        id="withdraw-reason"
+                        value={reason}
+                        onChange={(event) => setReason(event.target.value)}
+                        placeholder={t(
+                          'applications.withdrawReasonPlaceholder',
+                        )}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleWithdraw}
+                          disabled={withdrawMutation.isPending}
+                        >
+                          {t('applications.confirmWithdraw')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowWithdrawForm(false)}
+                          disabled={withdrawMutation.isPending}
+                        >
+                          {t('common.cancel')}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <Button
                       variant="destructive"
-                      onClick={() => handleRespond(false, rejectReason)}
-                      disabled={!rejectReason.trim()}
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setShowWithdrawForm(true)}
                     >
-                      {t('applications.details.confirmDecline')}
+                      {t('applications.withdraw')}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowRejectForm(false)}
-                    >
-                      {t('common.cancel')}
-                    </Button>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
 
-          <div>
-            <h4 className="mb-3 border-b pb-2 font-medium">
-              {t('applications.details.yourApplication')}
-            </h4>
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <span className="text-muted-foreground">
-                  {t('applications.details.jobCategory')}
-                </span>
-                <span>{app.jobCategory}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <span className="text-muted-foreground">
-                  {t('applications.details.jobLocation')}
-                </span>
-                <span>{app.jobLocation}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <span className="text-muted-foreground">
-                  {t('applications.details.resume')}
-                </span>
-                <button
-                  type="button"
-                  className="text-left text-primary hover:underline"
-                  onClick={() => void openAuthenticatedFile(app.resumeFileId)}
-                >
-                  {app.resumeFileName}
-                </button>
-              </div>
-              {app.coverLetterFileId && (
-                <div className="grid grid-cols-2 gap-2">
-                  <span className="text-muted-foreground">
-                    {t('applications.details.coverLetter')}
-                  </span>
-                  <button
-                    type="button"
-                    className="text-left text-primary hover:underline"
-                    onClick={() =>
-                      void openAuthenticatedFile(app.coverLetterFileId as string)
-                    }
-                  >
-                    {app.coverLetterFileName}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t('applications.details.close')}
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button variant="outline" onClick={close}>
+                {t('applications.details.close')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -1,4 +1,5 @@
 import type { JobFilters } from '@/types/job.types';
+import type { ApplicationQueryParams } from '@/types/application.types';
 
 /**
  * Centralised TanStack Query key factory.
@@ -17,6 +18,9 @@ export const QUERY_KEYS = {
   },
   APPLICATIONS: {
     ALL: ['applications'] as const,
+    MY: (params: ApplicationQueryParams = {}) =>
+      ['applications', 'my', params] as const,
+    JOB: (jobId: string) => ['applications', 'job', jobId] as const,
     DETAIL: (id: string) => ['applications', 'detail', id] as const,
   },
   PROFILE: {

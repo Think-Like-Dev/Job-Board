@@ -8,11 +8,11 @@ export const API_ENDPOINTS = {
   JOBS: {
     GET_ALL: '/public/jobs',
     GET_DETAILS: (id: string) => `/public/jobs/${id}`,
-    // Bookmarks are UI-only for now; these routes are reserved for the future
-    // bookmarks module and are not called by the current UI.
-    BOOKMARK: (id: string) => `/jobs/${id}/bookmark`,
-    REMOVE_BOOKMARK: (id: string) => `/jobs/${id}/bookmark`,
-    GET_BOOKMARKS: '/jobs/bookmarks',
+  },
+  BOOKMARKS: {
+    GET_ALL: '/bookmarks',
+    ADD: (jobId: string) => `/bookmarks/${jobId}`,
+    REMOVE: (jobId: string) => `/bookmarks/${jobId}`,
   },
   PROFILE: {
     GET: '/profile',
@@ -32,7 +32,7 @@ export const API_ENDPOINTS = {
     GET_DETAILS: (id: string) => `/applications/my/${id}`,
     APPLY: (jobId: string) => `/jobs/${jobId}/apply`,
     WITHDRAW: (id: string) => `/applications/${id}/withdraw`,
-    RESPOND_OFFER: (id: string) => `/applications/${id}/offer-response`,
+    DELETE: (id: string) => `/applications/${id}`,
   },
   NOTIFICATIONS: {
     STREAM: '/notifications/stream',

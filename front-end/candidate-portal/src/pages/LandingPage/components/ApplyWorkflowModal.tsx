@@ -14,8 +14,9 @@ import { Input } from '@ui/input';
 import { Label } from '@ui/label';
 import { useApplyForJob } from '@api/hooks/useApplications';
 import { useProfile } from '@api/hooks/useProfile';
+import { getErrorMessage } from '@utils/errorMessage';
 import { validateCoverLetter, validateResume } from '@utils/validators';
-import type { ApplyPayload } from '@/types/application.types';
+import type { Application, ApplyPayload } from '@/types/application.types';
 
 interface ApplyWorkflowModalProps {
   jobId: string;
@@ -23,6 +24,8 @@ interface ApplyWorkflowModalProps {
   onClose: () => void;
   onApplied: () => void;
   coverLetterRequired?: boolean;
+  /** Existing draft to continue; its files are kept unless a new one is chosen. */
+  draft?: Application | null;
 }
 
 const STEPS = {
@@ -37,6 +40,7 @@ export function ApplyWorkflowModal({
   onClose,
   onApplied,
   coverLetterRequired = false,
+  draft = null,
 }: ApplyWorkflowModalProps) {
   const { t } = useTranslation();
   const { data: profile } = useProfile();
@@ -50,8 +54,12 @@ export function ApplyWorkflowModal({
     useState(false);
   const [declared, setDeclared] = useState(false);
 
-  const hasResume = Boolean(profile?.resume || resumeFile);
-  const hasCoverLetter = Boolean(profile?.coverLetter || coverLetterFile);
+  const hasResume = Boolean(
+    profile?.resume || draft?.resumeFileId || resumeFile,
+  );
+  const hasCoverLetter = Boolean(
+    profile?.coverLetter || draft?.coverLetterFileId || coverLetterFile,
+  );
 
   function handleResumeFile(selected: File | undefined) {
     if (!selected) return;
@@ -117,8 +125,8 @@ export function ApplyWorkflowModal({
       );
       if (!isDraft) onApplied();
       onClose();
-    } catch {
-      toast.error(t('apply.failed'));
+    } catch (error) {
+      toast.error(getErrorMessage(error, t('apply.failed')));
     }
   }
 
@@ -148,6 +156,10 @@ export function ApplyWorkflowModal({
                 {profile?.resume ? (
                   <p className="text-sm text-muted-foreground">
                     {t('apply.resume.central')}: {profile.resume.filename}
+                  </p>
+                ) : draft?.resumeFileId ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('apply.resume.draft')}: {draft.resumeFileName}
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -188,6 +200,11 @@ export function ApplyWorkflowModal({
                   <p className="text-sm text-muted-foreground">
                     {t('apply.coverLetter.central')}:{' '}
                     {profile.coverLetter.filename}
+                  </p>
+                ) : draft?.coverLetterFileId ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('apply.coverLetter.draft')}:{' '}
+                    {draft.coverLetterFileName}
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">

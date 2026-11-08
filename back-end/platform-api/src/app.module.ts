@@ -14,6 +14,7 @@ import { JobsModule } from '@modules/jobs/jobs.module';
 import { ApplicationsModule } from '@modules/applications/applications.module';
 import { SkillsModule } from '@modules/skills/skills.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
+import { BookmarksModule } from '@modules/bookmarks/bookmarks.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ProfilesModule } from '@modules/profiles/profiles.module';
     ApplicationsModule,
     SkillsModule,
     ProfilesModule,
+    BookmarksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

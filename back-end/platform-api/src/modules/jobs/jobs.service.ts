@@ -215,6 +215,23 @@ export class JobsService extends GenericCrudService<Job> {
     return job;
   }
 
+  /**
+   * Published, still-open jobs for a set of ids. Used by saved jobs so a
+   * bookmark that points at an archived or expired job is simply hidden.
+   */
+  findPublicJobsByIds(ids: string[]): Promise<Job[]> {
+    if (!ids.length) {
+      return Promise.resolve([]);
+    }
+
+    return this.repository.find({
+      id: { $in: ids },
+      deletedAt: null,
+      status: JobStatus.PUBLISHED,
+      lastApplicationDate: { $gte: this.todayIsoDate() },
+    });
+  }
+
   /** Jobs are never hard-deleted; use `softDeleteJob` instead. */
   override remove(): Promise<boolean> {
     return Promise.reject(

@@ -22,6 +22,30 @@ The Project uses following tech stack and tools.
 
 > Note: The files Job-Board-up-v1.sql and Job-Board.dbml are just reference for initial db design. For the modules already implemented, MikroORM migrations in `platform-api/src/migrations` are the schema source; `recruitment_db.sql` and `ats_ai_db.sql` remain references for the full planned schema split by service.
 
+## Object storage (Garage S3)
+
+Uploaded files are stored in **Garage**, a self-hosted S3-compatible object store. Each environment has its own bucket and Docker volume; PostgreSQL `files` rows only hold metadata plus the object key.
+
+Path prefixes inside the single bucket:
+
+* `resumes/`
+* `cover-letters/`
+* `offer-letters/`
+* `profile-images/`
+* `other/`
+
+Compose provides:
+
+* `garage` — S3 API (`3900`) and admin API (`3903`).
+* `garage-init` — one-shot layout/bucket/key bootstrap.
+* `garage-webui` — optional file browser, `debug` profile only (`http://localhost:3909`).
+
+Per-environment volumes: `job-board-local-garage-data`, `job-board-staging-garage-data`, `job-board-prod-garage-data`.
+
+All `/api/files` routes require a valid session. File bytes stream through `GET /api/files/:id/content`; no public or presigned URL is exposed to browsers. Ownership is stored on `files.owner_type`/`owner_id`: candidates can only read and delete their own uploads, while internal users can read every file for candidate review. Recruiters can additionally share a file with a specific candidate through `POST /api/files/:id/grants` (backed by `file_access_grants`); the candidate can then read it but cannot delete it, and the grant can be revoked.
+
+See `platform-api/API-Readme.md` §6.6 for S3 env vars, bootstrap details, file access rules, and Garage quirks.
+
 
 Local everything in Docker
 ```sh
@@ -48,6 +72,7 @@ docker compose --env-file ./env/.env.production up -d --build
 | TypeScript build | optional | image build | image build |
 | Postgres | Docker | Docker/managed | managed eventually |
 | Redis | Docker | Docker/managed | managed eventually |
+| Object storage | Garage (Docker) | Garage (Docker) | Garage/managed |
 | .env | .env.local | .env.staging | .env.production/external |
 | Secrets in Git | ❌ | ❌ | ❌ |
 | Fixed OTP | ✅ | ❌ | ❌ |

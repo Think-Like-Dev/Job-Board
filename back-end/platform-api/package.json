@@ -39,6 +39,8 @@
     "seed:run:dist": "mikro-orm seeder:run --config ./dist/src/database/mikro-orm.cli.config.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1163.0",
+    "@aws-sdk/s3-request-presigner": "^3.1163.0",
     "@mikro-orm/cli": "7.2.3",
     "@mikro-orm/core": "^7.2.3",
     "@mikro-orm/migrations": "^7.2.3",
@@ -72,6 +74,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^26.6.4",
     "@types/supertest": "^7.2.1",
     "eslint": "^10.12.0",

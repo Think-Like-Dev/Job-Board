@@ -1,11 +1,11 @@
 # AI Platform API
 
-You are a Principal AI Microservice Architect and Senior Python Engineer. Your task is to implement a production-grade, asynchronous AI Microservice for an Applicant Tracking System (ATS) platform using Python 3.14+, FastAPI, SQLModel (PostgreSQL via asyncpg), PydanticAI, LangChain, and Cryptography.
+You are a Principal AI Microservice Architect and Senior Python Engineer. Your task is to implement a production-grade, asynchronous AI Microservice for an Applicant Tracking System (ATS) platform using Python 3.14+, FastAPI, SQLModel (PostgreSQL + pgvector via asyncpg), Pydantic v2 (pure type-safety & structured schemas), LangGraph (state-graph agent workflows & step navigation), RabbitMQ (aio-pika), and Cryptography (AES-256-GCM).
 
 Enforce strict code quality:
 1. Linting & Formatting: Compliance with `ruff format` and `ruff check --fix` across every module.
 2. Type Safety: Explicit type annotations throughout (PEP 484), including TypeVars and Generics where applicable.
-3. Architecture: Modular, layered architecture following SOLID principles.
+3. Architecture: Modular, layered, event-driven state-graph architecture following SOLID principles.
 4. Security: Zero plain-text key exposure in memory, logs, or API responses.
 
 ### Example Project Directory Structure
@@ -21,29 +21,38 @@ ai_service/
 │   ├── api/
 │   │   ├── v1/
 │   │   │   ├── endpoints/
-│   │   │   │   ├── ats.py           # Resume Analysis & Job Matching Endpoints
+│   │   │   │   ├── ats.py           # Resume Analysis & Job Matching Endpoints (Test / Admin)
 │   │   │   │   ├── providers.py     # AI Providers, Models, & Credentials (BYOK)
 │   │   │   │   └── health.py        # Service Health Checks
 │   │   │   └── router.py
 │   ├── core/
 │   │   ├── config.py                # Environment Settings (pydantic-settings)
-│   │   ├── security.py              # Encryption / Decryption Utilities (AES-256)
+│   │   ├── security.py              # Encryption / Decryption Utilities (AES-256-GCM)
+│   │   ├── rabbitmq.py              # RabbitMQ Connection & Channel Manager (aio-pika)
 │   │   └── exceptions.py            # Global Custom Exception Handlers
 │   ├── db/
 │   │   ├── session.py               # Async Engine & Session Manager
 │   │   └── base.py                  # Database Metadata Import Base
-│   ├── models/                      # SQLModel Relational Entities
-│   │   ├── ats.py                   # ResumeAnalysis, CandidateJobMatch
+│   ├── graphs/                      # LangGraph StateGraph Definitions
+│   │   ├── state.py                 # Pydantic GraphState Schema (Pure Pydantic v2)
+│   │   ├── nodes.py                 # Graph Nodes (Extract, OCR Fallback, Embed, Score)
+│   │   └── resume_scoring_graph.py  # Compiled StateGraph with Conditional Edges
+│   ├── models/                      # SQLModel Relational Entities (Postgres + pgvector)
+│   │   ├── ats.py                   # ResumeAnalysis, CandidateJobMatch, ResumeEmbedding, JobEmbedding
 │   │   └── llm_config.py            # AIProviders, AIModels, AICredentials, AIModelFailures
-│   ├── schemas/                     # Pydantic Output / Request Schemas
+│   ├── schemas/                     # Pydantic Output / Request Schemas (Pure Pydantic v2)
 │   │   ├── resume.py                # Extracted Resume Data Structure
 │   │   ├── job_match.py             # Match Score & Skill Gap Analysis
 │   │   └── credentials.py           # BYOK Requests & Responses
 │   ├── services/
-│   │   ├── ats_service.py           # Resume Parsing & Embedding/Matching Logic
 │   │   ├── orchestrator.py          # Dynamic LLM Provider Selection & Fallback Engine
-│   │   └── parser.py                # Raw PDF/Docx Extraction Pipeline
-│   └── main.py                      # FastAPI App Initialization
+│   │   ├── parser.py                # Raw PDF/Docx Extraction Pipeline (PyMuPDF / python-docx)
+│   │   ├── embedding_service.py     # Vector Generation & pgvector Similarity Search
+│   │   └── storage_client.py        # Garage S3 Stream Reader
+│   ├── workers/                     # Async RabbitMQ Event Consumers
+│   │   ├── scoring_worker.py        # Listens to 'application.submitted' -> Invokes LangGraph
+│   │   └── email_worker.py          # Listens to 'email.send' -> Formats & Dispatches Notifications
+│   └── main.py                      # FastAPI App Initialization & Worker Startup
 ├── pyproject.toml                   # Ruff & Dependency Config
 └── Dockerfile
 ```
@@ -51,15 +60,17 @@ ai_service/
 ## 1. SYSTEM ARCHITECTURE & MODULE BREAKDOWN
 
 Layer Structure:
-  [HTTP Layer: FastAPI Routers]
+  [Event Layer: RabbitMQ Consumers / Workers (aio-pika)]
         │
-  [Service Layer: Business Logic & File Parsing]
+  [HTTP Layer: FastAPI Routers (BYOK Admin & Direct Operations)]
+        │
+  [State-Graph Layer: LangGraph Workflows with Conditional Routing & Checkpoints]
+        │
+  [Schema & Validation Layer: Pure Pydantic v2 BaseModels & Structured Outputs]
         │
   [Orchestration Layer: BYOK Manager, Key Decryption & Provider Fallback Engine]
         │
-  [Framework Layer: PydanticAI / LangChain Agents]
-        │
-  [Data Access Layer: SQLModel Repositories & Async Engine]
+  [Data Access Layer: SQLModel Repositories, Asyncpg Engine & PostgreSQL + pgvector]
 
 ---
 
@@ -86,8 +97,8 @@ The core execution engine MUST support dynamic routing, key rotation, and automa
    FOR EACH (provider, model, credential) IN active_routes:
        TRY:
            a. Decrypt credential key via context manager.
-           b. Instantiate the provider-specific client (PydanticAI Agent or LangChain LLM).
-           c. Execute prompt with enforced Pydantic structured output schema.
+           b. Instantiate the provider-specific LLM client with structured output enforcement (Pydantic v2 schema via `.with_structured_output()`).
+           c. Execute node / prompt within the LangGraph workflow.
            d. RETURN structured output immediately on success.
        EXCEPT (RateLimitError, AuthenticationError, APIConnectionError, TimeoutError) AS err:
            a. Log exact failure details into `AIModelFailures` table:
@@ -100,35 +111,78 @@ The core execution engine MUST support dynamic routing, key rotation, and automa
    IF ALL ROUTES FAIL:
        RAISE AllProvidersExhaustedException("Every active AI provider/credential failed to produce a result.")
 
-MODULE 3: ATS RESUME EXTRACTION & MATCHING ENGINE
+MODULE 3: ATS RESUME EXTRACTION & HYBRID MATCHING GRAPH
 --------------------------------------------------------------------------------
 1. Text Extraction Pipeline:
-   - Accept PDF or DOCX file input via `UploadFile`.
-   - Extract raw text using non-blocking asynchronous document processing libraries (`pypdf`, `python-docx`).
-2. Resume Parsing (`/ats/parse-resume`):
-   - Pass raw text to `LLMOrchestrator` enforcing structured Pydantic output (`ResumeExtractionSchema`).
-   - Save result to database table `resume_analysis`:
-     - `extracted_data`: JSON field containing parsed skills, experience, education, personal info.
-     - `summary`: High-level candidate executive summary.
-3. Candidate-Job Matching (`/ats/match-candidate`):
-   - Input: Job Description (text) + Parsed Resume / Candidate ID.
-   - Pass both context windows to `LLMOrchestrator` enforcing `JobMatchEvaluationSchema`.
-   - Save result to database table `candidate_job_match`:
-     - `score`: Decimal (0.0 to 100.0).
-     - `matching_skills`: JSON array of overlapping skills.
-     - `missing_skills`: JSON array of skills required by JD but missing in Resume.
-     - `ai_summary`: Analysis of fit, strengths, and missing qualifications.
+   - Accept PDF or DOCX file input via `UploadFile` (or streamed from Garage S3).
+   - Extract raw text using non-blocking asynchronous document processing libraries (`PyMuPDF`/`fitz`, `python-docx`).
+2. LangGraph Resume Scoring Workflow (`resume_scoring_graph`):
+   - **Graph State**: Typed Pydantic v2 `GraphState` containing candidate info, raw text, structured profile, embeddings, scores, and evaluation notes.
+   - **Step 1: Text Inspection & OCR Fallback (Conditional Edge)**:
+     - Check if extracted text is legible/sufficient.
+     - *Conditional Routing*: If the document is unreadable / non-OCR friendly, route to the `profile_fallback_node` to populate the state from the candidate's existing platform profile snapshot; otherwise route to `llm_extraction_node`.
+   - **Step 2: Resume Parsing & Deduplication (`llm_extraction_node`)**:
+     - Parse once per unique resume file (tracked by `file_id` or SHA-256 hash).
+     - Extract structured entities enforcing Pydantic v2 `ResumeExtractionSchema`.
+     - Save parsed structure to database table `resume_analysis`:
+       - `extracted_data`: JSON field containing parsed skills, experience, education, personal info.
+       - `summary`: High-level candidate executive summary.
+   - **Step 3: Vector Generation (`embedding_node`)**:
+     - Generate dense vector embeddings for resume sections and store in `resume_embeddings` (`Vector(1536)`).
+     - Job embeddings are pre-computed and stored in `job_embeddings` upon job publication.
+   - **Step 4: Deterministic Scoring (`deterministic_scoring_node`)**:
+     - Calculate hard skill overlap (must-have vs. nice-to-have).
+     - Calculate tenure and experience alignment with recency decay.
+     - Compute cosine similarity via `pgvector`.
+   - **Step 5: LLM Qualitative Evaluation (`evaluation_node`)**:
+     - Run prompt enforcing Pydantic v2 `JobMatchEvaluationSchema` to generate pros, risks, and tailored interview questions.
+     - Save final evaluation to database table `candidate_job_match`:
+       - `score`: Decimal (0.0 to 100.0) reflecting the hybrid score.
+       - `matching_skills`: JSON array of overlapping skills.
+       - `missing_skills`: JSON array of skills required by JD but missing in Resume.
+       - `ai_summary`: Analysis of fit, strengths, and missing qualifications.
 
-## 2. DATABASE  MODEL 
+MODULE 4: ASYNCHRONOUS RABBITMQ EVENT ARCHITECTURE
+--------------------------------------------------------------------------------
+The AI service integrates with the core NestJS API using RabbitMQ as an asynchronous message bus:
 
-### 2.1 DATABASE MODEL REFERENCE (using SQLModel lib)
-Ensure SQLModel entities map to PostgreSQL schema using appropriate dialect types:
+1. Topic Exchange: `ats.events`
+   - Dead Letter Exchange (DLX): `ats.dlx` with Dead Letter Queue `ats.dlq`.
+2. Core Queues & Routing Keys:
+   - Queue `ai.resume.scoring` bound to routing key: `application.submitted`
+     - Payload: `{ application_id, candidate_id, job_id, resume_file_id }`
+     - Processing Flow:
+       a. Downloads file stream from Garage S3 / Core API via `storage_client`.
+       b. Checks if resume is already parsed (cache hit by `resume_file_id`); if not, invokes `resume_scoring_graph` to run text extraction, OCR fallback routing, and Pydantic parsing.
+       c. Computes embedding, stores in `resume_embeddings`.
+       d. Evaluates hybrid match against the target job requirements and persists to `candidate_job_match`.
+       e. Publishes completion event `scoring.completed` to notify recruiter frontend (via SSE) and trigger subsequent workflows.
+   - Queue `notifications.email` bound to routing keys: `email.*` (e.g., `email.send`, `email.application.received`)
+     - Payload: `{ to, template_id, subject, variables, trigger_source }`
+     - Processing Flow: Dispatches templated emails with retry, exponential backoff, and dead-letter routing upon repeated failure.
+
+## 2. DATABASE MODEL 
+
+### 2.1 DATABASE MODEL REFERENCE (using SQLModel lib + pgvector)
+Ensure SQLModel entities map to PostgreSQL schema using appropriate dialect types and `pgvector.sqlalchemy.Vector`:
 
 - `ResumeAnalysis` (`resume_analysis`)
   - id: UUID (PK)
   - resume_id: UUID (Indexed)
   - extracted_data: JSON / Dict
   - summary: TEXT
+  - created_at: TIMESTAMP
+
+- `ResumeEmbedding` (`resume_embeddings`)
+  - id: UUID (PK)
+  - resume_id: UUID (Indexed, FK -> resume_analysis.resume_id)
+  - embedding: Vector(1536)
+  - created_at: TIMESTAMP
+
+- `JobEmbedding` (`job_embeddings`)
+  - id: UUID (PK)
+  - job_id: UUID (Indexed)
+  - embedding: Vector(1536)
   - created_at: TIMESTAMP
 
 - `CandidateJobMatch` (`candidate_job_match`)
@@ -243,3 +297,12 @@ Provide FastAPI endpoints matching standard OpenAPI patterns:
 7. API and schemas should be swagger documented.
 8. All of the above are just guidelines, you can make changes as you see to fit the scope and database schema structure.
 9. I prefer `uv` package for environment management and package management using `pyproject.toml` file.
+
+## Startup Command
+
+```sh
+cp .env.example .env   # set DATABASE_*, AI_ENCRYPTION_KEY, AI_INTERNAL_TOKEN
+uv run alembic upgrade head
+uv run python -m app.scripts.seed_catalog
+uv run uvicorn app.main:app --reload
+```

@@ -15,6 +15,7 @@ import { ApplicationsModule } from '@modules/applications/applications.module';
 import { SkillsModule } from '@modules/skills/skills.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { BookmarksModule } from '@modules/bookmarks/bookmarks.module';
+import { RecruiterCandidatesModule } from '@modules/recruiter-candidates/recruiter-candidates.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { BookmarksModule } from '@modules/bookmarks/bookmarks.module';
     SkillsModule,
     ProfilesModule,
     BookmarksModule,
+    RecruiterCandidatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

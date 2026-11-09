@@ -29,7 +29,7 @@ import { CandidatePanel } from "./components/CandidatePanel";
 import {
   DocumentViewerPanel,
   type DocumentViewerTarget,
-} from "./components/DocumentViewerPanel";
+} from "@/components/common/DocumentViewerPanel";
 import { JobDescriptionPanel } from "./components/JobDescriptionPanel";
 import type { ApplicationSelection } from "./components/selection.types";
 import { useApplicationColumns } from "./components/useApplicationColumns";
@@ -219,7 +219,6 @@ const Applications = () => {
       <ApplicationsHeader
         job={job}
         candidateCount={candidateCount}
-        showJobDescription={showJobDescription}
         onToggleJobDescription={toggleJobDescription}
       />
 

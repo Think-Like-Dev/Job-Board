@@ -6,7 +6,7 @@ import { CommonServerResponseSchema } from "./common.schema";
 /*                              Shared Schemas                                */
 /* -------------------------------------------------------------------------- */
 
-const ApplicationFileSchema = z.object({
+export const ApplicationFileSchema = z.object({
   id: z.string(),
   filename: z.string().nullable().optional(),
   mimeType: z.string().nullable().optional(),
@@ -15,7 +15,7 @@ const ApplicationFileSchema = z.object({
   downloadUrl: z.string(),
 });
 
-const ApplicationEducationSchema = z.object({
+export const ApplicationEducationSchema = z.object({
   id: z.string(),
   institution: z.string(),
   degree: z.string(),
@@ -27,7 +27,7 @@ const ApplicationEducationSchema = z.object({
   additionalDetails: z.string().nullable().optional(),
 });
 
-const ApplicationExperienceSchema = z.object({
+export const ApplicationExperienceSchema = z.object({
   id: z.string(),
   companyName: z.string(),
   jobTitle: z.string(),
@@ -37,12 +37,12 @@ const ApplicationExperienceSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-const ApplicationSkillSchema = z.object({
+export const ApplicationSkillSchema = z.object({
   id: z.string(),
   name: z.string(),
 });
 
-const ApplicationCertificationSchema = z.object({
+export const ApplicationCertificationSchema = z.object({
   id: z.string(),
   title: z.string(),
   issuer: z.string().nullable().optional(),
@@ -56,7 +56,7 @@ const ApplicationCertificationSchema = z.object({
   expiryDate: z.string().nullable().optional(),
 });
 
-const ApplicationProfileSnapshotSchema = z.object({
+export const ApplicationProfileSnapshotSchema = z.object({
   id: z.string(),
   email: z.string(),
   firstName: z.string().nullable().optional(),

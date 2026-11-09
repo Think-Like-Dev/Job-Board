@@ -18,13 +18,17 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { AiEvaluationCard } from "./AiEvaluationCard";
 import { CandidateDocuments } from "./CandidateDocuments";
 import { CandidateProfileSnapshot } from "./CandidateProfileSnapshot";
-import type { DocumentViewerTarget } from "./DocumentViewerPanel";
-import { ResponsiveSidePanel } from "./ResponsiveSidePanel";
+import type { DocumentViewerTarget } from "@/components/common/DocumentViewerPanel";
+import { ResponsiveSidePanel } from "@/components/common/ResponsiveSidePanel";
 
 interface CandidatePanelProps {
   applicationId: string | null;
   onClose: () => void;
   onViewDocument: (target: DocumentViewerTarget) => void;
+  /** Overrides the candidate name/email header used on the job applications page. */
+  title?: string;
+  description?: string;
+  side?: "left" | "right";
 }
 
 function PanelSection({
@@ -121,6 +125,9 @@ export function CandidatePanel({
   applicationId,
   onClose,
   onViewDocument,
+  title,
+  description,
+  side = "right",
 }: CandidatePanelProps) {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useGetJobApplication(applicationId);
@@ -130,11 +137,16 @@ export function CandidatePanel({
     <ResponsiveSidePanel
       open={Boolean(applicationId)}
       onClose={onClose}
-      title={application?.candidateName ?? t("job.applications.drawer.title")}
+      title={
+        title ?? application?.candidateName ?? t("job.applications.drawer.title")
+      }
       description={
-        application?.candidateEmail ?? t("job.applications.drawer.loading")
+        description ??
+        application?.candidateEmail ??
+        t("job.applications.drawer.loading")
       }
       closeLabel={t("common.close")}
+      side={side}
       widthClassName="w-[26rem]"
       bodyClassName="space-y-6"
     >

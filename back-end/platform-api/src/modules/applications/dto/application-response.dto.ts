@@ -233,6 +233,53 @@ export class RecruiterApplicationListResponseDto {
   pagination!: ApplicationPaginationDto;
 }
 
+/** One job an internal user is reviewing for a specific candidate. */
+export class CandidateJobApplicationListItemDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  jobId!: string;
+
+  @ApiProperty()
+  jobTitle!: string;
+
+  @ApiProperty()
+  jobCode!: string;
+
+  @ApiProperty()
+  jobCategory!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  jobDepartment?: string | null;
+
+  @ApiProperty()
+  jobLocation!: string;
+
+  @ApiProperty({ enum: ApplicationStatus })
+  status!: ApplicationStatus;
+
+  @ApiPropertyOptional({ nullable: true })
+  appliedAt?: string | null;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class CandidateJobApplicationListResponseDto {
+  @ApiProperty({ example: true })
+  success!: boolean;
+
+  @ApiProperty()
+  message!: string;
+
+  @ApiProperty({ type: [CandidateJobApplicationListItemDto] })
+  data!: CandidateJobApplicationListItemDto[];
+
+  @ApiProperty({ type: ApplicationPaginationDto })
+  pagination!: ApplicationPaginationDto;
+}
+
 export class RecruiterApplicationDetailResponseDto {
   @ApiProperty({ example: true })
   success!: boolean;

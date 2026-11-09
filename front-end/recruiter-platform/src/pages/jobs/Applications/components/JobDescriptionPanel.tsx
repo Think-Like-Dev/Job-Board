@@ -7,7 +7,7 @@ import { Badge } from "@ui/badge";
 import type { JobDetail } from "@/api/schemas/jobs.schema";
 import { formatCompensation, formatIsoDate } from "@/lib/jobFormat";
 import { formatEnumToStartCase } from "@/lib/utils";
-import { ResponsiveSidePanel } from "./ResponsiveSidePanel";
+import { ResponsiveSidePanel } from "@/components/common/ResponsiveSidePanel";
 
 interface JobDescriptionPanelProps {
   open: boolean;

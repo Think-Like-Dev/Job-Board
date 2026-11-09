@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@ui/button";
 
 import { downloadAuthenticatedFile } from "@/lib/fileActions";
-import type { DocumentViewerTarget } from "./DocumentViewerPanel";
+import type { DocumentViewerTarget } from "@/components/common/DocumentViewerPanel";
 
 interface DocumentRowProps {
   label: string;

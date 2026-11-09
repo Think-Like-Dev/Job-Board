@@ -12,12 +12,17 @@ import type { ProfileView } from '@modules/profiles/profile.types';
 import { ApplicationQueries } from './application-queries';
 import { parseApplicationSort } from './application-sort';
 import {
+  toCandidateJobApplicationListItemDto,
   toRecruiterApplicationDetailDto,
   toRecruiterApplicationListItemDto,
 } from './application.presenter';
 import { Application } from './application.schema';
-import type { JobApplicationsQueryDto } from './dto/application-query.dto';
 import type {
+  CandidateJobApplicationsQueryDto,
+  JobApplicationsQueryDto,
+} from './dto/application-query.dto';
+import type {
+  CandidateJobApplicationListItemDto,
   RecruiterApplicationDetailDto,
   RecruiterApplicationListItemDto,
 } from './dto/application-response.dto';
@@ -99,6 +104,51 @@ export class RecruiterApplicationsService {
           files.get(application.resumeFileId),
           profile,
         );
+      }),
+      meta: result.meta,
+    };
+  }
+
+  /** Recruiter view of one candidate's applications across every job. */
+  async listCandidateApplications(
+    candidateId: string,
+    query: CandidateJobApplicationsQueryDto,
+  ): Promise<IPaginatedResult<CandidateJobApplicationListItemDto>> {
+    const candidate = await this.queries.findCandidate(candidateId);
+    if (!candidate) {
+      throw new NotFoundException('Candidate not found');
+    }
+
+    if (query.status === ApplicationStatus.DRAFT) {
+      throw new BadRequestException(
+        'Draft applications are not visible to recruiters',
+      );
+    }
+
+    const where: FilterQuery<Application> = { candidateId };
+    if (query.status) {
+      where.status = query.status;
+    } else {
+      where.status = { $ne: ApplicationStatus.DRAFT };
+    }
+
+    const result = await this.queries.findPage(
+      where,
+      query.page,
+      query.limit,
+      parseApplicationSort(query.sortBy, 'appliedAt'),
+    );
+    const jobs = await this.queries.findJobs(
+      result.data.map((application) => application.jobId),
+    );
+
+    return {
+      data: result.data.map((application) => {
+        const job = jobs.get(application.jobId);
+        if (!job) {
+          throw new NotFoundException('Job not found');
+        }
+        return toCandidateJobApplicationListItemDto(application, job);
       }),
       meta: result.meta,
     };

@@ -29,9 +29,9 @@ import { JobDetailDrawer } from "./jobs/JobDetail/JobDetailDrawer";
 import { JobApplicationStatsCell } from "./jobs/JobList/JobApplicationStatsCell";
 import {
   JOB_TAB_STATUS,
-  JobTabs,
   type JobTabKey,
-} from "./jobs/JobList/JobTabs";
+} from "./jobs/JobList/jobTabs.constants";
+import { JobTabs } from "./jobs/JobList/JobTabs";
 import { JobListToolbar } from "./jobs/JobList/JobListToolbar";
 import {
   DEFAULT_SALARY_RANGE,

@@ -38,6 +38,6 @@ import { RecruiterApplicationsController } from './recruiter-applications.contro
     RecruiterApplicationsService,
     ApplicationQueries,
   ],
-  exports: [ApplicationsService],
+  exports: [ApplicationsService, RecruiterApplicationsService],
 })
 export class ApplicationsModule {}

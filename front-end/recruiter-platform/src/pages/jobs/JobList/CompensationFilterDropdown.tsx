@@ -51,7 +51,10 @@ export function CompensationFilterDropdown({
   const [draftRange, setDraftRange] = useState<SliderRange>(range);
   const committedRangeRef = useRef<SliderRange>(range);
   const onRangeChangeRef = useRef(onRangeChange);
-  onRangeChangeRef.current = onRangeChange;
+
+  useEffect(() => {
+    onRangeChangeRef.current = onRangeChange;
+  }, [onRangeChange]);
 
   // Keep the draft in sync with the committed value (e.g. after Clear).
   useEffect(() => {

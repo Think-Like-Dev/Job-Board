@@ -1,7 +1,9 @@
+name: job-board-prod
+
 services:
   platform-api:
     env_file:
-      - ./env/.env.production
+      - ../../env/.env.production
 
     environment:
       NODE_ENV: production
@@ -12,13 +14,13 @@ services:
 
   migrate:
     env_file:
-      - ./env/.env.production
+      - ../../env/.env.production
     environment:
       NODE_ENV: production
 
   seed:
     env_file:
-      - ./env/.env.production
+      - ../../env/.env.production
     environment:
       NODE_ENV: production
 

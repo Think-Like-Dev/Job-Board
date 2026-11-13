@@ -47,19 +47,16 @@ All `/api/files` routes require a valid session. File bytes stream through `GET 
 See `platform-api/API-Readme.md` §6.6 for S3 env vars, bootstrap details, file access rules, and Garage quirks.
 
 
-Local everything in Docker
+## Running the stack
+
+All Docker deployment commands — first-run order, image builds, migrations, seeds, Garage
+bootstrap, debug profiles, volumes and troubleshooting — live in
+[`infrastructure/docker/README.md`](./infrastructure/docker/README.md).
+
+Quick start (from `back-end/`):
+
 ```sh
 docker compose --env-file ./env/.env.local up --build
-```
-
-Staging
-```sh
-docker compose --env-file ./env/.env.staging0 up -d --build
-```
-
-Production
-```sh
-docker compose --env-file ./env/.env.production up -d --build
 ```
 
 

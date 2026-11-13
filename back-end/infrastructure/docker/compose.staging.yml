@@ -1,14 +1,19 @@
 name: job-board-staging
+
+# Staging differences only. Every service, healthcheck and depends_on lives in
+# compose.yml. No infrastructure port is published here — the APIs reach
+# postgres/ai-postgres/redis/rabbitmq by service name on the compose network.
+
 services:
   platform-api:
     image: job-board-platform-api:staging
 
     build:
-      context: ./platform-api
+      context: ../../platform-api
       dockerfile: Dockerfile
 
     env_file:
-      - ./env/.env.staging
+      - ../../env/.env.staging
 
     environment:
       NODE_ENV: staging
@@ -21,18 +26,23 @@ services:
 
     restart: unless-stopped
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+  ai-platform:
+    image: job-board-ai-platform:staging
 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    build:
+      context: ../../ai-platform
+      dockerfile: Dockerfile
+
+    env_file:
+      - ../../env/.env.staging
+
+    environment:
+      AI_ENVIRONMENT: staging
+
+    ports:
+      - "8000:8000"
+
+    restart: unless-stopped
 
   # Migration
   migrate:
@@ -42,7 +52,7 @@ services:
       - migration
 
     env_file:
-      - ./env/.env.staging
+      - ../../env/.env.staging
 
     environment:
       NODE_ENV: staging
@@ -57,10 +67,6 @@ services:
     networks:
       - backend
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   # Seed
   seed:
     image: job-board-platform-api:staging
@@ -69,7 +75,7 @@ services:
       - seed
 
     env_file:
-      - ./env/.env.staging
+      - ../../env/.env.staging
 
     environment:
       NODE_ENV: staging
@@ -82,55 +88,36 @@ services:
     networks:
       - backend
 
-    depends_on:
-      postgres:
-        condition: service_healthy
+  ai-migrate:
+    image: job-board-ai-platform:staging
 
-  postgres:
-    image: postgres:18-bookworm
+    profiles:
+      - migration
 
-    restart: unless-stopped
+    env_file:
+      - ../../env/.env.staging
 
     environment:
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_NAME}
+      AI_ENVIRONMENT: staging
 
-    ports:
-      - "5432:5432"
-
-    volumes:
-      - postgres_data:/var/lib/postgresql
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+    restart: "no"
 
     networks:
       - backend
 
-  redis:
-    image: redis:7-alpine
+  ai-seed:
+    image: job-board-ai-platform:staging
 
-    restart: unless-stopped
+    profiles:
+      - seed
 
-    command: ["redis-server", "--appendonly", "yes"]
+    env_file:
+      - ../../env/.env.staging
 
-    ports:
-      - "6379:6379"
+    environment:
+      AI_ENVIRONMENT: staging
 
-    volumes:
-      - redis_data:/data
-
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
+    restart: "no"
 
     networks:
       - backend
@@ -138,6 +125,12 @@ services:
 volumes:
   postgres_data:
     name: job-board-staging-postgres-data
+
+  ai_postgres_data:
+    name: job-board-staging-ai-postgres-data
+
+  rabbitmq_data:
+    name: job-board-staging-rabbitmq-data
 
   redis_data:
     name: job-board-staging-redis-data

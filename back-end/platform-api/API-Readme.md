@@ -360,19 +360,17 @@ Garage data is isolated per environment, matching Postgres/Redis:
 
 **Start / verify**
 
-```sh
-cd back-end
-docker compose --env-file ./env/.env.local -f compose.yml -f compose.local.yml up -d garage garage-init
-docker logs job-board-local-garage-init-1
-```
+Deployment commands (first-time bootstrap, restart, web UI) live in
+[`infrastructure/docker/README.md`](../infrastructure/docker/README.md) §2.1 and §2.3. In
+short: `garage` must be up and `garage-init` must have run once per volume before any upload
+works.
 
 **Web UI (debug profile)**
 
-```sh
-docker compose --env-file ./env/.env.local -f compose.yml -f compose.local.yml --profile debug up -d garage-webui
-```
-
-Open `http://localhost:3909`. It reads `garage/garage.toml` and connects to the admin API at `http://garage:3903`. Optional basic auth can be enabled with `GARAGE_WEBUI_AUTH` (`username:bcrypt-hash` from `htpasswd -nbBC 10 user pass`). The UI is not started by default.
+`garage-webui` is gated behind the `debug` profile, listens on `http://localhost:3909`, reads
+`garage/garage.toml`, and talks to the admin API at `http://garage:3903`. Optional basic auth
+can be enabled with `GARAGE_WEBUI_AUTH` (`username:bcrypt-hash` from `htpasswd -nbBC 10 user
+pass`). The UI is not started by default; see the runbook above.
 
 **Quirks**
 
@@ -482,67 +480,23 @@ pnpm seed:create <SeederName>
 ```
 
 
-## Local Development Workflow
+## Container workflows
 
-1. Initial setup - Start PostgreSQL and Redis Infrastructure:
-```sh
-docker compose --env-file ./env/.env.local up -d postgres redis
-```
-2. Build the development image:
-```sh
-docker compose --env-file ./env/.env.local build platform-api
-```
-3. Run migrations
-```sh
-docker compose --env-file ./env/.env.local --profile migration run --rm migrate
-```
-4. Run seeds
-```sh
-docker compose --env-file ./env/.env.local --profile seed run --rm seed
-```
-5. Start the API
-```sh
-docker compose --env-file ./env/.env.local up -d platform-api
-```
+Container start/build/migrate/seed commands for local, staging and production live in
+[`infrastructure/docker/README.md`](../infrastructure/docker/README.md). It covers the
+first-run order, Garage bootstrap, profiles, volumes and per-environment quirks.
 
-> For subsequent development sessions, you don't need to repeat migrations and seeds unless there are new migrations or seed data to apply. 
->You can simply run: `docker compose --env-file ./env/.env.local up -d platform-api
-`
+Two things that trip people up:
 
-## Staging / Prod / Remote Cloud Workflow
-  `<env_file_path> -> ./env/.env.staging or ./env/.env.production`
+- In staging/production the image contains only `dist/`, so the compose file runs the
+  `:dist` script variants (`pnpm migration:up:dist`, `pnpm seed:run:dist`). You do not pass
+  the script name yourself when using the `migrate` / `seed` services.
+- Migrations support `down` and up-to/down-to a specific revision; append `:dist` when the
+  command runs inside a built image.
 
-1. Start Infrastructure
-```sh
-docker compose --env-file <env_file_path> up -d postgres redis
-```
-2. Build the application image
-```sh
-docker compose --env-file <env_file_path> build platform-api
-```
-Because all three services share the same image tag, this image is also used by migration and seed.
-
-3. Run migrations
-```sh
-docker compose --env-file <env_file_path> --profile migration run --rm migrate pnpm run migration:up:dist
-```
-4. Run seeds when required
-```sh
-docker compose --env-file <env_file_path> --profile seed run --rm seed pnpm run seed:run:dist
-```
-5. Start API
-```sh
-docker compose --env-file <env_file_path>  up -d platform-api
-```
-
-> **Note**: **In staging and Prod environments the built source will be under dist folder , we might have to run the script from dist folder with special commands as provided above.**
-It also supports running the migraiton down and until specific version
-
-|Scope|Command|
-|:---:|:-----:|
-| Migration Up One version | `pnpm run migration:up` |
-| Migration Down One version | `pnpm run migration:down` |
-| Migration Up until certain file | `pnpm run migration:up --to <filename>` |
-| Migration Down until certain file | `pnpm run migration:down --to <filename>` |
-
-_In case of executing from build folder add `:dist` as the suffix of command_
+| Scope | Command |
+| :--- | :--- |
+| Migration up one version | `pnpm run migration:up` |
+| Migration down one version | `pnpm run migration:down` |
+| Migration up until a file | `pnpm run migration:up --to <filename>` |
+| Migration down until a file | `pnpm run migration:down --to <filename>` |

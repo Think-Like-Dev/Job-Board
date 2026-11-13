@@ -1,14 +1,20 @@
 from functools import lru_cache
 from urllib.parse import quote_plus
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _db(name: str) -> AliasChoices:
+    """AI_DATABASE_* wins; bare DATABASE_* stays as the fallback so both
+    services can share one env file without overwriting each other's host."""
+    return AliasChoices(f"AI_DATABASE_{name}", f"DATABASE_{name}")
+
+
 class Settings(BaseSettings):
-    """Process configuration. AI-owned variables use the ``AI_`` prefix and the
-    database/S3 credentials are shared with the core API through their existing
-    names.
+    """Process configuration. AI-owned variables use the ``AI_`` prefix;
+    database credentials prefer ``AI_DATABASE_*`` so this service can point at
+    its own Postgres instance.
     """
 
     model_config = SettingsConfigDict(
@@ -24,10 +30,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     api_v1_prefix: str = "/api/v1"
 
-    database_host: str = Field(default="localhost", validation_alias="DATABASE_HOST")
-    database_port: int = Field(default=5432, validation_alias="DATABASE_PORT")
-    database_user: str = Field(default="jobboard", validation_alias="DATABASE_USER")
-    database_password: str = Field(default="", validation_alias="DATABASE_PASSWORD")
+    database_host: str = Field(default="localhost", validation_alias=_db("HOST"))
+    database_port: int = Field(default=5432, validation_alias=_db("PORT"))
+    database_user: str = Field(default="jobboard", validation_alias=_db("USER"))
+    database_password: str = Field(default="", validation_alias=_db("PASSWORD"))
     database_name: str = "job_board_ai_ats"
     database_echo: bool = False
     database_url_override: str | None = Field(default=None, validation_alias="AI_DATABASE_URL")

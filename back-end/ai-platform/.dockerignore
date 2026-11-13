@@ -1,15 +1,19 @@
-node_modules
-dist
-coverage
+.venv
+__pycache__
+*.pyc
+.ruff_cache
+.pytest_cache
+
 .git
 .gitignore
 
 .env
 .env.*
-.env.example
+!.env.example
 
-npm-debug.log*
-Dockerfile*
-compose*.yaml
+Dockerfile
+Dockerfile.*
+compose*.yml
 
 README.md
+*.sql

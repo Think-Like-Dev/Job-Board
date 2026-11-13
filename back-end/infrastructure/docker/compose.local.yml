@@ -1,0 +1,194 @@
+name: job-board-local
+
+# Local differences only. Every service, healthcheck and depends_on lives in
+# compose.yml; this file adds dev images, source mounts, commands, published
+# ports and per-environment volume names.
+
+services:
+  platform-api:
+    image: job-board-platform-api:local
+
+    build:
+      context: ../../platform-api
+      dockerfile: Dockerfile.dev
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      NODE_ENV: local
+      # Inside Compose the API reaches Garage by service name. Host-run dev
+      # servers use http://localhost:3900 from .env.local instead.
+      S3_ENDPOINT: http://garage:3900
+
+    volumes:
+      - ../../platform-api:/app
+      - platform_api_node_modules:/app/node_modules
+
+    ports:
+      - "5000:5000"
+
+    command: ["pnpm", "start:dev"]
+
+  ai-platform:
+    image: job-board-ai-platform:local
+
+    build:
+      context: ../../ai-platform
+      dockerfile: Dockerfile.dev
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      AI_ENVIRONMENT: local
+
+    volumes:
+      - ../../ai-platform:/app
+      # Image venv seeded into the volume on first run, then kept out of the bind mount.
+      - ai_platform_venv:/app/.venv
+
+    ports:
+      - "8000:8000"
+
+    # --reload-dir keeps the watcher off .venv and __pycache__ under the bind mount.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+
+  garage:
+    ports:
+      - "3900:3900"
+
+  # Published for host-side tools (psql, DBeaver, redis-cli, RabbitMQ UI).
+  # Staging publishes none of these.
+  postgres:
+    ports:
+      - "5432:5432"
+
+  ai-postgres:
+    # 5432 is already taken by the core API's Postgres; only the host port differs.
+    ports:
+      - "5433:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # Debug tools: host ports live here so local can reach them and staging cannot.
+  pgadmin:
+    ports:
+      - "5050:80"
+
+  redisinsight:
+    ports:
+      - "5540:5540"
+
+  garage-webui:
+    ports:
+      - "3909:3909"
+
+  # Migration
+  migrate:
+    image: job-board-platform-api:local
+
+    profiles:
+      - migration
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      NODE_ENV: local
+
+    volumes:
+      - ../../platform-api:/app
+      - platform_api_node_modules:/app/node_modules
+
+    command: ["pnpm", "migration:up"]
+
+    restart: "no"
+
+    networks:
+      - backend
+
+  # Seed
+  seed:
+    image: job-board-platform-api:local
+
+    profiles:
+      - seed
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      NODE_ENV: local
+
+    volumes:
+      - ../../platform-api:/app
+      - platform_api_node_modules:/app/node_modules
+
+    command: ["pnpm", "seed:run"]
+
+    restart: "no"
+
+    networks:
+      - backend
+
+  ai-migrate:
+    image: job-board-ai-platform:local
+
+    profiles:
+      - migration
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      AI_ENVIRONMENT: local
+
+    volumes:
+      - ../../ai-platform:/app
+      - ai_platform_venv:/app/.venv
+
+  ai-seed:
+    image: job-board-ai-platform:local
+
+    profiles:
+      - seed
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      AI_ENVIRONMENT: local
+
+    volumes:
+      - ../../ai-platform:/app
+      - ai_platform_venv:/app/.venv
+
+volumes:
+  platform_api_node_modules:
+    name: job-board-platform-api-node-modules
+
+  postgres_data:
+    name: job-board-local-postgres-data
+
+  ai_postgres_data:
+    name: job-board-local-ai-postgres-data
+
+  rabbitmq_data:
+    name: job-board-local-rabbitmq-data
+
+  ai_platform_venv:
+    name: job-board-local-ai-platform-venv
+
+  redis_data:
+    name: job-board-local-redis-data
+
+  garage_data:
+    name: job-board-local-garage-data

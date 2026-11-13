@@ -1,0 +1,367 @@
+name: job-board-backend
+
+# Full topology lives here: every service, healthcheck, restart policy, network
+# and volume reference. Overlays (compose.<env>.yml) carry differences only —
+# env files, image tags, published ports, commands, bind mounts, volume names.
+# Nothing in this file publishes a port.
+
+services:
+  platform-api:
+    build:
+      context: ../../platform-api
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  ai-platform:
+    build:
+      context: ../../ai-platform
+      dockerfile: Dockerfile
+
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+    restart: unless-stopped
+
+    networks:
+      - backend
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    depends_on:
+      ai-postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Core API database (sessions/OTPs live in Redis, not here).
+  postgres:
+    image: postgres:18-bookworm
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - backend
+
+  # AI service database. Separate instance because max_connections is per
+  # server, and because it needs pgvector.
+  ai-postgres:
+    image: pgvector/pgvector:pg18
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${AI_DATABASE_USER}
+      POSTGRES_PASSWORD: ${AI_DATABASE_PASSWORD}
+      POSTGRES_DB: ${AI_DATABASE_NAME}
+
+    volumes:
+      - ai_postgres_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - backend
+
+  # Sessions and OTPs.
+  redis:
+    image: redis:7-alpine
+
+    restart: unless-stopped
+
+    command: ["redis-server", "--appendonly", "yes"]
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    networks:
+      - backend
+
+  # Shared broker for the events that cross the two services.
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+
+    restart: unless-stopped
+
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+    networks:
+      - backend
+
+  # S3-compatible object storage for resumes and cover letters.
+  garage:
+    image: dxflrs/garage:v1.3.1
+
+    restart: unless-stopped
+
+    command: ["/garage", "-c", "/etc/garage.toml", "server"]
+
+    volumes:
+      - ../../garage/garage.toml:/etc/garage.toml:ro
+      - garage_data:/var/lib/garage
+
+    networks:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "/garage", "-c", "/etc/garage.toml", "node", "id"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # One-shot initialiser: assigns the single-node layout and creates the
+  # bucket/key. Safe to re-run; existing resources are left untouched.
+  garage-init:
+    build:
+      context: ../../garage
+      dockerfile: Dockerfile.init
+
+    depends_on:
+      garage:
+        condition: service_started
+
+    environment:
+      GARAGE_BUCKET: ${S3_BUCKET_NAME:-jobboard-files}
+      GARAGE_KEY_NAME: jobboard
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+
+    volumes:
+      - ../../garage/garage.toml:/etc/garage.toml:ro
+      # The CLI reads the node key from the metadata directory before it can
+      # talk to the running node over RPC. Read-only is enough.
+      - garage_data:/var/lib/garage:ro
+
+    # Share Garage's network namespace so the CLI can reach the node on
+    # 127.0.0.1:3901.
+    network_mode: "service:garage"
+
+    restart: "no"
+
+  # Optional file browser for the Garage bucket. Start with:
+  #   docker compose --profile debug up -d garage-webui
+  # UI: http://localhost:3909
+  garage-webui:
+    image: khairul169/garage-webui:1.1.0
+
+    profiles:
+      - debug
+
+    restart: unless-stopped
+
+    volumes:
+      - ../../garage/garage.toml:/etc/garage.toml:ro
+
+    environment:
+      API_BASE_URL: http://garage:3903
+      S3_ENDPOINT_URL: http://garage:3900
+      S3_REGION: garage
+      # Optional: username:bcrypt-hash from `htpasswd -nbBC 10 user pass`.
+      AUTH_USER_PASS: ${GARAGE_WEBUI_AUTH:-}
+
+    networks:
+      - backend
+
+    depends_on:
+      garage:
+        condition: service_started
+
+  # migrate
+  migrate:
+    build:
+      context: ../../platform-api
+      dockerfile: Dockerfile
+      target: production
+
+    profiles:
+      - migration
+
+    restart: "no"
+
+    networks:
+      - backend
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # seed
+  seed:
+    build:
+      context: ../../platform-api
+      dockerfile: Dockerfile
+      target: production
+
+    profiles:
+      - seed
+
+    restart: "no"
+
+    networks:
+      - backend
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ai-platform migrations (alembic). Never run in the app entrypoint.
+  ai-migrate:
+    build:
+      context: ../../ai-platform
+      dockerfile: Dockerfile
+
+    profiles:
+      - migration
+
+    command: ["alembic", "upgrade", "head"]
+
+    restart: "no"
+
+    networks:
+      - backend
+
+    depends_on:
+      ai-postgres:
+        condition: service_healthy
+
+  # ai-platform catalog seed
+  ai-seed:
+    build:
+      context: ../../ai-platform
+      dockerfile: Dockerfile
+
+    profiles:
+      - seed
+
+    command: ["python", "-m", "app.scripts.seed_catalog"]
+
+    restart: "no"
+
+    networks:
+      - backend
+
+    depends_on:
+      ai-postgres:
+        condition: service_healthy
+
+  # debug
+  pgadmin:
+    image: dpage/pgadmin4:latest
+
+    profiles:
+      - debug
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      # - ../../pgadmin/servers.json:/pgadmin4/servers.json:ro
+
+    networks:
+      - backend
+
+  redisinsight:
+    image: redis/redisinsight:latest
+
+    profiles:
+      - debug
+
+    volumes:
+      - redisinsight_data:/data
+
+    networks:
+      - backend
+
+networks:
+  backend:
+    name: job-board-backend
+    driver: bridge
+
+# Keys only. Each overlay supplies the real `name:` so environments stay
+# isolated without duplicating the service definitions.
+volumes:
+  postgres_data:
+  ai_postgres_data:
+  redis_data:
+  rabbitmq_data:
+  garage_data:
+
+  pgadmin_data:
+    name: job-board-pgadmin-data
+
+  redisinsight_data:
+    name: job-board-redisinsight-data
+
+
+#host.docker.internal

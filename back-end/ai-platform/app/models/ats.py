@@ -22,8 +22,14 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Field, SQLModel
 
-from app.core.constants import EMBEDDING_DIM, EXTRACTION_VERSION, WEIGHTS_VERSION
+from app.core.config import get_settings
+from app.core.constants import EXTRACTION_VERSION, WEIGHTS_VERSION
 from app.models.llm_config import created_at_column, uuid_pk
+
+# The vector size follows the configured embedding model, so swapping the model
+# (and its size) is a configuration change plus the Alembic migration that
+# alters the column type.
+EMBEDDING_DIM = get_settings().embedding_dim
 
 
 class ResumeAnalysis(SQLModel, table=True):

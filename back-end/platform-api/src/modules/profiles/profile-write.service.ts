@@ -24,6 +24,7 @@ import type {
   UpdateProfileDto,
 } from './dto/profile.dto';
 import { ProfileReadService } from './profile-read.service';
+import { ProfileRescoreService } from './profile-rescore.service';
 import { ProfileSnapshotService } from './profile-snapshot.service';
 import type { ProfileView } from './profile.types';
 
@@ -38,6 +39,7 @@ export class ProfileWriteService {
     private readonly em: PostgreSqlEntityManager,
     private readonly read: ProfileReadService,
     private readonly snapshots: ProfileSnapshotService,
+    private readonly rescore: ProfileRescoreService,
     private readonly files: FilesService,
   ) {}
 
@@ -52,7 +54,18 @@ export class ProfileWriteService {
       const before = await this.read.getLiveProfile(candidateId, em);
       await this.snapshots.createAndRepoint(em, candidateId, before);
       await this.applyUpdate(em, candidateId, dto);
-      return this.read.getLiveProfile(candidateId, em);
+      const after = await this.read.getLiveProfile(candidateId, em);
+
+      // A new central resume means the applications that used the old one
+      // have to be scored again.
+      await this.rescoreIfResumeChanged(
+        em,
+        candidateId,
+        before.resume?.id ?? null,
+        after,
+      );
+
+      return after;
     });
   }
 
@@ -112,7 +125,50 @@ export class ProfileWriteService {
     candidate.updatedAt = new Date();
     await em.flush();
 
-    return this.read.getLiveProfile(candidateId, em);
+    const after = await this.read.getLiveProfile(candidateId, em);
+
+    // The application being submitted is excluded: it is scored as part of
+    // its own submission, and it keeps pointing at the live profile.
+    await this.rescoreIfResumeChanged(
+      em,
+      candidateId,
+      before.resume?.id ?? null,
+      after,
+      excludeApplicationId,
+    );
+
+    return after;
+  }
+
+  /**
+   * Queues a re-score for every open application that used the central resume
+   * the candidate has just replaced.
+   */
+  private async rescoreIfResumeChanged(
+    em: EntityManager,
+    candidateId: string,
+    previousResumeFileId: string | null,
+    profile: ProfileView,
+    excludeApplicationId?: string,
+  ): Promise<void> {
+    const currentResumeFileId = profile.resume?.id ?? null;
+
+    if (
+      !previousResumeFileId ||
+      !currentResumeFileId ||
+      previousResumeFileId === currentResumeFileId
+    ) {
+      return;
+    }
+
+    await this.rescore.rescoreOpenApplications(
+      em,
+      candidateId,
+      previousResumeFileId,
+      currentResumeFileId,
+      profile,
+      excludeApplicationId,
+    );
   }
 
   private async applyUpdate(

@@ -63,11 +63,34 @@ class Settings(BaseSettings):
     # into the schema. Changing the size also needs an Alembic migration
     # (ALTER COLUMN ... TYPE vector(N) + rebuild the HNSW index) and a re-embed
     # via `app/scripts/convert_embeddings.py`.
+    #
+    # `multilingual-e5-small` covers 100 languages and is 384-dimensional — the
+    # same size as the schema — so a job description in one language and a
+    # resume in another can still be compared.
     local_embedding_model: str = Field(
-        default="all-MiniLM-L6-v2", validation_alias="AI_LOCAL_EMBEDDING_MODEL"
+        default="multilingual-e5-small", validation_alias="AI_LOCAL_EMBEDDING_MODEL"
     )
     embedding_dim: int = Field(default=EMBEDDING_DIM, validation_alias="AI_EMBEDDING_DIM", gt=0)
     embedding_base_url: str = Field(default="", validation_alias="AI_EMBEDDING_BASE_URL")
+    # E5-style models expect an asymmetric prefix: the job description is a
+    # query, the resume passages are passages.
+    embedding_query_prefix: str = Field(
+        default="query: ", validation_alias="AI_EMBEDDING_QUERY_PREFIX"
+    )
+    embedding_passage_prefix: str = Field(
+        default="passage: ", validation_alias="AI_EMBEDDING_PASSAGE_PREFIX"
+    )
+
+    # ── OCR (Tesseract) ─────────────────────────────────────────────────────
+    # The language packs installed in the image. English only for now; another
+    # language means installing its Tesseract pack (see the ai-platform
+    # README).
+    ocr_languages: str = Field(default="eng", validation_alias="AI_OCR_LANGUAGES")
+    # A page with fewer characters than this is treated as image-only and sent
+    # to OCR instead of the text extractor.
+    ocr_page_char_threshold: int = Field(
+        default=40, validation_alias="AI_OCR_PAGE_CHAR_THRESHOLD", gt=0
+    )
 
     # ── Local chat model (OpenAI-compatible, no API key) ───────────────────
     # The user runs the model themselves; the service only needs the endpoint.

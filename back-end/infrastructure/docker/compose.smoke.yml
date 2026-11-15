@@ -1,0 +1,127 @@
+# Smoke-test overlay: an isolated copy of the stack.
+#
+# Used with `compose.yml` only (never with `compose.local.yml`, whose volume
+# names and host ports belong to the working stack).
+#
+#   cd back-end
+#   docker compose -p job-board-smoke --env-file ./env/.env.local \
+#     -f infrastructure/docker/compose.yml \
+#     -f infrastructure/docker/compose.smoke.yml up -d --build
+#
+# Everything is separate from the working stack:
+#   - project name `job-board-smoke` -> its own containers and network;
+#   - every volume has its own `job-board-smoke-*` name, so the data in
+#     `job-board-local-*` / `job-board-staging-*` is never touched;
+#   - every published port is different, so the working stack can run at the
+#     same time;
+#   - the images are built under this project's name, so the images of the
+#     working stack are left alone.
+#
+# The whole stack goes away with:
+#   docker compose -p job-board-smoke --env-file ./env/.env.local \
+#     -f infrastructure/docker/compose.yml \
+#     -f infrastructure/docker/compose.smoke.yml down -v
+
+name: job-board-smoke
+
+services:
+  platform-api:
+    image: job-board-smoke-platform-api
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      NODE_ENV: local
+      # Inside Compose the services reach each other by name.
+      S3_ENDPOINT: http://garage:3900
+
+    ports:
+      - "5001:5000"
+
+    command: ["pnpm", "start:dist"]
+
+  ai-platform:
+    image: job-board-smoke-ai-platform
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      AI_ENVIRONMENT: local
+      S3_ENDPOINT: http://garage:3900
+      AI_RABBITMQ_HOST: rabbitmq
+      # The model servers run on the host.
+      AI_LOCAL_LLM_BASE_URL: http://host.docker.internal:9931/v1
+      AI_EMBEDDING_BASE_URL: http://host.docker.internal:9932/v1
+
+    # Docker Desktop resolves host.docker.internal to an IPv6 address, which
+    # the container cannot reach; this maps it to the IPv4 gateway instead.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    ports:
+      - "8001:8000"
+
+  migrate:
+    image: job-board-smoke-platform-api
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      NODE_ENV: local
+
+    command: ["pnpm", "migration:up:dist"]
+
+  ai-migrate:
+    image: job-board-smoke-ai-platform
+
+    env_file:
+      - ../../env/.env.local
+
+    environment:
+      AI_ENVIRONMENT: local
+
+    command: ["alembic", "upgrade", "head"]
+
+  postgres:
+    ports:
+      - "55432:5432"
+
+  ai-postgres:
+    ports:
+      - "55433:5432"
+
+  redis:
+    ports:
+      - "56379:6379"
+
+  rabbitmq:
+    ports:
+      - "55672:5672"
+      - "15673:15672"
+
+  garage:
+    ports:
+      - "53900:3900"
+
+volumes:
+  postgres_data:
+    name: job-board-smoke-postgres-data
+  ai_postgres_data:
+    name: job-board-smoke-ai-postgres-data
+  redis_data:
+    name: job-board-smoke-redis-data
+  rabbitmq_data:
+    name: job-board-smoke-rabbitmq-data
+  garage_data:
+    name: job-board-smoke-garage-data
+
+networks:
+  backend:
+    # The base file pins the network name to `job-board-backend`, which is the
+    # working stack's network. Without this the smoke stack would join it and
+    # two containers would claim the same service aliases.
+    name: job-board-smoke-backend
+    driver: bridge

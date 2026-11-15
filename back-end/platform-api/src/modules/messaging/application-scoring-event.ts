@@ -14,7 +14,20 @@ export interface ApplicationScoringEvent {
   candidateId: string;
   jobId: string;
   jobCode: string;
+  jobTitle: string;
   jobDescriptionText: string;
+  /**
+   * The recruiter's own skill list. It lets the AI service build a job spec
+   * without a language model, so the pipeline still runs (degraded) when no
+   * model is configured.
+   */
+  jobSkills: string[];
+  jobYearsOfExperience: string | null;
+  /**
+   * The language the AI writes its narrative in. The recruiter's UI language,
+   * so a Tamil-speaking recruiter reads a Tamil summary.
+   */
+  outputLanguage: string;
   /** The candidate's profile as it was when the application was submitted. */
   profileSnapshot: ProfileView;
   resume: {

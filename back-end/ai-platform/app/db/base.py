@@ -2,6 +2,6 @@
 
 from sqlmodel import SQLModel
 
-from app.models import ats, llm_config
+from app.models import ats, cancellation, llm_config, outbox
 
-__all__ = ["SQLModel", "ats", "llm_config"]
+__all__ = ["SQLModel", "ats", "cancellation", "llm_config", "outbox"]

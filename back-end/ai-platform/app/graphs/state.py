@@ -25,7 +25,19 @@ class ScoringState(BaseModel):
     profile_snapshot: dict[str, Any] | None = None
     resume_analysis_id: UUID | None = None
 
+    job_title: str = ""
     job_description_text: str = ""
+    # The recruiter's own skill list and experience requirement. They let the
+    # pipeline build a job spec without a language model.
+    job_skills: list[str] = []
+    job_years_of_experience: str | None = None
+    # The language the narrative is written in (the recruiter's UI language).
+    output_language: str = "en"
+
+    # False when no language model is configured. The run then degrades to the
+    # profile snapshot and the deterministic score (reported as "score only").
+    llm_available: bool = False
+
     extracted: ResumeExtractionSchema | None = None
     job_spec: JobSpec | None = None
     resume_vector: list[float] | None = None

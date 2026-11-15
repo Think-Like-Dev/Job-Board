@@ -53,6 +53,7 @@
     "@nestjs/platform-express": "^12.1.2",
     "@nestjs/schedule": "^12.0.2",
     "@nestjs/swagger": "^12.0.2",
+    "amqplib": "^0.10.4",
     "argon2": "^0.45.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -63,6 +64,7 @@
     "uuid": "^14.0.2"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.5",
     "@eslint/eslintrc": "^3.3.7",
     "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^12.0.8",

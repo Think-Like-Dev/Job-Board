@@ -4,11 +4,19 @@ from urllib.parse import quote_plus
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.constants import EMBEDDING_DIM
+
 
 def _db(name: str) -> AliasChoices:
     """AI_DATABASE_* wins; bare DATABASE_* stays as the fallback so both
     services can share one env file without overwriting each other's host."""
     return AliasChoices(f"AI_DATABASE_{name}", f"DATABASE_{name}")
+
+
+def _alias(*names: str) -> AliasChoices:
+    """First name wins. Used so the AI service can read the shared env file
+    (RABBITMQ_*, S3_*) while still allowing an AI_-prefixed override."""
+    return AliasChoices(*names)
 
 
 class Settings(BaseSettings):
@@ -50,6 +58,66 @@ class Settings(BaseSettings):
     # text-embedding-3-small accepts ~8k tokens; ~3 chars/token keeps a margin.
     max_embedding_chars: int = 24_000
 
+    # ── Embedding model (swappable) ────────────────────────────────────────
+    # The model and its vector size are configuration, never constants baked
+    # into the schema. Changing the size also needs an Alembic migration
+    # (ALTER COLUMN ... TYPE vector(N) + rebuild the HNSW index) and a re-embed
+    # via `app/scripts/convert_embeddings.py`.
+    local_embedding_model: str = Field(
+        default="all-MiniLM-L6-v2", validation_alias="AI_LOCAL_EMBEDDING_MODEL"
+    )
+    embedding_dim: int = Field(default=EMBEDDING_DIM, validation_alias="AI_EMBEDDING_DIM", gt=0)
+    embedding_base_url: str = Field(default="", validation_alias="AI_EMBEDDING_BASE_URL")
+
+    # ── Local chat model (OpenAI-compatible, no API key) ───────────────────
+    # The user runs the model themselves; the service only needs the endpoint.
+    local_llm_base_url: str = Field(default="", validation_alias="AI_LOCAL_LLM_BASE_URL")
+    local_llm_model: str = Field(default="", validation_alias="AI_LOCAL_LLM_MODEL")
+    local_llm_api_key: str = Field(default="", validation_alias="AI_LOCAL_LLM_API_KEY")
+
+    # ── Object storage (Garage / S3) ───────────────────────────────────────
+    # The shared env file carries the bare S3_* names; AI_* wins when set.
+    storage_endpoint: str = Field(
+        default="http://localhost:3900",
+        validation_alias=_alias("AI_STORAGE_ENDPOINT", "S3_ENDPOINT"),
+    )
+    storage_region: str = Field(
+        default="garage", validation_alias=_alias("AI_STORAGE_REGION", "S3_REGION")
+    )
+    storage_access_key: str = Field(
+        default="", validation_alias=_alias("AI_STORAGE_ACCESS_KEY_ID", "S3_ACCESS_KEY_ID")
+    )
+    storage_secret_key: str = Field(
+        default="",
+        validation_alias=_alias("AI_STORAGE_SECRET_ACCESS_KEY", "S3_SECRET_ACCESS_KEY"),
+    )
+    storage_bucket: str = Field(
+        default="jobboard-files",
+        validation_alias=_alias("AI_STORAGE_BUCKET", "S3_BUCKET_NAME"),
+    )
+    storage_force_path_style: bool = Field(
+        default=True,
+        validation_alias=_alias("AI_STORAGE_FORCE_PATH_STYLE", "S3_FORCE_PATH_STYLE"),
+    )
+
+    # ── RabbitMQ ───────────────────────────────────────────────────────────
+    rabbitmq_host: str = Field(
+        default="localhost", validation_alias=_alias("AI_RABBITMQ_HOST", "RABBITMQ_HOST")
+    )
+    rabbitmq_port: int = Field(
+        default=5672, validation_alias=_alias("AI_RABBITMQ_PORT", "RABBITMQ_PORT")
+    )
+    rabbitmq_user: str = Field(
+        default="guest", validation_alias=_alias("AI_RABBITMQ_USER", "RABBITMQ_USER")
+    )
+    rabbitmq_password: str = Field(
+        default="guest",
+        validation_alias=_alias("AI_RABBITMQ_PASSWORD", "RABBITMQ_PASSWORD"),
+    )
+    rabbitmq_vhost: str = Field(
+        default="/", validation_alias=_alias("AI_RABBITMQ_VHOST", "RABBITMQ_VHOST")
+    )
+
     @property
     def database_url(self) -> str:
         """Async SQLAlchemy DSN. A direct ``AI_DATABASE_URL`` wins."""
@@ -61,6 +129,20 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{user}:{password}"
             f"@{self.database_host}:{self.database_port}/{self.database_name}"
         )
+
+    @property
+    def rabbitmq_url(self) -> str:
+        """AMQP URL for aio-pika."""
+        user = quote_plus(self.rabbitmq_user)
+        password = quote_plus(self.rabbitmq_password)
+        vhost = self.rabbitmq_vhost.strip("/")
+        suffix = f"/{vhost}" if vhost else ""
+        return f"amqp://{user}:{password}@{self.rabbitmq_host}:{self.rabbitmq_port}{suffix}"
+
+    @property
+    def has_local_llm(self) -> bool:
+        """A local model server is configured (endpoint + model name)."""
+        return bool(self.local_llm_base_url and self.local_llm_model)
 
 
 @lru_cache

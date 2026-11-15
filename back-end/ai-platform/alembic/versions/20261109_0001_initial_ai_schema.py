@@ -18,7 +18,12 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
-EMBEDDING_DIM = 1536
+# Vector size of the embedding model. Must match `AI_EMBEDDING_DIM` (default
+# `app/core/constants.py`). The AI database had never been migrated when this
+# was set to 384, so the initial schema carries the smaller size directly.
+# Changing it later needs a new migration that alters the column type and
+# rebuilds the HNSW index, followed by `app/scripts/convert_embeddings.py`.
+EMBEDDING_DIM = 384
 
 
 def upgrade() -> None:

@@ -29,7 +29,10 @@ import {
   buildJobDescriptionText,
   type ApplicationScoringEvent,
 } from '@modules/messaging/application-scoring-event';
-import { ROUTING_APPLICATION_SUBMITTED } from '@modules/messaging/messaging.constants';
+import {
+  DEFAULT_OUTPUT_LANGUAGE,
+  ROUTING_APPLICATION_SUBMITTED,
+} from '@modules/messaging/messaging.constants';
 import { OutboxService } from '@modules/messaging/outbox.service';
 import { ProfileReadService } from '@modules/profiles/profile-read.service';
 import { ProfileWriteService } from '@modules/profiles/profile-write.service';
@@ -577,7 +580,11 @@ export class ApplicationsService {
       candidateId,
       jobId: application.jobId,
       jobCode: job.code,
+      jobTitle: job.title,
       jobDescriptionText: buildJobDescriptionText(job),
+      jobSkills: job.skills ?? [],
+      jobYearsOfExperience: job.yearsOfExperience ?? null,
+      outputLanguage: DEFAULT_OUTPUT_LANGUAGE,
       profileSnapshot: profile,
       resume: {
         fileId: file.id,

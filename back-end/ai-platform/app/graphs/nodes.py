@@ -13,13 +13,19 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import Settings
 from app.core.constants import EXTRACTION_VERSION
-from app.core.exceptions import UnreadableDocument, UnsupportedFileType
+from app.core.exceptions import (
+    AllProvidersExhausted,
+    NoActiveProvider,
+    UnreadableDocument,
+    UnsupportedFileType,
+)
 from app.graphs.state import ScoringState
 from app.models.ats import ResumeAnalysis
 from app.schemas.job_match import QualitativeEvaluationSchema
 from app.schemas.resume import EducationEntry, ExperienceEntry, ResumeExtractionSchema
 from app.services.embedding_service import EmbeddingService
 from app.services.job_service import JobService
+from app.services.job_spec import build_deterministic_job_spec
 from app.services.match_store import upsert_match
 from app.services.orchestrator import LLMOrchestrator
 from app.services.parser import DocumentParser
@@ -86,6 +92,11 @@ def _snapshot_to_extraction(snapshot: dict[str, Any]) -> ResumeExtractionSchema:
 
 def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
     async def inspect_text(state: ScoringState) -> dict[str, Any]:
+        # Whether a language model is available decides how much of the
+        # pipeline can run. Without one the run degrades to the profile
+        # snapshot and the deterministic score instead of failing.
+        llm_available = await deps.orchestrator.has_active_provider()
+
         if state.resume_bytes is not None:
             try:
                 document = await deps.parser.extract(state.resume_filename, state.resume_bytes)
@@ -96,6 +107,7 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 return {
                     "resume_text": "",
                     "resume_sha256": hashlib.sha256(snapshot_seed.encode("utf-8")).hexdigest(),
+                    "llm_available": llm_available,
                 }
             # The fallback uses the snapshot, so the snapshot must be part of the cache key.
             if len(document.text) < deps.settings.min_resume_text_chars and state.profile_snapshot:
@@ -103,16 +115,19 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 return {
                     "resume_text": document.text,
                     "resume_sha256": hashlib.sha256(seed.encode("utf-8")).hexdigest(),
+                    "llm_available": llm_available,
                 }
             return {
                 "resume_text": document.text,
                 "resume_sha256": hashlib.sha256(state.resume_bytes).hexdigest(),
+                "llm_available": llm_available,
             }
         seed = state.resume_text
         if len(seed) < deps.settings.min_resume_text_chars and state.profile_snapshot is not None:
             seed = f"{seed}\n{json.dumps(state.profile_snapshot, sort_keys=True)}"
         return {
             "resume_sha256": hashlib.sha256(seed.encode("utf-8")).hexdigest(),
+            "llm_available": llm_available,
         }
 
     async def profile_fallback(state: ScoringState) -> dict[str, Any]:
@@ -121,14 +136,31 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
 
     async def llm_extraction(state: ScoringState) -> dict[str, Any]:
-        extracted = await deps.orchestrator.structured_output(
-            ResumeExtractionSchema,
-            system=RESUME_EXTRACTION_SYSTEM,
-            user=state.resume_text[: deps.settings.max_text_chars],
-        )
+        if not state.llm_available and state.profile_snapshot:
+            # No language model: the profile snapshot is the structured
+            # candidate data.
+            return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
+        try:
+            extracted = await deps.orchestrator.structured_output(
+                ResumeExtractionSchema,
+                system=RESUME_EXTRACTION_SYSTEM,
+                user=state.resume_text[: deps.settings.max_text_chars],
+            )
+        except NoActiveProvider, AllProvidersExhausted:
+            if not state.profile_snapshot:
+                raise
+            return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
         return {"extracted": extracted}
 
     def route_after_inspect(state: ScoringState) -> str:
+        if not state.llm_available:
+            # Without a model the profile snapshot is the only structured
+            # source available.
+            if state.profile_snapshot:
+                return "fallback"
+            raise UnreadableDocument(
+                "No language model is configured and no profile snapshot was supplied"
+            )
         if len(state.resume_text) >= deps.settings.min_resume_text_chars:
             return "extract"
         if state.profile_snapshot:
@@ -187,9 +219,26 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         if record is None:
             raise UnreadableDocument("Resume analysis disappeared before embedding")
         resume_vector = await deps.embedder.ensure_resume_embedding(record)
-        job_record, job_spec = await deps.job_service.analyze(
-            state.job_description_text, state.job_id
-        )
+
+        try:
+            job_record, job_spec = await deps.job_service.analyze(
+                state.job_description_text, state.job_id
+            )
+        except NoActiveProvider, AllProvidersExhausted:
+            # No language model: the recruiter's own skill list and
+            # experience requirement are enough to score against.
+            job_spec = build_deterministic_job_spec(
+                title=state.job_title,
+                description_text=state.job_description_text,
+                skills=state.job_skills,
+                years_of_experience=state.job_years_of_experience,
+            )
+            return {
+                "resume_vector": resume_vector,
+                "job_vector": None,
+                "job_spec": job_spec,
+            }
+
         job_vector = await deps.embedder.ensure_job_embedding(job_record)
         return {
             "resume_vector": resume_vector,
@@ -213,16 +262,22 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
             raise UnreadableDocument("Evaluation requires a deterministic score first")
         # No pooled connection should be held during the LLM call.
         await deps.session.rollback()
-        qualitative = await deps.orchestrator.structured_output(
-            QualitativeEvaluationSchema,
-            system=EVALUATION_SYSTEM,
-            user=evaluation_user_prompt(
-                state.extracted,
-                state.job_spec,
-                state.deterministic.components,
-                deps.settings.max_text_chars,
-            ),
-        )
+        try:
+            qualitative = await deps.orchestrator.structured_output(
+                QualitativeEvaluationSchema,
+                system=EVALUATION_SYSTEM,
+                user=evaluation_user_prompt(
+                    state.extracted,
+                    state.job_spec,
+                    state.deterministic.components,
+                    deps.settings.max_text_chars,
+                    state.output_language,
+                ),
+            )
+        except NoActiveProvider, AllProvidersExhausted:
+            # The deterministic score is still valid; the run is reported as
+            # "score only" instead of "scored".
+            qualitative = QualitativeEvaluationSchema()
         return {"qualitative": qualitative}
 
     async def persist_match(state: ScoringState) -> dict[str, Any]:

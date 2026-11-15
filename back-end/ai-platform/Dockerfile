@@ -30,6 +30,17 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Tesseract for scanned (image-only) pages. Only the English language pack is
+# installed: to support another language, add its pack here (for example
+# `tesseract-ocr-tam`) and list it in AI_OCR_LANGUAGES. See the README.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        libgl1 \
+        libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN useradd --create-home --uid 10001 appuser
 
 COPY --from=builder --chown=appuser:appuser /app/.venv ./.venv

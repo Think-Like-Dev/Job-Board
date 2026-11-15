@@ -37,12 +37,65 @@ All routes except health require `X-Internal-Token: $AI_INTERNAL_TOKEN`.
 Resume and job-description extractions are cached by SHA-256 plus an
 `extraction_version`; bump `EXTRACTION_VERSION` in `app/core/constants.py` when
 a prompt or schema changes. The numeric score is deterministic Python. Semantic
-similarity needs an OpenAI key; without one, the remaining components are
-re-weighted and the match still returns (with `semantic = 0`).
+similarity needs an embedding provider; without one, the remaining components
+are re-weighted and the match still returns (with `semantic = 0`).
 
 `POST /api/v1/ats/resumes/parse` accepts an optional `resume_file_id` form
 field. Provider fallback runs within `AI_MAX_FALLBACK_SECONDS` and stops
 retrying a credential after an authentication/permission error.
+
+## Models
+
+| Purpose | Model | Where it runs |
+| --- | --- | --- |
+| Embeddings | `multilingual-e5-small` (384 dimensions, 100 languages) | an OpenAI-compatible server you run (`AI_EMBEDDING_BASE_URL`), or in-process later |
+| Chat / extraction | any OpenAI-compatible model server you run (`AI_LOCAL_LLM_BASE_URL`) | no API key needed |
+
+Both are **configuration**: the model name and the vector size come from
+`AI_LOCAL_EMBEDDING_MODEL` and `AI_EMBEDDING_DIM`. The vector size is also the
+column type in Postgres, so changing it needs
+
+1. an Alembic migration that alters the column
+   (`ALTER COLUMN ... TYPE vector(N)`) and rebuilds the HNSW index, and
+2. `uv run python -m app.scripts.convert_embeddings` to re-embed the stored
+   texts — a vector cannot be converted between models or sizes, it has to be
+   computed again.
+
+The model itself is not downloaded automatically: point the service at a server
+you run, or add the download step to the image build.
+
+## OCR languages (Tesseract)
+
+Scanned pages — a page with no selectable text — are read with Tesseract.
+**Only the English language pack is installed in the image.**
+
+To support another language:
+
+1. add the pack to both `Dockerfile` and `Dockerfile.dev`:
+
+   ```dockerfile
+   RUN apt-get update \
+       && apt-get install -y --no-install-recommends \
+           tesseract-ocr \
+           tesseract-ocr-eng \
+           tesseract-ocr-tam \
+       && rm -rf /var/lib/apt/lists/*
+   ```
+
+2. list the languages in `AI_OCR_LANGUAGES` (Tesseract syntax, `+` separated):
+
+   ```sh
+   AI_OCR_LANGUAGES=eng+tam
+   ```
+
+3. rebuild the image: `./dk build:dev ai`.
+
+Running many packs at once slows recognition down and can reduce accuracy, so
+install only the languages you need. The available packs are listed at
+<https://github.com/tesseract-ocr/tesseract>.
+
+When Tesseract is not installed, a scanned page is reported as unreadable and
+the run falls back to the candidate's profile data.
 
 ## Quality
 
@@ -52,4 +105,5 @@ uv run ruff check --fix .
 ```
 
 Database migrations live in `alembic/versions/`. The LangGraph pipeline is
-`app/graphs/resume_scoring_graph.py`; it is built but not wired to RabbitMQ yet.
+`app/graphs/resume_scoring_graph.py`; the RabbitMQ consumer that runs it lives
+in `app/workers/scoring_worker.py` and starts with the FastAPI process.

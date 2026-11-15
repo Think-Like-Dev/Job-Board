@@ -47,6 +47,13 @@ services:
       # run outside Docker.
       S3_ENDPOINT: http://garage:3900
       AI_RABBITMQ_HOST: rabbitmq
+      # Keep the ONNX runtime from using every core: the whole stack shares
+      # one 8 GB machine.
+      OMP_NUM_THREADS: "2"
+
+    # The scoring job is the memory peak (OCR + embeddings). Capped so it
+    # cannot squeeze the other services out of the machine.
+    mem_limit: 1280m
 
     volumes:
       - ../../ai-platform:/app

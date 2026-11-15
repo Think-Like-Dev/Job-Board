@@ -2,7 +2,13 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import type { AppConfig } from '@src/config/configuration';
-import { DEAD_LETTER_EXCHANGE, EVENTS_EXCHANGE } from './messaging.constants';
+import {
+  CORE_SCORING_RESULTS_QUEUE,
+  DEAD_LETTER_EXCHANGE,
+  EVENTS_EXCHANGE,
+  ROUTING_SCORING_COMPLETED,
+  ROUTING_SCORING_FAILED,
+} from './messaging.constants';
 
 /**
  * Thin wrapper around `amqplib` that publishes durable messages to the topic
@@ -83,6 +89,21 @@ export class RabbitMqPublisher implements OnModuleDestroy {
     await channel.assertExchange(DEAD_LETTER_EXCHANGE, 'topic', {
       durable: true,
     });
+
+    // The queue the AI service's results arrive in. The consumer declares the
+    // queue it reads, so the results are buffered even while nothing consumes
+    // them yet.
+    await channel.assertQueue(CORE_SCORING_RESULTS_QUEUE, { durable: true });
+    await channel.bindQueue(
+      CORE_SCORING_RESULTS_QUEUE,
+      EVENTS_EXCHANGE,
+      ROUTING_SCORING_COMPLETED,
+    );
+    await channel.bindQueue(
+      CORE_SCORING_RESULTS_QUEUE,
+      EVENTS_EXCHANGE,
+      ROUTING_SCORING_FAILED,
+    );
 
     this.channel = channel;
     this.logger.log(`Connected to RabbitMQ at ${rabbit.host}:${rabbit.port}`);

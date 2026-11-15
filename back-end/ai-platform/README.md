@@ -44,6 +44,40 @@ are re-weighted and the match still returns (with `semantic = 0`).
 field. Provider fallback runs within `AI_MAX_FALLBACK_SECONDS` and stops
 retrying a credential after an authentication/permission error.
 
+## Document ingestion
+
+The pipeline in `app/services/document/` reads a resume and decides whether it
+can be trusted:
+
+```
+validate -> extract -> assess -> normalise -> chunk
+```
+
+- **validate** — the extension says what the file claims to be, the content
+  says what it actually is. A file that lies is rejected.
+- **extract** — every page is classified on its own: selectable text goes
+  through PyMuPDF4LLM (which keeps the reading order and the tables),
+  image-only pages go through Tesseract. A PDF can have a text page, a scanned
+  page and a two-column page, so the decision is per page. DOCX files are read
+  paragraph by paragraph and table by table, in document order.
+- **assess** — text density, page coverage, unicode validity, reading order
+  and OCR confidence. A document that fails the assessment goes to the
+  `extraction_review` queue and is **not** scored; the recruiter sees why.
+- **normalise** — NFKC and whitespace clean-up, plus the language of the
+  document. The original language is kept: a Tamil resume stays Tamil.
+- **chunk** — the document is cut into its sections (skills, experience,
+  education, projects, certifications) and each section into chunks of a few
+  hundred tokens, because the embedding model has a token limit.
+
+Everything the pipeline produced is stored side by side in `resume_documents`
+(the text as extracted, the normalised text, the language, the method, the
+quality report) and `resume_chunks` (the chunks and their embeddings), so a
+better extractor can be dropped in later without asking anybody to upload
+their CV again.
+
+The semantic score compares the job against **every chunk** and keeps the best
+match, instead of comparing two single vectors.
+
 ## Models
 
 Both models run **locally**, on your own machine, served by

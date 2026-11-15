@@ -154,14 +154,20 @@ def _applicable_components(spec: JobSpec, has_vectors: bool) -> dict[str, bool]:
 def score_candidate(
     resume: ResumeExtractionSchema,
     spec: JobSpec,
-    resume_vector: list[float] | None = None,
+    resume_vectors: list[list[float]] | None = None,
     job_vector: list[float] | None = None,
     today: date | None = None,
 ) -> DeterministicScore:
+    """Scores a candidate against a job.
+
+    `resume_vectors` holds one vector per chunk of the resume; the job has
+    one vector. The semantic component is the best chunk against the job.
+    """
     skills, matching_skills, missing_skills = score_skills(
         resume.skills, spec.must_have_skills, spec.nice_to_have_skills
     )
-    applicable = _applicable_components(spec, bool(resume_vector and job_vector))
+    candidate_vectors = resume_vectors or []
+    applicable = _applicable_components(spec, bool(candidate_vectors and job_vector))
     components = ComponentScores(
         skills=round(skills, 2),
         experience=round(
@@ -169,9 +175,7 @@ def score_candidate(
             2,
         ),
         semantic=round(
-            score_semantic(resume_vector or [], job_vector or [])
-            if applicable["semantic"]
-            else 0.0,
+            score_semantic(candidate_vectors, job_vector) if applicable["semantic"] else 0.0,
             2,
         ),
         role=round(score_role(resume.experience, spec) if applicable["role"] else 0.0, 2),

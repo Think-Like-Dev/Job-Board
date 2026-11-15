@@ -1,9 +1,19 @@
-"""Nodes for the resume scoring graph. Services are injected as closures."""
+"""Nodes for the resume scoring graph. Services are injected as closures.
+
+The graph follows the document pipeline:
+
+    ingest -> embed_chunks -> store_document -> (extract | manual_review)
+           -> persist_resume -> embed_job -> deterministic_scoring
+           -> evaluation -> persist_match
+
+`manual_review` is a terminal branch: a document the pipeline could not read
+well enough is kept for a human instead of being scored.
+"""
 
 from __future__ import annotations
 
 import hashlib
-import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -17,18 +27,18 @@ from app.core.exceptions import (
     AllProvidersExhausted,
     NoActiveProvider,
     UnreadableDocument,
-    UnsupportedFileType,
 )
 from app.graphs.state import ScoringState
 from app.models.ats import ResumeAnalysis
 from app.schemas.job_match import QualitativeEvaluationSchema
 from app.schemas.resume import EducationEntry, ExperienceEntry, ResumeExtractionSchema
+from app.services.document import ingest_document
+from app.services.document_store import DocumentStore
 from app.services.embedding_service import EmbeddingService
 from app.services.job_service import JobService
 from app.services.job_spec import build_deterministic_job_spec
 from app.services.match_store import upsert_match
 from app.services.orchestrator import LLMOrchestrator
-from app.services.parser import DocumentParser
 from app.services.prompts import (
     EVALUATION_SYSTEM,
     RESUME_EXTRACTION_SYSTEM,
@@ -36,13 +46,14 @@ from app.services.prompts import (
 )
 from app.services.scoring.engine import score_candidate
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class GraphDependencies:
     session: AsyncSession
     orchestrator: LLMOrchestrator
     embedder: EmbeddingService
-    parser: DocumentParser
     job_service: JobService
     settings: Settings
 
@@ -91,49 +102,78 @@ def _snapshot_to_extraction(snapshot: dict[str, Any]) -> ResumeExtractionSchema:
 
 
 def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
-    async def inspect_text(state: ScoringState) -> dict[str, Any]:
-        # Whether a language model is available decides how much of the
-        # pipeline can run. Without one the run degrades to the profile
-        # snapshot and the deterministic score instead of failing.
-        llm_available = await deps.orchestrator.has_active_provider()
+    store = DocumentStore(deps.embedder)
 
-        if state.resume_bytes is not None:
-            try:
-                document = await deps.parser.extract(state.resume_filename, state.resume_bytes)
-            except UnreadableDocument, UnsupportedFileType:
-                if not state.profile_snapshot:
-                    raise
-                snapshot_seed = json.dumps(state.profile_snapshot, sort_keys=True)
-                return {
-                    "resume_text": "",
-                    "resume_sha256": hashlib.sha256(snapshot_seed.encode("utf-8")).hexdigest(),
-                    "llm_available": llm_available,
-                }
-            # The fallback uses the snapshot, so the snapshot must be part of the cache key.
-            if len(document.text) < deps.settings.min_resume_text_chars and state.profile_snapshot:
-                seed = f"{document.text}\n{json.dumps(state.profile_snapshot, sort_keys=True)}"
-                return {
-                    "resume_text": document.text,
-                    "resume_sha256": hashlib.sha256(seed.encode("utf-8")).hexdigest(),
-                    "llm_available": llm_available,
-                }
-            return {
-                "resume_text": document.text,
-                "resume_sha256": hashlib.sha256(state.resume_bytes).hexdigest(),
-                "llm_available": llm_available,
-            }
-        seed = state.resume_text
-        if len(seed) < deps.settings.min_resume_text_chars and state.profile_snapshot is not None:
-            seed = f"{seed}\n{json.dumps(state.profile_snapshot, sort_keys=True)}"
+    async def ingest(state: ScoringState) -> dict[str, Any]:
+        """Reads the document: extract, assess, normalise, chunk."""
+        ingested = ingest_document(
+            state.resume_filename,
+            state.resume_bytes or b"",
+            deps.settings,
+        )
+
         return {
-            "resume_sha256": hashlib.sha256(seed.encode("utf-8")).hexdigest(),
-            "llm_available": llm_available,
+            "ingested": ingested,
+            "chunks": ingested.chunks,
+            "resume_text": ingested.normalized_text,
+            "quality_ok": ingested.quality.ok,
+            "quality_issues": ingested.quality.issues,
+            "language": ingested.quality.language,
+            "document_method": ingested.document.method,
+            "resume_sha256": hashlib.sha256(state.resume_bytes or b"").hexdigest(),
         }
 
-    async def profile_fallback(state: ScoringState) -> dict[str, Any]:
-        if not state.profile_snapshot:
-            raise UnreadableDocument("Resume is unreadable and no profile snapshot was supplied")
-        return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
+    async def embed_chunks(state: ScoringState) -> dict[str, Any]:
+        """Embeds every chunk as a passage."""
+        if not state.chunks:
+            return {"chunk_vectors": []}
+
+        if not await deps.embedder.has_embedding_provider():
+            return {"chunk_vectors": []}
+
+        vectors: list[list[float]] = []
+        for chunk in state.chunks:
+            try:
+                vectors.append(await deps.embedder.embed_passage(chunk.text))
+            except Exception as exc:
+                logger.warning("Could not embed a chunk: %s", exc)
+                vectors.append([])
+
+        return {"chunk_vectors": vectors}
+
+    async def store_document(state: ScoringState) -> dict[str, Any]:
+        """Stores the document, its chunks and any review entry."""
+        if state.ingested is None:
+            return {}
+
+        document = await store.store(
+            deps.session,
+            state.ingested,
+            application_id=state.application_id,
+            resume_file_id=state.resume_file_id,
+            sha256=state.resume_sha256,
+        )
+        # Commit the document before anything else touches the session: the
+        # language model steps release their read transaction with a rollback,
+        # which would otherwise take the document with them.
+        await deps.session.commit()
+
+        return {"document_id": document.id, "needs_review": not state.quality_ok}
+
+    def route_after_ingest(state: ScoringState) -> str:
+        """A document that could not be read goes to the review queue."""
+        if not state.quality_ok:
+            return "manual_review"
+        return "extract"
+
+    async def manual_review(state: ScoringState) -> dict[str, Any]:
+        """The terminal branch for an unreadable document."""
+        logger.warning(
+            "Application %s needs a manual review: %s",
+            state.application_id,
+            "; ".join(state.quality_issues),
+        )
+        return {"needs_review": True}
 
     async def llm_extraction(state: ScoringState) -> dict[str, Any]:
         if not state.llm_available and state.profile_snapshot:
@@ -151,21 +191,6 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 raise
             return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
         return {"extracted": extracted}
-
-    def route_after_inspect(state: ScoringState) -> str:
-        if not state.llm_available:
-            # Without a model the profile snapshot is the only structured
-            # source available.
-            if state.profile_snapshot:
-                return "fallback"
-            raise UnreadableDocument(
-                "No language model is configured and no profile snapshot was supplied"
-            )
-        if len(state.resume_text) >= deps.settings.min_resume_text_chars:
-            return "extract"
-        if state.profile_snapshot:
-            return "fallback"
-        raise UnreadableDocument("Resume has too little text and no profile snapshot was supplied")
 
     async def persist_resume(state: ScoringState) -> dict[str, Any]:
         if state.extracted is None:
@@ -212,39 +237,25 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 await deps.session.refresh(record)
         return {"resume_analysis_id": record.id, "resume_sha256": sha256}
 
-    async def embedding(state: ScoringState) -> dict[str, Any]:
-        if state.extracted is None or state.resume_analysis_id is None:
-            raise UnreadableDocument("Resume extraction did not produce any data")
-        record = await deps.session.get(ResumeAnalysis, state.resume_analysis_id)
-        if record is None:
-            raise UnreadableDocument("Resume analysis disappeared before embedding")
-        resume_vector = await deps.embedder.ensure_resume_embedding(record)
-
+    async def embed_job(state: ScoringState) -> dict[str, Any]:
+        """The job spec and the job vector."""
         try:
             job_record, job_spec = await deps.job_service.analyze(
                 state.job_description_text, state.job_id
             )
         except NoActiveProvider, AllProvidersExhausted:
-            # No language model: the recruiter's own skill list and
-            # experience requirement are enough to score against.
+            # No language model: the recruiter's own skill list and experience
+            # requirement are enough to score against.
             job_spec = build_deterministic_job_spec(
                 title=state.job_title,
                 description_text=state.job_description_text,
                 skills=state.job_skills,
                 years_of_experience=state.job_years_of_experience,
             )
-            return {
-                "resume_vector": resume_vector,
-                "job_vector": None,
-                "job_spec": job_spec,
-            }
+            return {"job_spec": job_spec, "job_vector": None}
 
         job_vector = await deps.embedder.ensure_job_embedding(job_record)
-        return {
-            "resume_vector": resume_vector,
-            "job_vector": job_vector,
-            "job_spec": job_spec,
-        }
+        return {"job_spec": job_spec, "job_vector": job_vector}
 
     async def deterministic_scoring(state: ScoringState) -> dict[str, Any]:
         if state.extracted is None or state.job_spec is None:
@@ -252,7 +263,7 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         result = score_candidate(
             state.extracted,
             state.job_spec,
-            state.resume_vector,
+            state.chunk_vectors,
             state.job_vector,
         )
         return {"deterministic": result}
@@ -299,12 +310,14 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         return {"match_id": record.id}
 
     return {
-        "inspect_text": inspect_text,
-        "profile_fallback": profile_fallback,
+        "ingest": ingest,
+        "embed_chunks": embed_chunks,
+        "store_document": store_document,
+        "route_after_ingest": route_after_ingest,
+        "manual_review": manual_review,
         "llm_extraction": llm_extraction,
-        "route_after_inspect": route_after_inspect,
         "persist_resume": persist_resume,
-        "embedding": embedding,
+        "embed_job": embed_job,
         "deterministic_scoring": deterministic_scoring,
         "evaluation": evaluation,
         "persist_match": persist_match,

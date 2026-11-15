@@ -14,5 +14,17 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
     return dot / (left_norm * right_norm)
 
 
-def score_semantic(left: list[float], right: list[float]) -> float:
-    return max(0.0, min(1.0, cosine_similarity(left, right))) * 100.0
+def score_semantic(
+    candidate_vectors: list[list[float]],
+    job_vector: list[float] | None,
+) -> float:
+    """The best similarity between a job and the candidate's chunks.
+
+    A resume is a set of chunks (skills, one role, one qualification), so the
+    match is the best chunk against the job, not one vector against another.
+    """
+    if not job_vector or not candidate_vectors:
+        return 0.0
+
+    best = max(cosine_similarity(candidate, job_vector) for candidate in candidate_vectors)
+    return max(0.0, min(1.0, best)) * 100.0

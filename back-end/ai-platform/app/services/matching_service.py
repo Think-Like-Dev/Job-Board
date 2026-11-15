@@ -47,7 +47,12 @@ class MatchingService:
             payload.job_description_text, payload.job_id
         )
         job_vector = await self._embedder.ensure_job_embedding(job_record)
-        deterministic = score_candidate(extracted, spec, resume_vector, job_vector)
+        deterministic = score_candidate(
+            extracted,
+            spec,
+            [resume_vector] if resume_vector else [],
+            job_vector,
+        )
 
         # No pooled connection should be held during the LLM call.
         await self._session.rollback()

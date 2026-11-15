@@ -103,6 +103,9 @@ class JobAnalysis(SQLModel, table=True):
     )
     extracted_data: dict[str, Any] = Field(sa_column=Column(JSONB, nullable=False))
     summary: str = Field(sa_column=Column(Text, nullable=False, server_default=text("''")))
+    # The job description as it was submitted, kept so a job can be re-embedded
+    # later without asking the core API for it again.
+    source_text: str = Field(sa_column=Column(Text, nullable=False, server_default=text("''")))
     created_at: datetime = Field(sa_column=created_at_column())
 
 

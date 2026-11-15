@@ -45,7 +45,7 @@ async def upsert_match(
         # Ad-hoc evaluations may legitimately repeat; no unique key to conflict on.
         record = CandidateJobMatch(**values)
         session.add(record)
-        await session.commit()
+        await session.flush()
         await session.refresh(record)
         return record
 
@@ -61,7 +61,9 @@ async def upsert_match(
     )
     result = await session.execute(statement)
     record_id = result.scalar_one()
-    await session.commit()
+    # The caller commits: the match and the event that announces it belong in
+    # the same transaction.
+    await session.flush()
     record = (
         await session.exec(select(CandidateJobMatch).where(CandidateJobMatch.id == record_id))
     ).one()

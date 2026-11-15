@@ -7,13 +7,47 @@ from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import AppError
+from app.core.rabbitmq import RabbitMqManager
 from app.db.session import engine
+from app.workers.outbox_relay import OutboxRelay
+from app.workers.scoring_worker import ScoringWorker
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
-    yield
-    await engine.dispose()
+async def lifespan(app: FastAPI):
+    """Runs the broker consumers inside the FastAPI process.
+
+    There is no separate worker service: the scoring consumer and the outbox
+    relay live here, next to the HTTP API.
+    """
+    settings = get_settings()
+    manager = RabbitMqManager(settings)
+    worker = ScoringWorker(manager, settings=settings)
+    relay = OutboxRelay(manager)
+
+    try:
+        await manager.connect()
+    except Exception:
+        logger.exception(
+            "Could not connect to RabbitMQ; scoring and result publishing are disabled"
+        )
+    else:
+        await worker.start()
+        relay.start()
+
+    app.state.rabbitmq = manager
+    app.state.scoring_worker = worker
+    app.state.outbox_relay = relay
+
+    try:
+        yield
+    finally:
+        await relay.stop()
+        await worker.stop()
+        await manager.close()
+        await engine.dispose()
 
 
 def create_app() -> FastAPI:

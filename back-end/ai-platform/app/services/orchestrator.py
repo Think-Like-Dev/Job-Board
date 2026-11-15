@@ -38,8 +38,8 @@ class _Route:
 
     provider_code: str
     model_name: str
-    credential_id: UUID
-    model_id: UUID
+    credential_id: UUID | None
+    model_id: UUID | None
     encrypted_api_key: str
 
 
@@ -99,20 +99,28 @@ class LLMOrchestrator:
                         deadline - time.monotonic(),
                     ),
                 )
-                with self._cipher.decrypt(route.encrypted_api_key) as decrypted:
-                    api_key = decrypted
+                if route.credential_id is None:
+                    # The local model server needs no stored credential.
+                    api_key = self._settings.local_llm_api_key or "local"
                     chat = self._build_chat_model(
                         route.provider_code, route.model_name, api_key, remaining
                     )
-                    runnable = chat.with_structured_output(schema)
-                    result = await runnable.ainvoke(messages)
+                    result = await chat.with_structured_output(schema).ainvoke(messages)
+                else:
+                    with self._cipher.decrypt(route.encrypted_api_key) as decrypted:
+                        api_key = decrypted
+                        chat = self._build_chat_model(
+                            route.provider_code, route.model_name, api_key, remaining
+                        )
+                        runnable = chat.with_structured_output(schema)
+                        result = await runnable.ainvoke(messages)
                 if isinstance(result, schema):
                     return result
                 return schema.model_validate(result)
             except UnsupportedProvider:
                 raise
             except Exception as exc:
-                if _is_permanent_auth_error(exc):
+                if route.credential_id is not None and _is_permanent_auth_error(exc):
                     bad_credentials.add(route.credential_id)
                 message = self._sanitize(str(exc), api_key)
                 await self._record_failure(route.credential_id, route.model_id, exc, message)
@@ -135,7 +143,7 @@ class LLMOrchestrator:
             .order_by(AIProvider.created_at, AIModel.created_at, AICredential.created_at)
         )
         rows = (await self._session.exec(statement)).all()
-        return [
+        routes = [
             _Route(
                 provider_code=provider.code,
                 model_name=model.model_name,
@@ -145,6 +153,31 @@ class LLMOrchestrator:
             )
             for model, provider, credential in rows
         ]
+
+        # The local model server comes first: it is the route that works
+        # without a paid provider. A stored provider stays as the fallback.
+        if self._settings.has_local_llm:
+            routes.insert(
+                0,
+                _Route(
+                    provider_code="local",
+                    model_name=self._settings.local_llm_model,
+                    credential_id=None,
+                    model_id=None,
+                    encrypted_api_key="",
+                ),
+            )
+
+        return routes
+
+    async def has_active_provider(self) -> bool:
+        """Whether a language model is configured at all.
+
+        Callers use this to degrade instead of failing: without a model the
+        pipeline still produces a deterministic score.
+        """
+        routes = await self._active_routes()
+        return bool(routes)
 
     def _build_chat_model(
         self, provider_code: str, model_name: str, api_key: str, timeout: float
@@ -160,6 +193,16 @@ class LLMOrchestrator:
             return ChatAnthropic(
                 model_name=model_name,
                 api_key=api_key,
+                timeout=timeout,
+                max_retries=0,
+            )
+        if provider_code == "local":
+            # A model server on the user's own machine, speaking the
+            # OpenAI-compatible API. No API key is needed.
+            return ChatOpenAI(
+                model=model_name,
+                api_key=api_key,
+                base_url=self._settings.local_llm_base_url,
                 timeout=timeout,
                 max_retries=0,
             )

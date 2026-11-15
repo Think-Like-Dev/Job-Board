@@ -32,3 +32,13 @@ export const ROUTING_SCORING_COMPLETED = 'scoring.completed';
 
 /** The AI service gave up scoring an application. */
 export const ROUTING_SCORING_FAILED = 'scoring.failed';
+
+/**
+ * The language the AI writes its narrative in (fit analysis, strengths, risks,
+ * interview questions).
+ *
+ * Today the recruiter platform ships one locale, so this is a constant. When
+ * the recruiter's own locale is stored on the user, it replaces this value
+ * per event and the AI writes the narrative in that language.
+ */
+export const DEFAULT_OUTPUT_LANGUAGE = 'en';

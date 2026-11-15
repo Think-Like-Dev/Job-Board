@@ -1,0 +1,5 @@
+# Git stores these as LF and checks them out with the line endings of the
+# machine: CRLF on Windows, LF on Linux and macOS. The scripts run inside the
+# Docker images, so the images strip the carriage returns themselves.
+*.sh text
+dk text

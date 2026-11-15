@@ -12,6 +12,7 @@ export interface AppConfig {
   cookie: CookieConfig;
   corsOrigins: string[];
   storage: StorageConfig;
+  rabbitmq: RabbitMqConfig;
 }
 
 /** S3-compatible object storage (Garage) used for resumes and cover letters. */
@@ -23,6 +24,24 @@ export interface StorageConfig {
   bucket: string;
   forcePathStyle: boolean;
   signedUrlExpirySeconds: number;
+}
+
+/**
+ * RabbitMQ broker used for the events that cross into the AI service.
+ * The topology names live in `src/modules/messaging/messaging.constants.ts`.
+ */
+export interface RabbitMqConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  vhost: string;
+  /** How many unpublished outbox records one relay tick publishes. */
+  outboxBatchSize: number;
+  /** How often the relay looks for unpublished outbox records, in ms. */
+  outboxPollMs: number;
+  /** After this many failed publishes the record is marked as permanently failed. */
+  maxPublishAttempts: number;
 }
 
 export interface DatabaseConfig {
@@ -118,6 +137,22 @@ export default (): AppConfig => ({
     forcePathStyle: (process.env.S3_FORCE_PATH_STYLE ?? 'true') === 'true',
     signedUrlExpirySeconds: parseInt(
       process.env.S3_SIGNED_URL_EXPIRY_SECONDS ?? '900',
+      10,
+    ),
+  },
+  rabbitmq: {
+    host: process.env.RABBITMQ_HOST ?? 'localhost',
+    port: parseInt(process.env.RABBITMQ_PORT ?? '5672', 10),
+    user: process.env.RABBITMQ_USER ?? 'guest',
+    password: process.env.RABBITMQ_PASSWORD ?? 'guest',
+    vhost: process.env.RABBITMQ_VHOST ?? '/',
+    outboxBatchSize: parseInt(
+      process.env.RABBITMQ_OUTBOX_BATCH_SIZE ?? '50',
+      10,
+    ),
+    outboxPollMs: parseInt(process.env.RABBITMQ_OUTBOX_POLL_MS ?? '5000', 10),
+    maxPublishAttempts: parseInt(
+      process.env.RABBITMQ_MAX_PUBLISH_ATTEMPTS ?? '5',
       10,
     ),
   },

@@ -42,6 +42,11 @@ services:
 
     environment:
       AI_ENVIRONMENT: local
+      # Inside Compose the AI service reaches Garage by service name. The
+      # shared env file keeps the host view (localhost:3900) for services that
+      # run outside Docker.
+      S3_ENDPOINT: http://garage:3900
+      AI_RABBITMQ_HOST: rabbitmq
 
     volumes:
       - ../../ai-platform:/app

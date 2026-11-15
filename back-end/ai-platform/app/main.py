@@ -53,6 +53,13 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Build the FastAPI application. Kept as a factory for tests and workers."""
     settings = get_settings()
+    # Uvicorn only configures its own loggers, so the root logger has no
+    # handler: without this the service's own messages (the broker
+    # connection, the scoring worker, the outbox relay) never reach the log.
+    logging.basicConfig(
+        level=settings.log_level.upper(),
+        format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+    )
     logging.getLogger().setLevel(settings.log_level.upper())
     app = FastAPI(
         title=settings.app_name,

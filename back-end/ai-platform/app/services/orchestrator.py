@@ -140,7 +140,11 @@ class LLMOrchestrator:
                 AIProvider.is_active.is_(True),
                 AICredential.is_active.is_(True),
             )
-            .order_by(AIProvider.created_at, AIModel.created_at, AICredential.created_at)
+            .order_by(
+                AIProvider.created_at,
+                AIModel.model_name,
+                AICredential.created_at,
+            )
         )
         rows = (await self._session.exec(statement)).all()
         routes = [

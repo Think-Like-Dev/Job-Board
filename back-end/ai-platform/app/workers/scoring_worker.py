@@ -20,6 +20,7 @@ from typing import Any
 from uuid import UUID
 
 from aio_pika.abc import AbstractIncomingMessage
+from pydantic import ValidationError
 from sqlalchemy import text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -44,7 +45,6 @@ from app.services.embedding_service import EmbeddingService
 from app.services.job_service import JobService
 from app.services.orchestrator import LLMOrchestrator
 from app.services.outbox_service import OutboxService
-from app.services.parser import DocumentParser
 from app.services.scoring.models import DeterministicScore
 from app.services.storage_client import StorageClient
 
@@ -117,11 +117,24 @@ class ScoringWorker:
             await message.ack()
             return
 
-        await self._handle_scoring(message, body)
+        try:
+            await self._handle_scoring(message, body)
+        except Exception:
+            # Anything unexpected dead-letters the message. Leaving it
+            # unacknowledged would redeliver it in a hot loop forever.
+            logger.exception("Unexpected failure while handling a scoring message")
+            with contextlib.suppress(Exception):
+                await message.reject(requeue=False)
 
     async def _handle_cancellation(self, body: dict[str, Any]) -> None:
         """Records that an application must not be scored any more."""
-        event = ApplicationCancelledEvent.model_validate(body)
+        try:
+            event = ApplicationCancelledEvent.model_validate(body)
+        except ValidationError as exc:
+            # A message that does not match the contract can never be handled:
+            # dead-letter it instead of redelivering it forever.
+            logger.error("Discarding a cancellation message that does not match: %s", exc)
+            return
         async with async_session_factory() as session:
             await session.execute(
                 text(
@@ -136,7 +149,15 @@ class ScoringWorker:
         logger.info("Application %s cancelled (%s)", event.applicationId, event.reason)
 
     async def _handle_scoring(self, message: AbstractIncomingMessage, body: dict[str, Any]) -> None:
-        event = ApplicationSubmittedEvent.model_validate(body)
+        try:
+            event = ApplicationSubmittedEvent.model_validate(body)
+        except ValidationError as exc:
+            # A message that does not match the contract can never be handled:
+            # dead-letter it instead of redelivering it forever.
+            logger.error("Discarding a scoring message that does not match: %s", exc)
+            await message.reject(requeue=False)
+            return
+
         attempt = int(message.headers.get("x-attempt", 1) or 1)
 
         async with async_session_factory() as session:
@@ -175,7 +196,6 @@ class ScoringWorker:
             session=session,
             orchestrator=orchestrator,
             embedder=embedder,
-            parser=DocumentParser(self._settings.max_resume_bytes),
             job_service=job_service,
             settings=self._settings,
         )
@@ -194,6 +214,9 @@ class ScoringWorker:
             job_years_of_experience=event.jobYearsOfExperience,
             output_language=event.outputLanguage or "en",
             profile_snapshot=event.profileSnapshot or None,
+            # Whether a language model is available decides how much of the
+            # pipeline can run; without one the run still produces a score.
+            llm_available=await orchestrator.has_active_provider(),
         )
 
         return await graph.ainvoke(state)
@@ -217,7 +240,32 @@ class ScoringWorker:
         match_id: UUID | None = result.get("match_id")
 
         if deterministic is None or match_id is None:
-            logger.error("The scoring run produced no match for %s", event.applicationId)
+            # The document could not be read well enough to score, or the run
+            # produced nothing. The recruiter sees why there is no score.
+            reason = (
+                "the document needs a manual review"
+                if result.get("needs_review")
+                else ("the scoring run produced no match")
+            )
+            message = "; ".join(result.get("quality_issues") or []) or reason
+            logger.warning("No score for application %s: %s", event.applicationId, message)
+
+            await self._outbox.enqueue(
+                session,
+                aggregate_type="application",
+                aggregate_id=event.applicationId,
+                event_type=SCORING_FAILED,
+                routing_key=SCORING_FAILED,
+                payload={
+                    "applicationId": str(event.applicationId),
+                    "candidateId": str(event.candidateId),
+                    "jobId": str(event.jobId),
+                    "attempt": 1,
+                    "reason": reason,
+                    "message": message,
+                },
+            )
+            await session.commit()
             return
 
         await self._outbox.enqueue(

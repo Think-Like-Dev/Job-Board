@@ -95,7 +95,9 @@ function Wait-Ready {
 
 $chatArgs = @(
     '-m', $chatModelPath,
-    '--host', '127.0.0.1',
+    # Bind every interface: a container reaches the host through the Docker
+    # gateway, not through 127.0.0.1.
+    '--host', '0.0.0.0',
     '--port', "$ChatPort",
     '--ctx-size', "$ContextSize",
     '--threads', "$Threads",
@@ -103,7 +105,7 @@ $chatArgs = @(
 )
 $embeddingArgs = @(
     '-m', $embeddingModelPath,
-    '--host', '127.0.0.1',
+    '--host', '0.0.0.0',
     '--port', "$EmbeddingPort",
     '--threads', "$Threads",
     '--embedding',

@@ -83,7 +83,9 @@ if port_in_use "$CHAT_PORT"; then
 else
   "$LLAMA_SERVER" \
     -m "$MODELS_DIR/$CHAT_MODEL" \
-    --host 127.0.0.1 \
+    # Bind every interface: a container reaches the host through the Docker
+    # gateway, not through 127.0.0.1.
+    --host 0.0.0.0 \
     --port "$CHAT_PORT" \
     --ctx-size "$CONTEXT_SIZE" \
     --threads "$THREADS" \
@@ -98,7 +100,7 @@ if port_in_use "$EMBEDDING_PORT"; then
 else
   "$LLAMA_SERVER" \
     -m "$MODELS_DIR/$EMBEDDING_MODEL" \
-    --host 127.0.0.1 \
+    --host 0.0.0.0 \
     --port "$EMBEDDING_PORT" \
     --threads "$THREADS" \
     --embedding \

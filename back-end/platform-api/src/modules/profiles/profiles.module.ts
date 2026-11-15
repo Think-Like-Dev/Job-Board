@@ -10,9 +10,12 @@ import { CandidateSkillSchema } from '@modules/candidates/candidate-skill.schema
 import { CandidateSchema } from '@modules/candidates/candidate.schema';
 import { FileSchema } from '@modules/files/file.schema';
 import { FilesModule } from '@modules/files/files.module';
+import { JobSchema } from '@modules/jobs/job.schema';
+import { MessagingModule } from '@modules/messaging/messaging.module';
 import { SkillSchema } from '@modules/skills/skill.schema';
 import { ProfileController } from './profile.controller';
 import { ProfileReadService } from './profile-read.service';
+import { ProfileRescoreService } from './profile-rescore.service';
 import { ProfileSnapshotService } from './profile-snapshot.service';
 import { ProfileWriteService } from './profile-write.service';
 
@@ -28,12 +31,19 @@ import { ProfileWriteService } from './profile-write.service';
       SkillSchema,
       ApplicationSchema,
       FileSchema,
+      JobSchema,
     ]),
     SessionModule,
     FilesModule,
+    MessagingModule,
   ],
   controllers: [ProfileController],
-  providers: [ProfileReadService, ProfileSnapshotService, ProfileWriteService],
+  providers: [
+    ProfileReadService,
+    ProfileSnapshotService,
+    ProfileWriteService,
+    ProfileRescoreService,
+  ],
   exports: [ProfileReadService, ProfileWriteService],
 })
 export class ProfilesModule {}

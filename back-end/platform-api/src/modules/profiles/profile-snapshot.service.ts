@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { EntityManager } from '@mikro-orm/core';
 import { ApplicationSchema } from '@modules/applications/application.schema';
-import { CandidateProfileVersionSchema } from '@modules/candidates/candidate-profile-version.schema';
+import {
+  CandidateProfileVersion,
+  CandidateProfileVersionSchema,
+} from '@modules/candidates/candidate-profile-version.schema';
 import type { ProfileSnapshotData, ProfileView } from './profile.types';
 
 /**
@@ -42,6 +45,24 @@ export class ProfileSnapshotService {
       return null;
     }
 
+    const version = await this.createVersion(em, candidateId, view);
+
+    await em.nativeUpdate(ApplicationSchema, liveWhere, {
+      profileVersionId: version.id,
+    });
+
+    return { id: version.id, versionNumber: version.versionNumber };
+  }
+
+  /**
+   * Creates one immutable snapshot of the given profile view without touching
+   * any application. Callers point the applications they care about at it.
+   */
+  async createVersion(
+    em: EntityManager,
+    candidateId: string,
+    view: ProfileView,
+  ): Promise<CandidateProfileVersion> {
     const latest = await em.findOne(
       CandidateProfileVersionSchema,
       { candidateId },
@@ -59,10 +80,6 @@ export class ProfileSnapshotService {
     em.persist(version);
     await em.flush();
 
-    await em.nativeUpdate(ApplicationSchema, liveWhere, {
-      profileVersionId: version.id,
-    });
-
-    return { id: version.id, versionNumber };
+    return version;
   }
 }

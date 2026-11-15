@@ -47,6 +47,11 @@ services:
       # run outside Docker.
       S3_ENDPOINT: http://garage:3900
       AI_RABBITMQ_HOST: rabbitmq
+      # The model servers run on the host (see
+      # ai-platform/scripts/start-llama-servers.ps1), so the container reaches
+      # them through the Docker host gateway.
+      AI_LOCAL_LLM_BASE_URL: http://host.docker.internal:9931/v1
+      AI_EMBEDDING_BASE_URL: http://host.docker.internal:9932/v1
       # Keep the ONNX runtime from using every core: the whole stack shares
       # one 8 GB machine.
       OMP_NUM_THREADS: "2"

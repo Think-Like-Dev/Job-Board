@@ -9,6 +9,9 @@ RUN apk add --no-cache ca-certificates
 COPY --from=garage /garage /garage
 COPY garage-init.sh /garage-init.sh
 
-RUN chmod +x /garage-init.sh
+# The repository is checked out with the line endings of the machine, so on
+# Windows this file arrives with CRLF. The shell would read `set -eu\r` and
+# die with "illegal option -", so the carriage returns go here, in the image.
+RUN sed -i 's/\r$//' /garage-init.sh && chmod +x /garage-init.sh
 
 ENTRYPOINT ["/bin/sh", "/garage-init.sh"]

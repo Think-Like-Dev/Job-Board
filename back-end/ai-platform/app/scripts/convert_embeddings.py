@@ -27,6 +27,7 @@ from app.core.exceptions import ConfigurationError
 from app.core.security import CredentialCipher, get_cipher
 from app.db.session import async_session_factory
 from app.models.ats import JobAnalysis, JobEmbedding, ResumeAnalysis, ResumeEmbedding
+from app.models.documents import ResumeChunk
 from app.services.embedding_service import EmbeddingService
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,23 @@ async def convert_jobs(session, embedder: EmbeddingService) -> int:
     return converted
 
 
+async def convert_chunks(session, embedder: EmbeddingService) -> int:
+    """Re-embeds every stored chunk."""
+    chunks = (await session.exec(select(ResumeChunk))).all()
+    converted = 0
+
+    for chunk in chunks:
+        if not (chunk.text or "").strip():
+            continue
+
+        vector = await embedder.embed_passage(chunk.text)
+        chunk.embedding = vector
+        chunk.model = embedder.model_name
+        converted += 1
+
+    return converted
+
+
 async def main() -> int:
     logging.basicConfig(level=logging.INFO)
     settings = get_settings()
@@ -131,11 +149,14 @@ async def main() -> int:
         await session.commit()
         jobs = await convert_jobs(session, embedder)
         await session.commit()
+        chunks = await convert_chunks(session, embedder)
+        await session.commit()
 
         logger.info(
-            "Converted %s resume vector(s) and %s job vector(s) to %s",
+            "Converted %s resume vector(s), %s job vector(s) and %s chunk vector(s) to %s",
             resumes,
             jobs,
+            chunks,
             embedder.model_name,
         )
 

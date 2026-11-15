@@ -102,6 +102,23 @@ class EmbeddingService:
         return vector
 
     async def embed(self, text: str) -> list[float]:
+        """Embeds a text with no prefix."""
+        return await self._embed(text, prefix="")
+
+    async def embed_query(self, text: str) -> list[float]:
+        """Embeds a job description.
+
+        E5-style models are asymmetric: a job description is a `query` and a
+        resume passage is a `passage`. The prefixes are configuration because
+        they belong to the model, not to the model server.
+        """
+        return await self._embed(text, prefix=self._settings.embedding_query_prefix)
+
+    async def embed_passage(self, text: str) -> list[float]:
+        """Embeds a piece of a resume."""
+        return await self._embed(text, prefix=self._settings.embedding_passage_prefix)
+
+    async def _embed(self, text: str, *, prefix: str) -> list[float]:
         route = await self._embedding_route()
         if route is None:
             raise NoActiveProvider(
@@ -114,14 +131,15 @@ class EmbeddingService:
             if encrypted_key:
                 with self._cipher.decrypt(encrypted_key) as decrypted:
                     api_key = decrypted
-                    # Release the read transaction before the external call.
-                    await self._session.rollback()
-                    vectors = await self._embed_with(model, api_key, base_url, dimensions, text)
+                    vectors = await self._embed_with(
+                        model, api_key, base_url, dimensions, prefix + text
+                    )
             else:
                 # The local model server needs no key.
                 api_key = "local"
-                await self._session.rollback()
-                vectors = await self._embed_with(model, api_key, base_url, dimensions, text)
+                vectors = await self._embed_with(
+                    model, api_key, base_url, dimensions, prefix + text
+                )
         finally:
             api_key = ""
 

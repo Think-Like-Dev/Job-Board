@@ -110,3 +110,17 @@ export enum FileOwnerType {
   CANDIDATE = 'CANDIDATE',
   USER = 'USER',
 }
+
+/**
+ * Lifecycle of a record in the transactional outbox.
+ *
+ * - `PENDING` — waiting to be published (or waiting for the next retry).
+ * - `PUBLISHED` — the broker acknowledged the message.
+ * - `FAILED` — publishing failed too many times; the record is kept for
+ *   inspection instead of being deleted.
+ */
+export enum OutboxStatus {
+  PENDING = 'PENDING',
+  PUBLISHED = 'PUBLISHED',
+  FAILED = 'FAILED',
+}

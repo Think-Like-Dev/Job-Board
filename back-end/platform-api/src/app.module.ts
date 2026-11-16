@@ -16,6 +16,7 @@ import { SkillsModule } from '@modules/skills/skills.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { BookmarksModule } from '@modules/bookmarks/bookmarks.module';
 import { MessagingModule } from '@modules/messaging/messaging.module';
+import { AiScoringModule } from '@modules/ai-scoring/ai-scoring.module';
 import { RecruiterCandidatesModule } from '@modules/recruiter-candidates/recruiter-candidates.module';
 
 @Module({
@@ -40,6 +41,7 @@ import { RecruiterCandidatesModule } from '@modules/recruiter-candidates/recruit
     BookmarksModule,
     RecruiterCandidatesModule,
     MessagingModule,
+    AiScoringModule,
   ],
   controllers: [AppController],
   providers: [AppService],

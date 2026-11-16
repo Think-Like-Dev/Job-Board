@@ -2,13 +2,8 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import type { AppConfig } from '@src/config/configuration';
-import {
-  CORE_SCORING_RESULTS_QUEUE,
-  DEAD_LETTER_EXCHANGE,
-  EVENTS_EXCHANGE,
-  ROUTING_SCORING_COMPLETED,
-  ROUTING_SCORING_FAILED,
-} from './messaging.constants';
+import { EVENTS_EXCHANGE } from './messaging.constants';
+import { declareMessagingTopology } from './messaging.topology';
 
 /**
  * Thin wrapper around `amqplib` that publishes durable messages to the topic
@@ -85,25 +80,11 @@ export class RabbitMqPublisher implements OnModuleDestroy {
     });
 
     const channel = await this.connection.createConfirmChannel();
-    await channel.assertExchange(EVENTS_EXCHANGE, 'topic', { durable: true });
-    await channel.assertExchange(DEAD_LETTER_EXCHANGE, 'topic', {
-      durable: true,
-    });
-
-    // The queue the AI service's results arrive in. The consumer declares the
-    // queue it reads, so the results are buffered even while nothing consumes
-    // them yet.
-    await channel.assertQueue(CORE_SCORING_RESULTS_QUEUE, { durable: true });
-    await channel.bindQueue(
-      CORE_SCORING_RESULTS_QUEUE,
-      EVENTS_EXCHANGE,
-      ROUTING_SCORING_COMPLETED,
-    );
-    await channel.bindQueue(
-      CORE_SCORING_RESULTS_QUEUE,
-      EVENTS_EXCHANGE,
-      ROUTING_SCORING_FAILED,
-    );
+    // The results queue is declared here as well, so a result is buffered
+    // even when nothing consumes it yet. Both ends declare it the same way;
+    // RabbitMQ refuses a queue that is declared twice with different
+    // arguments.
+    await declareMessagingTopology(channel);
 
     this.channel = channel;
     this.logger.log(`Connected to RabbitMQ at ${rabbit.host}:${rabbit.port}`);

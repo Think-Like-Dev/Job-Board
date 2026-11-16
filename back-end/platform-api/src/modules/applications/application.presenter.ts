@@ -3,6 +3,11 @@ import type { File } from '@modules/files/file.schema';
 import type { Job } from '@modules/jobs/job.schema';
 import type { ProfileView } from '@modules/profiles/profile.types';
 import { toProfileDto } from '@modules/profiles/profile.presenter';
+import type { ApplicationAiScore } from '@modules/ai-scoring/application-ai-score.schema';
+import {
+  toApplicationAiScoreDto,
+  toApplicationAiScoreSummaryDto,
+} from '@modules/ai-scoring/dto/ai-score-response.dto';
 import type { ApplicationStatusHistory } from './application-status-history.schema';
 import type { Application } from './application.schema';
 import type {
@@ -108,6 +113,7 @@ export function toRecruiterApplicationListItemDto(
   candidate: Candidate,
   resume: File | null | undefined,
   profile?: ProfileView,
+  aiScore?: ApplicationAiScore | null,
 ): RecruiterApplicationListItemDto {
   return {
     id: application.id,
@@ -122,6 +128,7 @@ export function toRecruiterApplicationListItemDto(
     status: application.status,
     appliedAt: toIso(application.appliedAt) ?? null,
     createdAt: application.createdAt?.toISOString() ?? new Date().toISOString(),
+    aiScore: toApplicationAiScoreSummaryDto(aiScore),
   };
 }
 
@@ -150,6 +157,7 @@ export function toRecruiterApplicationDetailDto(
   coverLetter: File | null | undefined,
   history: ApplicationStatusHistory[],
   profile: ProfileView,
+  aiScore?: ApplicationAiScore | null,
 ): RecruiterApplicationDetailDto {
   return {
     ...toRecruiterApplicationListItemDto(
@@ -157,6 +165,7 @@ export function toRecruiterApplicationDetailDto(
       candidate,
       resume,
       profile,
+      aiScore,
     ),
     resumeFileUrl: downloadUrl(application.resumeFileId),
     coverLetterFileId: application.coverLetterFileId ?? undefined,
@@ -179,5 +188,6 @@ export function toRecruiterApplicationDetailDto(
       resumeFileId: profile.resume?.id,
     },
     statusHistory: history.map(toStatusHistoryDto),
+    aiAssessment: toApplicationAiScoreDto(aiScore),
   };
 }

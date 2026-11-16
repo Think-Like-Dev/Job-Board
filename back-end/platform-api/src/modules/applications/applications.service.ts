@@ -31,9 +31,11 @@ import {
 } from '@modules/messaging/application-scoring-event';
 import {
   DEFAULT_OUTPUT_LANGUAGE,
+  ROUTING_APPLICATION_CANCELLED,
   ROUTING_APPLICATION_SUBMITTED,
 } from '@modules/messaging/messaging.constants';
 import { OutboxService } from '@modules/messaging/outbox.service';
+import { AiScoringProjectionService } from '@modules/ai-scoring/ai-scoring-projection.service';
 import { ProfileReadService } from '@modules/profiles/profile-read.service';
 import { ProfileWriteService } from '@modules/profiles/profile-write.service';
 import { ApplicationQueries } from './application-queries';
@@ -107,6 +109,7 @@ export class ApplicationsService {
     private readonly profileWriteService: ProfileWriteService,
     private readonly profileReadService: ProfileReadService,
     private readonly outboxService: OutboxService,
+    private readonly aiScoring: AiScoringProjectionService,
   ) {}
 
   /**
@@ -296,6 +299,24 @@ export class ApplicationsService {
         dto.reason?.trim() || null,
         candidateId,
       );
+
+      // The AI service may be scoring this application right now. Tell it to
+      // stop, and drop the "waiting for the score" marker: the score will
+      // never arrive.
+      this.outboxService.enqueue(txEm, {
+        aggregateType: 'application',
+        aggregateId: application.id,
+        eventType: 'application.cancelled',
+        routingKey: ROUTING_APPLICATION_CANCELLED,
+        payload: {
+          applicationId: application.id,
+          candidateId,
+          jobId: application.jobId,
+          reason: dto.reason?.trim() || 'withdrawn',
+        },
+      });
+      await this.aiScoring.clearPending(txEm, application.id);
+
       await txEm.flush();
     });
 
@@ -600,6 +621,15 @@ export class ApplicationsService {
       eventType: 'application.submitted',
       routingKey: ROUTING_APPLICATION_SUBMITTED,
       payload: payload as unknown as Record<string, unknown>,
+    });
+
+    // The recruiter sees the score as "waiting" from this moment on. The row
+    // is written in the same transaction, so a score can never be announced
+    // for an application the recruiter never heard about.
+    await this.aiScoring.markPending(txEm, {
+      id: application.id,
+      candidateId,
+      jobId: application.jobId,
     });
   }
 

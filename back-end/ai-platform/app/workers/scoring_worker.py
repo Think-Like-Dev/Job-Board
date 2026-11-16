@@ -289,6 +289,9 @@ class ScoringWorker:
                 "risks": list(qualitative.risks if qualitative else []),
                 "interviewQuestions": list(qualitative.interview_questions if qualitative else []),
                 "knockoutReason": deterministic.knockout_reason,
+                # Without a language model there is no narrative, only the
+                # deterministic score. The core API shows the two differently.
+                "mode": "scored" if qualitative else "score_only",
             },
         )
         await session.commit()

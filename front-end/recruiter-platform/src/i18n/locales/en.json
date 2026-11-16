@@ -155,7 +155,12 @@
       "loadFailedTitle": "Could not load applications",
       "loadFailed": "Please check your connection and try again.",
       "retry": "Retry",
-      "aiScorePending": "AI ranking is not available yet",
+      "aiScorePending": "The AI score is not available yet",
+      "aiScore": {
+        "none": "No score yet",
+        "scoring": "Scoring…",
+        "failed": "Failed"
+      },
       "noResume": "Not provided",
       "viewResume": "View resume",
       "downloadResume": "Download resume",
@@ -234,8 +239,19 @@
           "portfolio": "Portfolio"
         },
         "ai": {
-          "pending": "AI Evaluation pending",
-          "description": "AI ranking and evaluation will be available in a later release."
+          "none": "No score has been calculated for this application yet.",
+          "pending": "Scoring in progress",
+          "pendingDescription": "The resume is being read and scored. The result appears here as soon as it is ready.",
+          "failed": "Scoring failed",
+          "failedDescription": "The resume could not be scored.",
+          "scored": "Assessed",
+          "scoreOnly": "Score only",
+          "weights": "Weights {{version}}",
+          "summary": "Fit analysis",
+          "strengths": "Strengths",
+          "risks": "Risks",
+          "skills": "Skills",
+          "interviewQuestions": "Suggested questions"
         },
         "timeline": {
           "applied": "Applied",

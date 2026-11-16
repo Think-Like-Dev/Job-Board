@@ -12,6 +12,7 @@ import { FileSchema } from '@modules/files/file.schema';
 import { FilesModule } from '@modules/files/files.module';
 import { JobSchema } from '@modules/jobs/job.schema';
 import { MessagingModule } from '@modules/messaging/messaging.module';
+import { AiScoringModule } from '@modules/ai-scoring/ai-scoring.module';
 import { SkillSchema } from '@modules/skills/skill.schema';
 import { ProfileController } from './profile.controller';
 import { ProfileReadService } from './profile-read.service';
@@ -36,6 +37,7 @@ import { ProfileWriteService } from './profile-write.service';
     SessionModule,
     FilesModule,
     MessagingModule,
+    AiScoringModule,
   ],
   controllers: [ProfileController],
   providers: [

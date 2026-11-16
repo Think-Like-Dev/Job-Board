@@ -80,6 +80,10 @@ class ScoringCompletedEvent(EventEnvelope):
     risks: list[str] = Field(default_factory=list)
     interviewQuestions: list[str] = Field(default_factory=list)
     knockoutReason: str | None = None
+    # Whether the result carries a narrative ("scored") or only the number
+    # ("score_only"). The core API needs this to tell the recruiter which of
+    # the two it is looking at.
+    mode: str = "scored"
 
 
 class ScoringFailedEvent(EventEnvelope):

@@ -17,6 +17,7 @@ import {
   ROUTING_APPLICATION_SUBMITTED,
 } from '@modules/messaging/messaging.constants';
 import { OutboxService } from '@modules/messaging/outbox.service';
+import { AiScoringProjectionService } from '@modules/ai-scoring/ai-scoring-projection.service';
 import { ProfileSnapshotService } from './profile-snapshot.service';
 import type { ProfileView } from './profile.types';
 
@@ -52,6 +53,7 @@ export class ProfileRescoreService {
   constructor(
     private readonly em: PostgreSqlEntityManager,
     private readonly outbox: OutboxService,
+    private readonly aiScoring: AiScoringProjectionService,
     private readonly snapshots: ProfileSnapshotService,
   ) {}
 
@@ -151,6 +153,14 @@ export class ProfileRescoreService {
         eventType: 'application.submitted',
         routingKey: ROUTING_APPLICATION_SUBMITTED,
         payload: payload as unknown as Record<string, unknown>,
+      });
+
+      // The old score belongs to the old document. The recruiter sees the
+      // application as "waiting" until the new result arrives.
+      await this.aiScoring.markPending(em, {
+        id: application.id,
+        candidateId,
+        jobId: job.id,
       });
       queued += 1;
     }

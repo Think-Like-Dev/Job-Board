@@ -245,14 +245,22 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
             )
         except NoActiveProvider, AllProvidersExhausted:
             # No language model: the recruiter's own skill list and experience
-            # requirement are enough to score against.
+            # requirement are enough to score against. The embedding of the
+            # job does not need a model, so the semantic part of the score
+            # still works.
             job_spec = build_deterministic_job_spec(
                 title=state.job_title,
                 description_text=state.job_description_text,
                 skills=state.job_skills,
                 years_of_experience=state.job_years_of_experience,
             )
-            return {"job_spec": job_spec, "job_vector": None}
+            job_record = await deps.job_service.store_spec(
+                state.job_description_text,
+                job_spec,
+                state.job_id,
+            )
+            job_vector = await deps.embedder.ensure_job_embedding(job_record)
+            return {"job_spec": job_spec, "job_vector": job_vector}
 
         job_vector = await deps.embedder.ensure_job_embedding(job_record)
         return {"job_spec": job_spec, "job_vector": job_vector}

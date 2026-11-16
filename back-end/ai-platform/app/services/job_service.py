@@ -65,6 +65,45 @@ class JobService:
         await self._session.refresh(record)
         return record, spec
 
+    async def store_spec(
+        self,
+        description: str,
+        spec: JobSpec,
+        job_id: UUID | None = None,
+    ) -> JobAnalysis:
+        """Stores a job analysis that no language model produced.
+
+        The embedding of the job is what the semantic score needs, and the
+        embedding hangs on an analysis row. Without a model the recruiter's
+        own skills and the job text are enough to build that row, so the
+        semantic part of the score still works.
+        """
+        content_hash = hashlib.sha256(description.encode("utf-8")).hexdigest()
+        cached = await self._find(content_hash)
+        if cached is not None:
+            return await self._with_job_id(cached, job_id)
+
+        record = JobAnalysis(
+            job_id=job_id,
+            content_hash=content_hash,
+            extraction_version=EXTRACTION_VERSION,
+            extracted_data=spec.model_dump(mode="json"),
+            summary=spec.summary,
+        )
+        self._session.add(record)
+        try:
+            await self._session.commit()
+        except IntegrityError:
+            # Another request stored the same JD first; use its row.
+            await self._session.rollback()
+            existing = await self._find(content_hash)
+            if existing is None:
+                raise
+            return await self._with_job_id(existing, job_id)
+
+        await self._session.refresh(record)
+        return record
+
     async def _with_job_id(
         self, record: JobAnalysis, job_id: UUID | None
     ) -> tuple[JobAnalysis, JobSpec]:

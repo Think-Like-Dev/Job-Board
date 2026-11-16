@@ -124,3 +124,20 @@ export enum OutboxStatus {
   PUBLISHED = 'PUBLISHED',
   FAILED = 'FAILED',
 }
+
+/**
+ * State of the AI score the recruiter sees for an application.
+ *
+ * - `PENDING` - a scoring run was queued; the result has not arrived yet.
+ * - `SCORED` - the AI scored the application and wrote the assessment.
+ * - `SCORE_ONLY` - the AI produced a number but no narrative, because no
+ *   language model was available and only the deterministic score was
+ *   computed.
+ * - `FAILED` - the AI gave up; the reason is stored with the row.
+ */
+export enum AiScoreStatus {
+  PENDING = 'PENDING',
+  SCORED = 'SCORED',
+  SCORE_ONLY = 'SCORE_ONLY',
+  FAILED = 'FAILED',
+}

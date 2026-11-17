@@ -49,8 +49,10 @@ services:
       AI_RABBITMQ_HOST: rabbitmq
       # The model servers run on the host (see
       # ai-platform/scripts/start-llama-servers.ps1), so the container reaches
-      # them through the Docker host gateway.
+      # them through the Docker host gateway. The alias is the chat server's
+      # `--alias`; swapping the GGUF keeps it.
       AI_LOCAL_LLM_BASE_URL: http://host.docker.internal:9931/v1
+      AI_LOCAL_LLM_MODEL: local-chat
       AI_EMBEDDING_BASE_URL: http://host.docker.internal:9932/v1
       # Keep the ONNX runtime from using every core: the whole stack shares
       # one 8 GB machine.

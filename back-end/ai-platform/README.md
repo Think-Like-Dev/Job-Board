@@ -172,6 +172,76 @@ The AI service talks to them over the OpenAI-compatible API:
 The compose overlays set the container-side URLs; the env file keeps the
 host-side ones.
 
+### The chat model: prompt, limits and swapping the file
+
+The local chat model is an ordinary OpenAI-compatible endpoint, so the file
+behind it is configuration. To use another one: put the new GGUF in the models
+directory, point `CHAT_MODEL` (the launcher) at it, keep the server alias (or
+update `AI_LOCAL_LLM_MODEL`), and restart the server. No code changes.
+
+A small model on a CPU is not reliable at structured output, so one call goes
+through three attempts (`app/services/local_llm.py`):
+
+1. `response_format: json_object`, with a compact field list in the system
+   prompt - the shape a 0.5 B model actually follows.
+2. The same prompt without `response_format`, for a server build that rejects
+   it.
+3. One repair, which hands the model the validation error it made.
+
+The field list is used instead of the JSON Schema document, and
+`response_format: json_schema` (llama.cpp's grammar mode) is not used: on this
+model and server the grammar made the answer run to the token cap instead of
+finishing, while the field list produced the same object in a third of the
+tokens.
+
+A server that is unreachable, or a call that runs out of time, is **not**
+retried with another format: the orchestrator moves to the next route instead
+of spending the budget on a dead server.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `AI_LOCAL_LLM_TIMEOUT_SECONDS` | `180` | per-call timeout for the local route |
+| `AI_LOCAL_LLM_MAX_INPUT_CHARS` | `8000` | how much of the prompt the model reads |
+| `AI_LOCAL_LLM_MAX_TOKENS` | `900` | hard cap on one answer |
+| `AI_LOCAL_LLM_TEMPERATURE` | `0` | structured output wants no creativity |
+
+The server's context is 8192 tokens (`CONTEXT_SIZE` in the launcher). One call
+has to fit the capped input, the field list and the answer in that window, so
+raise both together if you raise the input cap.
+
+Instruction following is a property of the file, not of this code: the 0.5 B
+model used during development writes its assessment in English even when
+`outputLanguage` asks for Tamil, and it sometimes repeats a risk. The prompts
+ask for both correctly; a larger GGUF follows them, and swapping the file is
+the whole change.
+
+If the model still cannot produce a valid object, the run degrades to
+"score only": the deterministic score is stored and the recruiter sees the
+number without a narrative.
+
+Probe the model without a database, RabbitMQ or a resume upload:
+
+```sh
+uv run python -m app.scripts.probe_local_model
+uv run python -m app.scripts.probe_local_model --language ta
+```
+
+### Languages
+
+Language support has two independent halves, and only one of them is about
+model files:
+
+- **Reading the document.** A PDF with a text layer is read as it is. An
+  image-only (scanned) page goes through Tesseract and needs that script's
+  data pack (see *OCR languages* below). No chat or embedding model is
+  involved.
+- **Comparing text.** `multilingual-e5-small` embeds about 100 languages into
+  the same 384-dimension space, so a Tamil resume and an English job
+  description are already comparable. Nothing has to be downloaded for that.
+- **Matching skills.** This is the remaining gap: the skill catalogue and its
+  aliases are English, so a Tamil skill name does not equal its English
+  counterpart even though the vectors are close.
+
 ### Changing the embedding model
 
 The model name and the vector size are configuration, never constants baked

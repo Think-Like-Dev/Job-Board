@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { ApplicationAiScoreSchema } from './application-ai-score.schema';
+import { AiScoreEventsService } from './ai-score-events.service';
 import { AiScoringProjectionService } from './ai-scoring-projection.service';
 import { AiScoringResultsConsumer } from './ai-scoring-results.consumer';
 
@@ -13,7 +14,11 @@ import { AiScoringResultsConsumer } from './ai-scoring-results.consumer';
  */
 @Module({
   imports: [MikroOrmModule.forFeature([ApplicationAiScoreSchema])],
-  providers: [AiScoringProjectionService, AiScoringResultsConsumer],
-  exports: [AiScoringProjectionService],
+  providers: [
+    AiScoringProjectionService,
+    AiScoringResultsConsumer,
+    AiScoreEventsService,
+  ],
+  exports: [AiScoringProjectionService, AiScoreEventsService],
 })
 export class AiScoringModule {}

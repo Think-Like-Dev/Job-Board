@@ -7,11 +7,13 @@ import {
   ApplicationAiScore,
   ApplicationAiScoreSchema,
 } from './application-ai-score.schema';
+import { toApplicationAiScoreDto } from './dto/ai-score-response.dto';
 import {
   ScoringCompletedMessageDto,
   ScoringFailedMessageDto,
   ScoringMode,
 } from './dto/scoring-result.dto';
+import { AiScoreEventsService } from './ai-score-events.service';
 
 /**
  * The recruiter-facing view of the AI service's assessment.
@@ -36,6 +38,7 @@ export class AiScoringProjectionService {
     @InjectRepository(ApplicationAiScoreSchema)
     private readonly repository: EntityRepository<ApplicationAiScore>,
     private readonly em: PostgreSqlEntityManager,
+    private readonly events: AiScoreEventsService,
   ) {}
 
   /**
@@ -137,6 +140,8 @@ export class AiScoringProjectionService {
         this.toTimestamp(message.occurredAt),
       ],
     );
+
+    await this.notifyStored(message.applicationId, message.eventId);
   }
 
   /** Records that the AI gave up. Never erases a score that already arrived. */
@@ -173,6 +178,8 @@ export class AiScoringProjectionService {
         AiScoreStatus.FAILED,
       ],
     );
+
+    await this.notifyStored(message.applicationId, message.eventId);
   }
 
   /**
@@ -188,6 +195,46 @@ export class AiScoringProjectionService {
         WHERE "application_id" = ? AND "status" = ?`,
       [applicationId, AiScoreStatus.PENDING],
     );
+  }
+
+  /**
+   * Tells the open drawers of an application what was just stored.
+   *
+   * The row is read back, so the notification carries exactly what the
+   * recruiter API returns, and a result that lost the race against a newer
+   * one is not announced: the stored row no longer points at its event.
+   */
+  private async notifyStored(
+    applicationId: string,
+    eventId: string,
+  ): Promise<void> {
+    try {
+      // The consumer runs outside a request, so it has no EntityManager
+      // context: `this.em` is the global one, and reading through it would
+      // use a shared identity map (and reject the `refresh`). A fork has its
+      // own context and reads the row the way the recruiter API will.
+      const em = this.em.fork();
+      const stored = await em.findOne(ApplicationAiScoreSchema, {
+        applicationId,
+      });
+
+      if (!stored || stored.eventId !== eventId) {
+        return;
+      }
+
+      const assessment = toApplicationAiScoreDto(stored);
+      if (assessment) {
+        this.events.publish(applicationId, assessment);
+      }
+    } catch (error) {
+      // The row is written; a drawer that cannot be told is not a failure of
+      // the scoring itself.
+      this.logger.warn(
+        `Could not notify the streams of application ${applicationId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   /** The assessment of one application, if there is one. */

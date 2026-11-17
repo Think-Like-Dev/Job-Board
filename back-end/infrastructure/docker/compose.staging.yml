@@ -44,10 +44,18 @@ services:
       AI_RABBITMQ_HOST: rabbitmq
       # The model servers run on the host (see
       # ai-platform/scripts/start-llama-servers.ps1), so the container reaches
-      # them through the Docker host gateway.
+      # them through the Docker host gateway. The alias has to be set too:
+      # without a model name the local route is never registered and every run
+      # silently degrades to "score only".
       AI_LOCAL_LLM_BASE_URL: http://host.docker.internal:9931/v1
+      AI_LOCAL_LLM_MODEL: local-chat
       AI_EMBEDDING_BASE_URL: http://host.docker.internal:9932/v1
       OMP_NUM_THREADS: "2"
+
+    # Docker Desktop resolves host.docker.internal to an IPv6 address, which
+    # the container cannot reach; this maps it to the IPv4 gateway instead.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     # Same cap as local: the scoring job (OCR + embeddings) is the peak.
     mem_limit: 1280m

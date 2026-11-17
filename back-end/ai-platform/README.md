@@ -157,6 +157,20 @@ curl http://localhost:9932/v1/embeddings -d '{"input":"hello"}'
 The embedding response must have **384** dimensions — that is what the vector
 columns are.
 
+From inside the AI container the host is reached by another name, and the
+image carries `curl` for exactly this check:
+
+```sh
+docker exec job-board-local-ai-platform-1 \
+  curl -s http://host.docker.internal:9931/v1/models
+docker exec job-board-local-ai-platform-1 \
+  curl -s http://host.docker.internal:9932/v1/models
+```
+
+`host.docker.internal` resolves only inside a container, so the same URL fails
+from the host and a bare `localhost` fails inside — matching the URL to where
+you run it is the whole trick.
+
 ### Configuration
 
 The AI service talks to them over the OpenAI-compatible API:

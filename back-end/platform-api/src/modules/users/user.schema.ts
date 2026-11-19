@@ -26,7 +26,9 @@ export const UserSchema = new EntitySchema<User>({
     id: { type: 'uuid', primary: true, defaultRaw: 'gen_random_uuid()' },
     name: { type: 'string', nullable: true },
     email: { type: 'string', unique: true },
-    passwordHash: { type: 'string', nullable: true },
+    // Never serialized: responses go through `toUserResponse`. `hidden` is a
+    // second line of defence if an entity is ever serialized directly.
+    passwordHash: { type: 'string', nullable: true, hidden: true },
     role: {
       enum: true,
       items: () => UserRole,

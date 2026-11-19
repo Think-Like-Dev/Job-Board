@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SeniorityLevel(StrEnum):
@@ -45,3 +45,28 @@ class QualitativeEvaluationSchema(BaseModel):
     strengths: list[str] = Field(default_factory=list)
     risks: list[str] = Field(default_factory=list)
     interview_questions: list[str] = Field(default_factory=list)
+
+    @field_validator("fit_analysis", mode="after")
+    @classmethod
+    def _tidy_summary(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("strengths", "risks", "interview_questions", mode="after")
+    @classmethod
+    def _tidy_list(cls, values: list[str]) -> list[str]:
+        """Trims, drops empties and repeats, and keeps the three asked for.
+
+        A small model tends to answer with more than it was asked for, and to
+        repeat an entry; the recruiter's panel has room for three, and the
+        event contract says three.
+        """
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for item in values:
+            text = item.strip()
+            key = text.casefold()
+            if not text or key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(text)
+        return cleaned[:3]

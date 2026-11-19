@@ -24,6 +24,7 @@ from app.core.exceptions import (
 )
 from app.core.security import CredentialCipher
 from app.models.llm_config import AICredential, AIModel, AIModelFailure, AIProvider
+from app.services.local_llm import structured_output as local_structured_output
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
@@ -80,7 +81,12 @@ class LLMOrchestrator:
 
         messages = [SystemMessage(content=system), HumanMessage(content=user)]
         failures: list[str] = []
-        deadline = time.monotonic() + self._settings.max_fallback_seconds
+        # The local model is free but slow. It gets its own budget, so a slow
+        # local attempt does not spend the paid fallback's.
+        budget = self._settings.max_fallback_seconds
+        if any(route.provider_code == "local" for route in routes):
+            budget += self._settings.local_llm_timeout_seconds
+        deadline = time.monotonic() + budget
         bad_credentials: set[UUID] = set()
 
         for route in routes:
@@ -92,21 +98,25 @@ class LLMOrchestrator:
 
             api_key = ""
             try:
-                remaining = max(
-                    1.0,
-                    min(
-                        self._settings.http_timeout_seconds,
-                        deadline - time.monotonic(),
-                    ),
-                )
-                if route.credential_id is None:
-                    # The local model server needs no stored credential.
+                if route.provider_code == "local":
+                    # A model server on the user's own machine. It needs the
+                    # scheme in front of it and a slower timeout than an API.
                     api_key = self._settings.local_llm_api_key or "local"
-                    chat = self._build_chat_model(
-                        route.provider_code, route.model_name, api_key, remaining
+                    result = await local_structured_output(
+                        self._settings,
+                        schema,
+                        system=system,
+                        user=user,
+                        timeout=self._settings.local_llm_timeout_seconds,
                     )
-                    result = await chat.with_structured_output(schema).ainvoke(messages)
                 else:
+                    remaining = max(
+                        1.0,
+                        min(
+                            self._settings.http_timeout_seconds,
+                            deadline - time.monotonic(),
+                        ),
+                    )
                     with self._cipher.decrypt(route.encrypted_api_key) as decrypted:
                         api_key = decrypted
                         chat = self._build_chat_model(
@@ -197,16 +207,6 @@ class LLMOrchestrator:
             return ChatAnthropic(
                 model_name=model_name,
                 api_key=api_key,
-                timeout=timeout,
-                max_retries=0,
-            )
-        if provider_code == "local":
-            # A model server on the user's own machine, speaking the
-            # OpenAI-compatible API. No API key is needed.
-            return ChatOpenAI(
-                model=model_name,
-                api_key=api_key,
-                base_url=self._settings.local_llm_base_url,
                 timeout=timeout,
                 max_retries=0,
             )

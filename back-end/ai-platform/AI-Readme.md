@@ -5,16 +5,21 @@ Owns the `job_board_ai_ats` database and never reads the core API's database.
 
 ## Local development
 
-Requires [uv](https://docs.astral.sh/uv/), Python 3.14, and a Postgres 18
-instance with the `pgvector` extension available.
+Requires [uv](https://docs.astral.sh/uv/), Python 3.14, and the shared env file
+`back-end/env/.env.local` (created by `./dk setup`).
+
+The service reads `../env/.env.<AI_ENVIRONMENT>` (default `local`) and then a
+local `.env`, so it runs from this directory without exporting anything:
 
 ```sh
-cp .env.example .env          # fill in DATABASE_* and AI_* values
 uv sync
 uv run alembic upgrade head
 uv run python -m app.scripts.seed_catalog
 uv run uvicorn app.main:app --reload
 ```
+
+Inside Docker neither file is mounted; the variables arrive from compose.
+A local `.env` is only for a one-off override.
 
 - Swagger UI: <http://localhost:8000/docs>
 - Liveness: <http://localhost:8000/api/v1/health>
@@ -92,28 +97,23 @@ provider and no API key is needed.
 Two processes, because `llama-server` serves either chat **or** embeddings
 (`--embedding` restricts it), and they are different model files.
 
+**English is the supported scope.** The embedding model also covers other
+scripts (Tamil, Arabic, Chinese, …) — but only if the GGUF was converted with
+the XLM-R tokenizer. See *Embedding model files* below for the files that
+work.
+
 ### Download, in order
 
 1. **llama.cpp for Windows (CPU)** — <https://github.com/ggml-org/llama.cpp/releases>
    Take the `llama-*-bin-win-cpu-x64` zip, unzip it to `C:\Users\<you>\llama.cpp\`.
    You need `llama-server.exe` from it.
-2. **The embedding model** — <https://huggingface.co/keisuke-miyako/multilingual-e5-small-gguf-q8_0>
-   Download `multilingual-e5-small-Q8_0.gguf` (126 MB) and **rename it** to
-   `e5-small-multilingual-q8_0.gguf` when you put it in the models folder.
+2. **The embedding model** — <https://huggingface.co/TwinSunsLLC/multilingual-e5-small-gguf>
+   Download `multilingual-e5-small-q8_0.gguf` (132 MB) and keep its name.
 
-   > **Do not use `cstr/multilingual-e5-small-GGUF`.** Its conversion is
-   > missing the `tokenizer.ggml.model` and `tokenizer.ggml.token_type_count`
-   > keys that llama.cpp needs for BERT-style models, so the server refuses
-   > to load it:
-   > `error loading model: bert model needs to define token type count`.
-   > The `keisuke-miyako` build has them. Because Windows filenames are
-   > case-insensitive, the broken `multilingual-e5-small-q8_0.gguf` and the
-   > working `multilingual-e5-small-Q8_0.gguf` are the same name — that is
-   > why the scripts look for `e5-small-multilingual-q8_0.gguf`.
-   >
-   > The Q4_K_M build (119 MB) is in the sibling repository
-   > <https://huggingface.co/keisuke-miyako/multilingual-e5-small-gguf-q4_k_m>
-   > and works just as well.
+   > The upstream name is shared by other builds that cannot read non-Latin
+   > text, so check the file you downloaded:
+   > `llama-tokenize -m <file> -p "தமிழ்"` must give one token, not a run of
+   > `32`.
 3. **The chat model** — <https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF>
    Download `qwen2.5-0.5b-instruct-q4_k_m.gguf` (469 MB). Alternatives:
    `gemma-3-1b-it-Q4_K_M.gguf` (769 MB) from
@@ -127,9 +127,28 @@ Outside the repository, so they can never be committed:
 
 ```
 C:\Users\<you>\models\
-├── e5-small-multilingual-q8_0.gguf     (the keisuke-miyako build, renamed)
-└── qwen2.5-0.5b-instruct-q4_k_m.gguf
+├── multilingual-e5-small-q8_0.gguf      (embeddings, the default)
+└── qwen2.5-0.5b-instruct-q4_k_m.gguf    (chat)
 ```
+
+### Embedding model files
+
+| File | Size | Purpose |
+| --- | --- | --- |
+| `qwen2.5-0.5b-instruct-q4_k_m.gguf` | 469 MB | chat: resume extraction, JD analysis, narrative (`:9931`) |
+| `multilingual-e5-small-q8_0.gguf` | 132 MB | embeddings, 384 dimensions (`:9932`) |
+
+Only these two are needed. The upstream name
+`multilingual-e5-small-q8_0.gguf` is also used by a build that **cannot read
+non-Latin text**: every non-Latin character becomes `<unk>`, so Tamil, Arabic
+and Chinese all embed to the same vector. If you replace the file, check it
+with `llama-tokenize -m <file> -p "தமிழ்"` — one token is right, a run of `32`
+is the broken conversion.
+
+`AI_LOCAL_EMBEDDING_MODEL` is both the name the service asks for and the cache
+key of every stored vector: change it whenever the file changes, or the
+previous vectors are reused. Swapping files needs no migration — all these
+builds are 384-dimensional.
 
 ### Start them
 
@@ -180,7 +199,7 @@ The AI service talks to them over the OpenAI-compatible API:
 | `AI_LOCAL_LLM_BASE_URL` | `http://localhost:9931/v1` (host) · `http://host.docker.internal:9931/v1` (container) |
 | `AI_LOCAL_LLM_MODEL` | `local-chat` (the `--alias` of the chat server) |
 | `AI_EMBEDDING_BASE_URL` | `http://localhost:9932/v1` (host) · `http://host.docker.internal:9932/v1` (container) |
-| `AI_LOCAL_EMBEDDING_MODEL` | `multilingual-e5-small` |
+| `AI_LOCAL_EMBEDDING_MODEL` | `multilingual-e5-small-xlmr` (must match the launcher's `--alias`) |
 | `AI_EMBEDDING_DIM` | `384` |
 
 The compose overlays set the container-side URLs; the env file keeps the
@@ -242,19 +261,23 @@ uv run python -m app.scripts.probe_local_model --language ta
 
 ### Languages
 
-Language support has two independent halves, and only one of them is about
-model files:
+English is the supported scope. Other scripts work as far as the pipeline is
+concerned, and the pieces are independent:
 
 - **Reading the document.** A PDF with a text layer is read as it is. An
   image-only (scanned) page goes through Tesseract and needs that script's
   data pack (see *OCR languages* below). No chat or embedding model is
   involved.
 - **Comparing text.** `multilingual-e5-small` embeds about 100 languages into
-  the same 384-dimension space, so a Tamil resume and an English job
-  description are already comparable. Nothing has to be downloaded for that.
-- **Matching skills.** This is the remaining gap: the skill catalogue and its
-  aliases are English, so a Tamil skill name does not equal its English
-  counterpart even though the vectors are close.
+  the same 384-dimension space, so a Tamil, Arabic or Chinese resume can be
+  compared with an English job description — **provided the GGUF was converted
+  with the XLM-R tokenizer** (see *Embedding model files*). A BERT-tokenizer
+  conversion embeds every non-Latin script to the same vector, which looks
+  fine in the database and means nothing.
+- **Matching skills.** Exact and alias matching compares strings, so a Tamil
+  `பைதான்` does not equal `Python`. The cross-language fallback — embedding the
+  unmatched skill names and accepting a measured threshold — is the remaining
+  gap; until it lands, the skills component of such an application is 0.
 
 ### Changing the embedding model
 
@@ -266,6 +289,11 @@ into the schema. Changing the size also needs
 2. `uv run python -m app.scripts.convert_embeddings` to re-embed the stored
    texts — a vector cannot be converted between models or sizes, it has to be
    computed again.
+
+Swapping the **file** without changing the size still needs a new
+`AI_LOCAL_EMBEDDING_MODEL` name: the stored vectors are keyed by it, and
+keeping the old name would silently reuse vectors produced by the previous
+model. The old rows are harmless — they are simply never selected again.
 
 E5-style models expect an asymmetric prefix: the job description is a query,
 the resume passages are passages (`AI_EMBEDDING_QUERY_PREFIX`,

@@ -160,6 +160,19 @@ export class RecruiterApplicationsService {
     };
   }
 
+  /**
+   * Throws unless the application is one a recruiter may see.
+   *
+   * The score stream checks this before it subscribes, so a stream can never
+   * be opened for a draft or for an id that does not exist.
+   */
+  async assertVisible(id: string): Promise<void> {
+    const application = await this.queries.findApplicationById(id);
+    if (!application || application.status === ApplicationStatus.DRAFT) {
+      throw new NotFoundException('Application not found');
+    }
+  }
+
   async getApplication(id: string): Promise<RecruiterApplicationDetailDto> {
     const application = await this.queries.findApplicationById(id);
     if (!application || application.status === ApplicationStatus.DRAFT) {

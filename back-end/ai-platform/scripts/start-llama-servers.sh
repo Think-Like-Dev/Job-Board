@@ -21,10 +21,15 @@ set -euo pipefail
 MODELS_DIR="${MODELS_DIR:-$HOME/models}"
 LLAMA_SERVER="${LLAMA_SERVER:-$HOME/llama.cpp/llama-server}"
 CHAT_MODEL="${CHAT_MODEL:-qwen2.5-0.5b-instruct-q4_k_m.gguf}"
-# Deliberately not the upstream file name: several broken conversions ship as
-# "multilingual-e5-small-q8_0.gguf" and a case-insensitive filesystem would
-# match them. This name is unique to the build that actually loads.
-EMBEDDING_MODEL="${EMBEDDING_MODEL:-e5-small-multilingual-q8_0.gguf}"
+# The correctly converted multilingual build: an XLM-R tokenizer, so Tamil,
+# Arabic and Chinese are real tokens instead of one <unk> per character. The
+# same upstream name is also used by a build that cannot read non-Latin text,
+# so a replacement must be checked with llama-tokenize - see
+# "Embedding model files" in AI-Readme.md.
+EMBEDDING_MODEL="${EMBEDDING_MODEL:-multilingual-e5-small-q8_0.gguf}"
+# The name the service asks for, and the cache key of every stored vector.
+# Change it whenever the file changes, or the old vectors are reused.
+EMBEDDING_ALIAS="${EMBEDDING_ALIAS:-multilingual-e5-small-xlmr}"
 CHAT_PORT="${CHAT_PORT:-9931}"
 EMBEDDING_PORT="${EMBEDDING_PORT:-9932}"
 THREADS="${THREADS:-4}"
@@ -43,11 +48,11 @@ die() {
 
 [ -f "$MODELS_DIR/$CHAT_MODEL" ] || die \
   "the chat model is missing: $MODELS_DIR/$CHAT_MODEL" \
-  "See the 'Models' section of back-end/ai-platform/README.md for the download links."
+  "See the 'Models' section of back-end/ai-platform/AI-Readme.md for the download links."
 
 [ -f "$MODELS_DIR/$EMBEDDING_MODEL" ] || die \
   "the embedding model is missing: $MODELS_DIR/$EMBEDDING_MODEL" \
-  "See the 'Models' section of back-end/ai-platform/README.md for the download links."
+  "See the 'Models' section of back-end/ai-platform/AI-Readme.md for the download links."
 
 LOG_DIR="$MODELS_DIR/logs"
 mkdir -p "$LOG_DIR"
@@ -105,7 +110,7 @@ else
     --threads "$THREADS" \
     --embedding \
     --pooling mean \
-    --alias multilingual-e5-small \
+    --alias "$EMBEDDING_ALIAS" \
     >"$LOG_DIR/llama-embeddings.log" 2>&1 &
   echo "  embeddings pid $!  -> http://localhost:$EMBEDDING_PORT/v1"
   wait_ready "$EMBEDDING_PORT" embeddings "$LOG_DIR/llama-embeddings.log" || true

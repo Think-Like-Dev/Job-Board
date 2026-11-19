@@ -1,4 +1,5 @@
 from functools import lru_cache
+from os import environ
 from urllib.parse import quote_plus
 
 from pydantic import AliasChoices, Field
@@ -27,7 +28,12 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="AI_",
-        env_file=".env",
+        # The shared env file first, so the service can run on the host with
+        # `uv run uvicorn ...` from this directory and no exported variables.
+        # Inside Docker `../env` is not mounted, both files are absent, and the
+        # variables arrive from compose as before. A local `.env` still wins
+        # for a one-off override.
+        env_file=(f"../env/.env.{environ.get('AI_ENVIRONMENT', 'local')}", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -66,9 +72,11 @@ class Settings(BaseSettings):
     #
     # `multilingual-e5-small` covers 100 languages and is 384-dimensional — the
     # same size as the schema — so a job description in one language and a
-    # resume in another can still be compared.
+    # resume in another can still be compared. The name doubles as the cache
+    # key for stored vectors: point it at a different file and the old vectors
+    # stop being reused, which is what a model swap needs.
     local_embedding_model: str = Field(
-        default="multilingual-e5-small", validation_alias="AI_LOCAL_EMBEDDING_MODEL"
+        default="multilingual-e5-small-xlmr", validation_alias="AI_LOCAL_EMBEDDING_MODEL"
     )
     embedding_dim: int = Field(default=EMBEDDING_DIM, validation_alias="AI_EMBEDDING_DIM", gt=0)
     embedding_base_url: str = Field(default="", validation_alias="AI_EMBEDDING_BASE_URL")

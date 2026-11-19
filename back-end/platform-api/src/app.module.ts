@@ -25,7 +25,14 @@ import { RecruiterCandidatesModule } from '@modules/recruiter-candidates/recruit
       isGlobal: true,
       load: [configuration],
       // Load environment-specific overrides: `.env.<NODE_ENV>` wins over `.env`.
-      envFilePath: [`.env.${process.env.NODE_ENV ?? 'local'}`, '.env'],
+      // The shared file lives one level up, so the API runs on the host with
+      // `pnpm start:dev` without exporting anything; inside Docker it is not
+      // mounted and the variables arrive from compose. A local file still wins.
+      envFilePath: [
+        `.env.${process.env.NODE_ENV ?? 'local'}`,
+        '.env',
+        `../env/.env.${process.env.NODE_ENV ?? 'local'}`,
+      ],
     }),
     RedisModule,
     DatabaseModule,

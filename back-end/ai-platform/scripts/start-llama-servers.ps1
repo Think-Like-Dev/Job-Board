@@ -25,10 +25,15 @@ param(
     [string]$ModelsDir = "$env:USERPROFILE\models",
     [string]$ServerExe = "$env:USERPROFILE\llama.cpp\llama-server.exe",
     [string]$ChatModel = "qwen2.5-0.5b-instruct-q4_k_m.gguf",
-    # Deliberately not the upstream file name: several broken conversions ship
-    # as "multilingual-e5-small-q8_0.gguf" and Windows would match them by
-    # case. This name is unique to the build that actually loads.
-    [string]$EmbeddingModel = "e5-small-multilingual-q8_0.gguf",
+    # The correctly converted multilingual build: an XLM-R tokenizer, so Tamil,
+    # Arabic and Chinese are real tokens instead of one <unk> per character.
+    # The same upstream name is also used by a build that cannot read non-Latin
+    # text, so a replacement must be checked with llama-tokenize - see
+    # "Embedding model files" in AI-Readme.md.
+    [string]$EmbeddingModel = "multilingual-e5-small-q8_0.gguf",
+    # The name the service asks for, and the cache key of every stored vector.
+    # Change it whenever the file changes, or the old vectors are reused.
+    [string]$EmbeddingAlias = "multilingual-e5-small-xlmr",
     [int]$ChatPort = 9931,
     [int]$EmbeddingPort = 9932,
     [int]$Threads = 4,
@@ -55,9 +60,9 @@ $chatModelPath = Join-Path $ModelsDir $ChatModel
 $embeddingModelPath = Join-Path $ModelsDir $EmbeddingModel
 
 Assert-File -Path $chatModelPath -What 'the chat model' `
-    -Hint 'See the "Models" section of back-end/ai-platform/README.md for the download links.'
+    -Hint 'See the "Models" section of back-end/ai-platform/AI-Readme.md for the download links.'
 Assert-File -Path $embeddingModelPath -What 'the embedding model' `
-    -Hint 'See the "Models" section of back-end/ai-platform/README.md for the download links.'
+    -Hint 'See the "Models" section of back-end/ai-platform/AI-Readme.md for the download links.'
 
 $logDir = Join-Path $ModelsDir 'logs'
 if (-not (Test-Path -LiteralPath $logDir)) {
@@ -110,7 +115,7 @@ $embeddingArgs = @(
     '--threads', "$Threads",
     '--embedding',
     '--pooling', 'mean',
-    '--alias', 'multilingual-e5-small'
+    '--alias', $EmbeddingAlias
 )
 
 Write-Host 'Starting the model servers...' -ForegroundColor Cyan

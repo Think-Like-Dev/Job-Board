@@ -52,6 +52,14 @@ export class AuthUserDto {
 
   @ApiProperty({ enum: ['candidate', 'user'] })
   principalType!: 'candidate' | 'user';
+
+  @ApiProperty({
+    type: [String],
+    example: ['job.read', 'candidate.read'],
+    description:
+      'Effective permissions for the session. The SPA gates routes and actions on these, never on the role string.',
+  })
+  permissions!: string[];
 }
 
 export class AuthResponseDto {

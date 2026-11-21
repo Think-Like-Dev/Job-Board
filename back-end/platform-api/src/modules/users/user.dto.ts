@@ -52,3 +52,54 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   override isActive?: boolean;
 }
+
+/**
+ * Frontend-facing shape of an internal user.
+ *
+ * Deliberately explicit: the persisted entity carries credential material
+ * (`passwordHash`) and must never be serialized straight to a response.
+ */
+export class UserResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiPropertyOptional({ example: 'Jane Recruiter' })
+  name?: string;
+
+  @ApiProperty({ example: 'jane@company.com' })
+  email!: string;
+
+  @ApiPropertyOptional({ enum: UserRole })
+  role?: UserRole;
+
+  @ApiProperty({ example: true })
+  isActive!: boolean;
+
+  @ApiPropertyOptional({ format: 'date-time' })
+  createdAt?: string;
+
+  @ApiPropertyOptional({ format: 'date-time' })
+  updatedAt?: string;
+}
+
+export class UserListResponseDto {
+  @ApiProperty({ type: [UserResponseDto] })
+  data!: UserResponseDto[];
+
+  @ApiProperty({
+    example: {
+      totalItems: 1,
+      itemCount: 1,
+      itemsPerPage: 20,
+      totalPages: 1,
+      currentPage: 1,
+    },
+  })
+  meta!: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
+}

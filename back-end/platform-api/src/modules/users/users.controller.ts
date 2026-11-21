@@ -8,10 +8,21 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserListResponseDto,
+  UserResponseDto,
+} from './user.dto';
+import { toUserPage, toUserResponse } from './user.presenter';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 
 @ApiTags('users')
@@ -22,31 +33,40 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: 'Create a user (internal: recruiter/admin)' })
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.createUser(dto);
+  @ApiCreatedResponse({ type: UserResponseDto })
+  async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
+    return toUserResponse(await this.usersService.createUser(dto));
   }
 
   @Get()
   @ApiOperation({ summary: 'List users (paginated)' })
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.usersService.findAllPaginated(query);
+  @ApiOkResponse({ type: UserListResponseDto })
+  async findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<UserListResponseDto> {
+    return toUserPage(await this.usersService.findAllPaginated(query));
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get one user' })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne({ id });
+  @ApiOkResponse({ type: UserResponseDto })
+  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    return toUserResponse(await this.usersService.findOne({ id }));
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user' })
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.updateUser(id, dto);
+  @ApiOkResponse({ type: UserResponseDto })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    return toUserResponse(await this.usersService.updateUser(id, dto));
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a user' })
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string): Promise<boolean> {
     return this.usersService.remove({ id });
   }
 }

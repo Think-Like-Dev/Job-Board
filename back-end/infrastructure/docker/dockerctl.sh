@@ -47,6 +47,7 @@ Actions
   build   [target]   build images (api, ai, all, platform-api, ai-platform)
   infra   [target]   start datastores (api|ai|all or a single service)
   up      [target]   start app containers only (api|ai|all)
+  recreate [target]  recreate app containers from the current image (api|ai|all)
   run                start the whole stack
   garage             start garage + run the one-shot garage-init
   debug              start the debug tools (pgadmin, redisinsight, garage-webui)
@@ -72,6 +73,7 @@ Examples
   ./dk seed:staging ai
   ./dk infra:dev rabbitmq
   ./dk up:dev api
+  ./dk recreate:dev api
   ./dk logs:dev ai-platform
   ./dk run:dev --dry-run
   ./dk stop:staging --volumes
@@ -142,6 +144,7 @@ _dk_group() {
     build)   printf 'platform-api ai-platform\n' ;;
     infra)   printf 'postgres ai-postgres redis rabbitmq\n' ;;
     up)      printf 'platform-api ai-platform\n' ;;
+    recreate) printf 'platform-api ai-platform\n' ;;
     migrate) printf 'migrate ai-migrate\n' ;;
     seed)    printf 'seed ai-seed\n' ;;
     *)       return 1 ;;
@@ -157,6 +160,8 @@ _dk_alias() {
     infra:ai|infra:ai-platform)                       printf 'ai-postgres\n' ;;
     up:api|up:platform|up:platform-api)               printf 'platform-api\n' ;;
     up:ai|up:ai-platform)                             printf 'ai-platform\n' ;;
+    recreate:api|recreate:platform|recreate:platform-api) printf 'platform-api\n' ;;
+    recreate:ai|recreate:ai-platform)                 printf 'ai-platform\n' ;;
     migrate:api|migrate:platform|migrate:platform-api) printf 'migrate\n' ;;
     migrate:ai|migrate:ai-platform)                   printf 'ai-migrate\n' ;;
     seed:api|seed:platform|seed:platform-api)         printf 'seed\n' ;;
@@ -171,6 +176,7 @@ _dk_raw_allowed() {
     build:platform-api|build:ai-platform)                                          return 0 ;;
     infra:postgres|infra:ai-postgres|infra:redis|infra:rabbitmq|infra:garage)      return 0 ;;
     up:platform-api|up:ai-platform)                                                return 0 ;;
+    recreate:platform-api|recreate:ai-platform)                                    return 0 ;;
     migrate:migrate|migrate:ai-migrate)                                            return 0 ;;
     seed:seed|seed:ai-seed)                                                        return 0 ;;
     *) return 1 ;;
@@ -200,7 +206,7 @@ _dk_resolve() {
 _dk_bad_target() {
   printf 'invalid target for %s: %s\n' "$1" "$2" >&2
   case "$1" in
-    build|up) printf '  use: api | ai | all\n' >&2 ;;
+    build|up|recreate) printf '  use: api | ai | all\n' >&2 ;;
     infra)    printf '  use: api | ai | all | postgres | ai-postgres | redis | rabbitmq | garage\n' >&2 ;;
     migrate)  printf '  use: api | ai | all\n' >&2 ;;
     seed)     printf '  use: api | ai | all\n' >&2 ;;
@@ -397,11 +403,15 @@ dk() {
       # shellcheck disable=SC2086
       _dk_compose "$env_name" build $build_svcs ;;
 
-    infra|up)
+    infra|up|recreate)
       local start_svcs
+      local -a recreate_flag=()
       start_svcs="$(_dk_resolve "$action" "$env_name" "$target")" || { _dk_bad_target "$action" "$target"; return 2; }
+      # `up` keeps an existing container when only the image was rebuilt;
+      # `recreate` always starts a fresh container from the current image.
+      [ "$action" = "recreate" ] && recreate_flag+=(--force-recreate)
       # shellcheck disable=SC2086
-      _dk_compose "$env_name" up -d $start_svcs ;;
+      _dk_compose "$env_name" up -d "${recreate_flag[@]}" $start_svcs ;;
 
     migrate|seed)
       local db_svcs profile one
@@ -422,7 +432,7 @@ dk() {
 
 # --- sugar: build:dev, migrate:staging, ... --------------------------------
 for _dk_e in dev staging; do
-  for _dk_a in build infra up migrate seed garage debug run init stop logs ps; do
+  for _dk_a in build infra up recreate migrate seed garage debug run init stop logs ps; do
     eval "${_dk_a}:${_dk_e}() { dk ${_dk_a} ${_dk_e} \"\$@\"; }"
   done
 done

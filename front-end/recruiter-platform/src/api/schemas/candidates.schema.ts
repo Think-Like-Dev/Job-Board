@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApplicationStatus } from "@/types/application.types";
+import { CandidateStatus } from "@/types/candidate.types";
 import {
   ApplicationProfileSnapshotSchema,
   ApplicationSkillSchema,
@@ -20,6 +21,7 @@ export const CandidateListItemSchema = z.object({
   firstName: nullableString(),
   lastName: nullableString(),
   email: z.string(),
+  status: z.enum(CandidateStatus),
   phone: nullableString(),
   currentLocation: nullableString(),
   skills: z.array(ApplicationSkillSchema),
@@ -51,6 +53,7 @@ export const CandidateGapSchema = z.object({
 });
 
 export const CandidateDetailSchema = ApplicationProfileSnapshotSchema.extend({
+  status: z.enum(CandidateStatus),
   createdAt: nullableString(),
   createdBy: nullableString(),
   totalExperienceMonths: z.number(),

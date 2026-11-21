@@ -18,6 +18,7 @@ export function toCandidateListItemDto(
     firstName: candidate.firstName ?? null,
     lastName: candidate.lastName ?? null,
     email: candidate.email,
+    status: candidate.status,
     phone: candidate.phone ?? null,
     currentLocation: candidate.currentLocation ?? null,
     skills: skills.map((skill) => ({ id: skill.id, name: skill.name })),
@@ -37,6 +38,7 @@ export function toCandidateDetailDto(
 ): CandidateDetailDto {
   return {
     ...toProfileDto(profile),
+    status: candidate.status,
     createdAt: candidate.createdAt?.toISOString() ?? null,
     createdBy: candidate.createdBy ?? null,
     totalExperienceMonths: calculation.totalMonths,

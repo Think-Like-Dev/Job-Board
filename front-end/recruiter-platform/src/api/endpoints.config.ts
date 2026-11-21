@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
     GET_ALL: '/candidates',
     CREATE: '/candidates',
     GET_DETAILS: (id: string) => `/candidates/${id}`,
+    DELETE: (id: string) => `/candidates/${id}`,
     LIST_APPLICATIONS: (id: string) => `/candidates/${id}/applications`,
   },
   SKILLS: {

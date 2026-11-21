@@ -23,6 +23,16 @@ export enum UserStatus {
   SUSPENDED = 'SUSPENDED',
 }
 
+/**
+ * Candidate lifecycle. A profile a recruiter creates manually starts INVITED
+ * and becomes ACTIVE after the candidate's first OTP sign-in; self-registered
+ * candidates are created ACTIVE. Only INVITED profiles can be hard-deleted.
+ */
+export enum CandidateStatus {
+  INVITED = 'INVITED',
+  ACTIVE = 'ACTIVE',
+}
+
 export enum JobStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',

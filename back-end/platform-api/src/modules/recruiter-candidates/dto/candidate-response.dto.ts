@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CandidateStatus } from '@common/constants/enums';
 import { CandidateProfileDto } from '@modules/profiles/dto/profile-response.dto';
 
 export class CandidateSkillDto {
@@ -22,6 +23,13 @@ export class CandidateListItemDto {
 
   @ApiProperty()
   email!: string;
+
+  @ApiProperty({
+    enum: CandidateStatus,
+    description:
+      'INVITED until the candidate signs in with an OTP for the first time',
+  })
+  status!: CandidateStatus;
 
   @ApiPropertyOptional({ nullable: true })
   phone?: string | null;
@@ -96,6 +104,13 @@ export class CandidateCareerGapDto {
 
 /** Live profile plus the candidate-level fields used by the detail page. */
 export class CandidateDetailDto extends CandidateProfileDto {
+  @ApiProperty({
+    enum: CandidateStatus,
+    description:
+      'INVITED until the candidate signs in with an OTP for the first time',
+  })
+  status!: CandidateStatus;
+
   @ApiPropertyOptional({ nullable: true })
   createdAt?: string | null;
 

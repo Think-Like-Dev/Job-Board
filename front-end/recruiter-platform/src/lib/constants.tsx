@@ -1,4 +1,4 @@
-import { BriefcaseBusinessIcon, GaugeIcon, MailIcon, MonitorSmartphoneIcon, UserCircleIcon, UsersIcon } from "lucide-react"
+import { BriefcaseBusinessIcon, GaugeIcon, MailIcon, UserCircleIcon, UsersIcon } from "lucide-react"
 import type { ReactNode } from 'react';
 import { PERMISSIONS, type Permission } from '@/permissions/permissions';
 
@@ -34,12 +34,6 @@ export const navMain: NavMainItem[] = [
     url: "/team",
     icon: (<UsersIcon />),
     permission: PERMISSIONS.USER_READ,
-  },
-  {
-    title: "Sessions",
-    url: "/sessions",
-    icon: (<MonitorSmartphoneIcon />),
-    permission: PERMISSIONS.SESSION_READ_SELF,
   },
   {
     title: "Mail Templates",

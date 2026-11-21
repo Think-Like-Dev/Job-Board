@@ -18,10 +18,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon, MonitorSmartphoneIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
 
 import { useLogout } from "@api/hooks/useAuth"
+import { PERMISSIONS } from "@/permissions/permissions"
+import { usePermissions } from "@/permissions/usePermissions"
 
 function getInitials(name: string, email: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -46,6 +49,8 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { can } = usePermissions()
   const logoutMutation = useLogout()
   const initials = getInitials(user.name, user.email)
 
@@ -123,7 +128,17 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            {can(PERMISSIONS.SESSION_READ_SELF) && (
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => navigate("/sessions")}>
+                  <MonitorSmartphoneIcon />
+                  {t("nav.activeSessions")}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem
+              variant="destructive"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
             >

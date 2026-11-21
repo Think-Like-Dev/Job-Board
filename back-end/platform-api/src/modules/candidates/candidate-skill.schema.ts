@@ -5,9 +5,14 @@ import {
 } from '@mikro-orm/core';
 import { SkillSchema } from '@modules/skills/skill.schema';
 import { CandidateSchema } from './candidate.schema';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 
 /** Live many-to-many link between a candidate and a canonical skill. */
-export interface CandidateSkill {
+export interface CandidateSkill extends SoftDeletable {
   candidateId: string;
   skillId: string;
   createdAt?: Date;
@@ -16,6 +21,7 @@ export interface CandidateSkill {
 export const CandidateSkillSchema = new EntitySchema<CandidateSkill>({
   name: 'CandidateSkill',
   tableName: 'candidate_skills',
+  filters: softDeleteFilter,
   indexes: [
     {
       name: 'candidate_skills_skill_id_index',
@@ -45,6 +51,7 @@ export const CandidateSkillSchema = new EntitySchema<CandidateSkill>({
       deferMode: DeferMode.INITIALLY_IMMEDIATE,
       foreignKeyName: 'fk_skills_id_candidate_skills',
     } as unknown as EntitySchemaProperty<string, CandidateSkill>,
+    ...softDeleteProperty,
     createdAt: { type: 'datetime', defaultRaw: 'now()' },
   },
 });

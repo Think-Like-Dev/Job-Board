@@ -4,6 +4,11 @@ import {
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
 import { ApplicationStatus } from '@common/constants/enums';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 import { CandidateProfileVersionSchema } from '@modules/candidates/candidate-profile-version.schema';
 import { CandidateSchema } from '@modules/candidates/candidate.schema';
 import { FileSchema } from '@modules/files/file.schema';
@@ -14,7 +19,7 @@ import { JobSchema } from '@modules/jobs/job.schema';
  * unique: a draft and its submitted form are the same row, and later status
  * changes never create duplicates.
  */
-export interface Application {
+export interface Application extends SoftDeletable {
   id: string;
   candidateId: string;
   jobId: string;
@@ -36,6 +41,8 @@ export const ApplicationSchema = new EntitySchema<Application>({
     {
       name: 'applications_candidate_job_unique',
       properties: ['candidateId', 'jobId'],
+      // Only live applications block a duplicate; a removed row does not.
+      where: { deletedAt: null },
     },
   ],
   indexes: [
@@ -51,6 +58,7 @@ export const ApplicationSchema = new EntitySchema<Application>({
     { name: 'applications_status_index', properties: ['status'] },
     { name: 'applications_applied_at_index', properties: ['appliedAt'] },
   ],
+  filters: softDeleteFilter,
   properties: {
     id: { type: 'uuid', primary: true, defaultRaw: 'gen_random_uuid()' },
     candidateId: {
@@ -113,6 +121,7 @@ export const ApplicationSchema = new EntitySchema<Application>({
     },
     appliedAt: { type: 'datetime', nullable: true },
     withdrawnAt: { type: 'datetime', nullable: true },
+    ...softDeleteProperty,
     createdAt: { type: 'datetime', defaultRaw: 'now()' },
     updatedAt: {
       type: 'datetime',

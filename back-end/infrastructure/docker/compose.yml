@@ -132,6 +132,20 @@ services:
     networks:
       - backend
 
+  # Local mail catcher. Staging and production point MAIL_* at a real SMTP
+  # relay instead; this service is only started by the local overlay.
+  mailpit:
+    image: axllent/mailpit:v1.21
+
+    restart: unless-stopped
+
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+    networks:
+      - backend
+
   # Shared broker for the events that cross the two services.
   rabbitmq:
     image: rabbitmq:4-management-alpine

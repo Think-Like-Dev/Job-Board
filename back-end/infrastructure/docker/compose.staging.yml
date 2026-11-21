@@ -5,6 +5,11 @@ name: job-board-staging
 # postgres/ai-postgres/redis/rabbitmq by service name on the compose network.
 
 services:
+  # Mailpit is a local-only catcher. The profile keeps it out of a normal
+  # `up` in staging, where MAIL_* points at a real relay instead.
+  mailpit:
+    profiles: ["mailcatcher"]
+
   platform-api:
     image: job-board-platform-api:staging
 

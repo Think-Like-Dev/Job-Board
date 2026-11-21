@@ -9,7 +9,7 @@ export enum UserStatus {
 
 export interface TeamMember {
   id: string;
-  name?: string;
+  name?: string | null;
   firstName?: string;
   lastName?: string;
   phone?: string;

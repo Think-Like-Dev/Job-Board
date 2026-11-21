@@ -34,6 +34,7 @@ import {
 } from './auth.dto';
 import type { AppConfig } from '@src/config/configuration';
 import { SessionAuth } from './session-auth.decorator';
+import { PermissionsService } from '@modules/rbac/permissions.service';
 import type { AuthenticatedRequest } from './auth.types';
 
 @ApiTags('auth')
@@ -44,6 +45,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly candidatesService: CandidatesService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   @Post('otp/request')
@@ -84,7 +86,15 @@ export class AuthController {
         email: candidate.email,
         role: AuthRole.CANDIDATE,
       });
-      return { user: toCandidateDto(candidate) };
+      return {
+        user: toCandidateDto(
+          candidate,
+          this.permissionsService.forSession({
+            principalType: 'candidate',
+            role: AuthRole.CANDIDATE,
+          }),
+        ),
+      };
     }
 
     const user = await this.usersService.findByEmail(dto.email);
@@ -98,7 +108,12 @@ export class AuthController {
       email: user.email,
       role: user.role ?? UserRole.RECRUITER,
     });
-    return { user: toUserDto(user) };
+    return {
+      user: toUserDto(
+        user,
+        this.permissionsService.forRole(user.role ?? UserRole.RECRUITER),
+      ),
+    };
   }
 
   @Post('login')
@@ -144,14 +159,27 @@ export class AuthController {
       if (!candidate) {
         throw new UnauthorizedException('Session principal no longer exists');
       }
-      return { user: toCandidateDto(candidate) };
+      return {
+        user: toCandidateDto(
+          candidate,
+          this.permissionsService.forSession({
+            principalType: 'candidate',
+            role: AuthRole.CANDIDATE,
+          }),
+        ),
+      };
     }
 
     const user = await this.usersService.findByEmail(req.session.email);
     if (!user || user.isActive === false) {
       throw new UnauthorizedException('Session principal no longer exists');
     }
-    return { user: toUserDto(user) };
+    return {
+      user: toUserDto(
+        user,
+        this.permissionsService.forRole(user.role ?? UserRole.RECRUITER),
+      ),
+    };
   }
 
   @Post('logout')
@@ -177,7 +205,10 @@ export class AuthController {
   }
 }
 
-function toCandidateDto(candidate: Candidate): AuthUserDto {
+function toCandidateDto(
+  candidate: Candidate,
+  permissions: readonly string[],
+): AuthUserDto {
   return {
     id: candidate.id,
     email: candidate.email,
@@ -185,15 +216,17 @@ function toCandidateDto(candidate: Candidate): AuthUserDto {
     lastName: candidate.lastName,
     role: AuthRole.CANDIDATE,
     principalType: 'candidate',
+    permissions: [...permissions],
   };
 }
 
-function toUserDto(user: User): AuthUserDto {
+function toUserDto(user: User, permissions: readonly string[]): AuthUserDto {
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     role: user.role ?? UserRole.RECRUITER,
     principalType: 'user',
+    permissions: [...permissions],
   };
 }

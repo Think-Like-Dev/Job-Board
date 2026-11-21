@@ -15,6 +15,8 @@ export interface UserProfile {
   avatarUrl?: string;
   role?: UserRole;
   principalType?: 'candidate' | 'user';
+  /** Effective permissions from `GET /auth/me`; gate UI on these, not role. */
+  permissions?: string[];
 }
 
 export interface LoginPayload {

@@ -1,4 +1,4 @@
-import { BriefcaseBusinessIcon, GaugeIcon, MailIcon, UserCircleIcon } from "lucide-react"
+import { BriefcaseBusinessIcon, GaugeIcon, MailIcon, UserCircleIcon, UsersIcon } from "lucide-react"
 import type { ReactNode } from 'react';
 import { PERMISSIONS, type Permission } from '@/permissions/permissions';
 
@@ -28,6 +28,12 @@ export const navMain: NavMainItem[] = [
     url: "/candidates",
     icon: (<UserCircleIcon />),
     permission: PERMISSIONS.CANDIDATE_READ,
+  },
+  {
+    title: "Team",
+    url: "/team",
+    icon: (<UsersIcon />),
+    permission: PERMISSIONS.USER_READ,
   },
   {
     title: "Mail Templates",

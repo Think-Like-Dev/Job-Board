@@ -1,7 +1,7 @@
 import { Seeder } from '@mikro-orm/seeder';
 import type { EntityManager } from '@mikro-orm/postgresql';
 import * as argon2 from 'argon2';
-import { UserRole } from '../common/constants/enums';
+import { UserRole, UserStatus } from '../common/constants/enums';
 import { UserSchema } from '../modules/users/user.schema';
 
 interface SeedUser {
@@ -62,7 +62,9 @@ export class UserSeeder extends Seeder {
       const user = em.create(UserSchema, {
         ...seedUser,
         passwordHash,
+        status: UserStatus.ACTIVE,
         isActive: true,
+        inviteSendCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

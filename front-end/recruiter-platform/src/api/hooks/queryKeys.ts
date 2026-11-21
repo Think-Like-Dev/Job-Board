@@ -39,6 +39,11 @@ export const QUERY_KEYS = {
   SKILLS: {
     SEARCH: (term: string) => ["skills", "search", term] as const,
   },
+  TEAM: {
+    ALL: ["team"] as const,
+    LIST: (filters: unknown) => ["team", "list", filters] as const,
+    INVITATION: (token: string) => ["team", "invitation", token] as const,
+  },
   PROFILE: {
     ME: ["profile", "me"] as const,
   },

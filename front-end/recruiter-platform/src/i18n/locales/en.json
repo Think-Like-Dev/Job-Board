@@ -262,6 +262,7 @@
   },
   "nav": {
     "back": "Back",
+    "activeSessions": "Active sessions",
     "logout": "Logout",
     "loggingOut": "Logging out..."
   },

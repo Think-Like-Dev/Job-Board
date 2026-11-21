@@ -21,6 +21,7 @@ import {
 import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthRole, UserRole, UserStatus } from '@common/constants/enums';
+import { appUrl } from '@common/utils/app-url';
 import type { Candidate } from '@modules/candidates/candidate.schema';
 import type { User } from '@modules/users/user.schema';
 import { MailService } from '@modules/mail/mail.service';
@@ -157,17 +158,19 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.usersService.findByEmail(dto.email);
-    if (
-      !user ||
-      !(await this.usersService.verifyPassword(user, dto.password))
-    ) {
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    // Invited users have no password hash yet, so the status check has to run
+    // before verifyPassword or they only ever see "Invalid credentials".
+    if (user.status === UserStatus.INVITED) {
+      throw new UnauthorizedException('Finish your invitation first');
+    }
+    if (!(await this.usersService.verifyPassword(user, dto.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
     if (user.isActive === false || user.status === UserStatus.SUSPENDED) {
       throw new UnauthorizedException('Account is disabled');
-    }
-    if (user.status === UserStatus.INVITED) {
-      throw new UnauthorizedException('Finish your invitation first');
     }
 
     const otp = await this.authService.generateOtp(
@@ -238,7 +241,7 @@ export class AuthController {
 
     const token = await this.authService.createPasswordResetToken(email);
     const mail = this.config.get('mail', { infer: true });
-    const resetUrl = `${mail.appBaseUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
+    const resetUrl = appUrl(mail.appBaseUrl, `/reset-password?token=${token}`);
 
     try {
       await this.mailService.sendPasswordReset(email, resetUrl);

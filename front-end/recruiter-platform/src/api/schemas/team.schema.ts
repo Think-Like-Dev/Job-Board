@@ -4,7 +4,7 @@ import { UserStatus } from '@/types/team.types';
 
 export const TeamMemberSchema = z.object({
   id: z.string(),
-  name: z.string().optional(),
+  name: z.string().nullish(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z.string().optional(),

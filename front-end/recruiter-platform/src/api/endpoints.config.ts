@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
     LIST: '/users',
     UPDATE: (id: string) => `/users/${id}`,
     DELETE: (id: string) => `/users/${id}`,
+    DELETE_INVITATION: (id: string) => `/users/${id}/invitation`,
     RESEND_INVITE: (id: string) => `/users/${id}/invite/resend`,
   },
   JOBS: {

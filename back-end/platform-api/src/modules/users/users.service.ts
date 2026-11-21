@@ -10,7 +10,6 @@ import {
 import * as argon2 from 'argon2';
 import { GenericCrudService } from '@common/factory/generic-crud.service';
 import { UserRole, UserStatus } from '@common/constants/enums';
-import { markDeleted } from '@common/persistence/soft-delete';
 import type { SessionPayload } from '@modules/auth/auth.service';
 import { User, UserSchema } from './user.schema';
 import {
@@ -159,23 +158,26 @@ export class UsersService extends GenericCrudService<User> {
   }
 
   /**
-   * Revokes a pending invitation: the token dies immediately and the row is
-   * soft-deleted, so the same address can be invited again later.
+   * Hard-deletes a pending invitation.
+   *
+   * An invited user never signed in and owns no data, so the row is removed
+   * instead of soft-deleted: the address can be invited again immediately and
+   * no "INVITED + deleted" limbo row is left behind.
    */
-  async revokeInvitation(actor: SessionPayload, id: string): Promise<boolean> {
+  async deleteInvitationByActor(
+    actor: SessionPayload,
+    id: string,
+  ): Promise<boolean> {
     const user = await this.findOne({ id });
     this.policy.assertCanManage(actor, user);
 
     if (user.status !== UserStatus.INVITED) {
-      throw new BadRequestException('Only a pending invitation can be revoked');
+      throw new BadRequestException('Only a pending invitation can be deleted');
     }
 
-    user.inviteTokenHash = null;
-    user.inviteExpiresAt = null;
-    user.status = UserStatus.SUSPENDED;
-    user.updatedAt = new Date();
-    markDeleted(user);
-    await this.repository.getEntityManager().flush();
+    const em = this.repository.getEntityManager();
+    em.remove(user);
+    await em.flush();
     return true;
   }
 

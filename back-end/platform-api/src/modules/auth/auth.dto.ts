@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 /** Requests an OTP to be sent to the email (candidate auth). */
 export class RequestOtpDto {
@@ -67,6 +73,65 @@ export class PasswordResetRequestResponseDto {
 export class PasswordResetConfirmResponseDto {
   @ApiProperty({ example: true })
   success!: boolean;
+}
+
+/** A live session, safe to display (never the token). */
+export class SessionResponseDto {
+  @ApiProperty({ description: 'Public session id used for revocation.' })
+  id!: string;
+
+  @ApiProperty({ enum: ['candidate', 'user'] })
+  principalType!: 'candidate' | 'user';
+
+  @ApiProperty({ format: 'uuid' })
+  principalId!: string;
+
+  @ApiProperty()
+  email!: string;
+
+  @ApiProperty()
+  role!: string;
+
+  @ApiPropertyOptional()
+  ip?: string;
+
+  @ApiPropertyOptional()
+  userAgent?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  lastSeenAt!: string;
+
+  @ApiProperty()
+  expiresAt!: string;
+
+  @ApiProperty({ description: 'True for the session making the request.' })
+  current!: boolean;
+}
+
+export class SessionListResponseDto {
+  @ApiProperty({ type: [SessionResponseDto] })
+  data!: SessionResponseDto[];
+}
+
+/** Admin session filters: a principal, an email, or everyone. */
+export class AdminSessionsQueryDto {
+  @ApiPropertyOptional({ enum: ['candidate', 'user'] })
+  @IsOptional()
+  @IsIn(['candidate', 'user'])
+  principalType?: 'candidate' | 'user';
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsString()
+  principalId?: string;
+
+  @ApiPropertyOptional({ example: 'jane@company.com' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 /** Principal returned after authentication (candidate or internal user). */

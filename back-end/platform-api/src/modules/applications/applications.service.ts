@@ -327,6 +327,11 @@ export class ApplicationsService {
    * Hard-deletes a draft and its history so the candidate can start over.
    * Files uploaded only for the draft are removed unless still referenced by
    * the candidate profile or another application.
+   *
+   * Deliberate soft-delete exception: a draft is unsubmitted work product and
+   * owns an uploaded resume (`applications.resume_file_id` is NOT NULL with a
+   * RESTRICT foreign key). Soft-deleting it would keep that file locked, so a
+   * draft is the one business row that is still physically deleted.
    */
   async deleteDraft(id: string, candidateId: string): Promise<void> {
     const em = this.repository.getEntityManager();

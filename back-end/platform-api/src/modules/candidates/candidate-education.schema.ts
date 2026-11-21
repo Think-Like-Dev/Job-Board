@@ -4,9 +4,14 @@ import {
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
 import { CandidateSchema } from './candidate.schema';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 
 /** One education entry on the candidate's live profile. */
-export interface CandidateEducation {
+export interface CandidateEducation extends SoftDeletable {
   id: string;
   candidateId: string;
   institution: string;
@@ -25,6 +30,7 @@ export interface CandidateEducation {
 export const CandidateEducationSchema = new EntitySchema<CandidateEducation>({
   name: 'CandidateEducation',
   tableName: 'candidate_education',
+  filters: softDeleteFilter,
   indexes: [
     {
       name: 'candidate_education_candidate_id_index',
@@ -51,6 +57,7 @@ export const CandidateEducationSchema = new EntitySchema<CandidateEducation>({
     grade: { type: 'string', nullable: true },
     gpa: { type: 'decimal', precision: 4, scale: 2, nullable: true },
     additionalDetails: { type: 'text', nullable: true },
+    ...softDeleteProperty,
     createdAt: { type: 'datetime', defaultRaw: 'now()' },
     updatedAt: {
       type: 'datetime',

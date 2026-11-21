@@ -4,9 +4,14 @@ import {
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
 import { CandidateSchema } from './candidate.schema';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 
 /** One work-history entry on the candidate's live profile. */
-export interface CandidateExperience {
+export interface CandidateExperience extends SoftDeletable {
   id: string;
   candidateId: string;
   companyName: string;
@@ -22,6 +27,7 @@ export interface CandidateExperience {
 export const CandidateExperienceSchema = new EntitySchema<CandidateExperience>({
   name: 'CandidateExperience',
   tableName: 'candidate_experience',
+  filters: softDeleteFilter,
   indexes: [
     {
       name: 'candidate_experience_candidate_id_index',
@@ -46,6 +52,7 @@ export const CandidateExperienceSchema = new EntitySchema<CandidateExperience>({
     endDate: { type: 'date', nullable: true },
     salary: { type: 'string', nullable: true },
     description: { type: 'text', nullable: true },
+    ...softDeleteProperty,
     createdAt: { type: 'datetime', defaultRaw: 'now()' },
     updatedAt: {
       type: 'datetime',

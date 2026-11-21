@@ -6,6 +6,7 @@ import {
 import { LockMode, type EntityManager } from '@mikro-orm/core';
 import { EntityManager as PostgreSqlEntityManager } from '@mikro-orm/postgresql';
 import { FileType } from '@common/constants/enums';
+import { markDeleted, markRestored } from '@common/persistence/soft-delete';
 import { CandidateCertificationSchema } from '@modules/candidates/candidate-certification.schema';
 import { CandidateEducationSchema } from '@modules/candidates/candidate-education.schema';
 import { CandidateExperienceSchema } from '@modules/candidates/candidate-experience.schema';
@@ -302,7 +303,7 @@ export class ProfileWriteService {
 
     for (const row of existing) {
       if (!keep.has(row.id)) {
-        em.remove(row);
+        markDeleted(row);
       }
     }
   }
@@ -352,7 +353,7 @@ export class ProfileWriteService {
 
     for (const row of existing) {
       if (!keep.has(row.id)) {
-        em.remove(row);
+        markDeleted(row);
       }
     }
   }
@@ -365,8 +366,28 @@ export class ProfileWriteService {
     const uniqueIds = [...new Set(skillIds)];
     await this.assertSkillsExist(em, uniqueIds);
 
-    await em.nativeDelete(CandidateSkillSchema, { candidateId });
+    // The pair is the primary key, so a removed skill is revived instead of
+    // re-inserted; deleted rows are included deliberately.
+    const existing = await em.find(
+      CandidateSkillSchema,
+      { candidateId },
+      { filters: false },
+    );
+    const bySkillId = new Map(existing.map((row) => [row.skillId, row]));
+    const desired = new Set(uniqueIds);
+
+    for (const row of existing) {
+      if (desired.has(row.skillId)) {
+        if (row.deletedAt) markRestored(row);
+      } else if (!row.deletedAt) {
+        markDeleted(row);
+      }
+    }
+
     for (const skillId of uniqueIds) {
+      if (bySkillId.has(skillId)) {
+        continue;
+      }
       em.persist(
         em.create(CandidateSkillSchema, {
           candidateId,
@@ -444,7 +465,7 @@ export class ProfileWriteService {
 
     for (const row of existing) {
       if (!keep.has(row.id)) {
-        em.remove(row);
+        markDeleted(row);
       }
     }
   }

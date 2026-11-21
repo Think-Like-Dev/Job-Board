@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
   ValidateNested,
@@ -35,8 +36,17 @@ export class CompensationDto {
   @IsEnum(CompensationType)
   type!: CompensationType;
 
-  @ApiPropertyOptional({ example: '$ USD' })
-  @IsString()
+  @ApiPropertyOptional({
+    example: 'INR',
+    description:
+      'ISO 4217 code. The recruiter form lists every currency the browser supports (Intl.supportedValuesOf).',
+  })
+  @Transform(({ value }: TransformFnParams): unknown =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @Matches(/^[A-Z]{3}$/, {
+    message: 'currency must be a three-letter ISO 4217 code',
+  })
   @IsOptional()
   currency?: string;
 

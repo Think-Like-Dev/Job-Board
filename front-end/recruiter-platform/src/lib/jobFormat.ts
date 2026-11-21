@@ -1,6 +1,7 @@
 import { formatDate } from "date-fns";
 
 import { CompensationType } from "@/types/job.types";
+import { currencyCode, formatMoney } from "@/lib/currency";
 
 /** Minimal shape shared by the form, list and detail compensation payloads. */
 export interface CompensationLike {
@@ -16,18 +17,20 @@ export function formatCompensation(
 ): string {
   if (!compensation) return "";
 
+  const currency = currencyCode(compensation.currency) ?? compensation.currency;
+
   switch (compensation.type) {
     case CompensationType.FIXED:
       return typeof compensation.amount === "number"
-        ? `${compensation.currency ?? ""} ${compensation.amount} ${compensation.period ?? ""}`.trim()
+        ? `${formatMoney(compensation.amount, compensation.currency)} ${compensation.period ?? ""}`.trim()
         : "";
     case CompensationType.RANGE:
       return Array.isArray(compensation.amount)
-        ? `${compensation.currency ?? ""} ${compensation.amount[0]} - ${compensation.amount[1]} ${compensation.period ?? ""}`.trim()
+        ? `${formatMoney(compensation.amount[0], compensation.currency)} - ${formatMoney(compensation.amount[1], compensation.currency)} ${compensation.period ?? ""}`.trim()
         : "";
     case CompensationType.NEGOTIABLE:
       return compensation.currency
-        ? `${compensation.currency} ${compensation.period ?? ""} (Negotiable)`.trim()
+        ? `${currency} ${compensation.period ?? ""} (Negotiable)`.trim()
         : "Negotiable";
     default:
       return "";

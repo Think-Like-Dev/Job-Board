@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
   Req,
   Res,
@@ -20,6 +22,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthRole, UserRole } from '@common/constants/enums';
 import type { Candidate } from '@modules/candidates/candidate.schema';
 import type { User } from '@modules/users/user.schema';
+import { MailService } from '@modules/mail/mail.service';
 import { AuthService } from './auth.service';
 import { UsersService } from '@modules/users/users.service';
 import { CandidatesService } from '@modules/candidates/candidates.service';
@@ -29,7 +32,11 @@ import {
   LoginDto,
   LoginResponseDto,
   OtpRequestResponseDto,
+  PasswordResetConfirmResponseDto,
+  PasswordResetRequestResponseDto,
   RequestOtpDto,
+  RequestPasswordResetDto,
+  ResetPasswordDto,
   VerifyOtpDto,
 } from './auth.dto';
 import type { AppConfig } from '@src/config/configuration';
@@ -40,12 +47,15 @@ import type { AuthenticatedRequest } from './auth.types';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly config: ConfigService<AppConfig, true>,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly candidatesService: CandidatesService,
     private readonly permissionsService: PermissionsService,
+    private readonly mailService: MailService,
   ) {}
 
   @Post('otp/request')
@@ -57,6 +67,7 @@ export class AuthController {
       dto.email,
       AuthRole.CANDIDATE,
     );
+    await this.deliverOtp(dto.email, otp);
     return { message: 'OTP sent to your email', ...this.devOtp(otp) };
   }
 
@@ -139,12 +150,76 @@ export class AuthController {
       user.email,
       AuthRole.RECRUITER,
     );
+    await this.deliverOtp(user.email, otp);
     return {
       success: true,
       otpRequired: true,
       message: 'OTP sent to your email',
       ...this.devOtp(otp),
     };
+  }
+
+  @Post('password/reset/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Email a password reset link to an internal user' })
+  @ApiOkResponse({ type: PasswordResetRequestResponseDto })
+  async requestPasswordReset(
+    @Body() dto: RequestPasswordResetDto,
+  ): Promise<PasswordResetRequestResponseDto> {
+    const genericMessage = 'If the account exists, a reset link has been sent.';
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.usersService.findByEmail(email);
+
+    // Never reveal whether an address belongs to an account.
+    if (!user || user.isActive === false) {
+      return { success: true, message: genericMessage };
+    }
+
+    const token = await this.authService.createPasswordResetToken(email);
+    const mail = this.config.get('mail', { infer: true });
+    const resetUrl = `${mail.appBaseUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
+
+    try {
+      await this.mailService.sendPasswordReset(email, resetUrl);
+    } catch (error) {
+      // Local development may run without Mailpit; the link is returned below.
+      if (this.config.get('nodeEnv', { infer: true }) !== 'local') {
+        throw error;
+      }
+      this.logger.warn(
+        `Password reset mail failed in local mode: ${(error as Error).message}`,
+      );
+    }
+
+    return {
+      success: true,
+      message: genericMessage,
+      ...this.devResetUrl(resetUrl),
+    };
+  }
+
+  @Post('password/reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set a new password from a reset token' })
+  @ApiOkResponse({ type: PasswordResetConfirmResponseDto })
+  async confirmPasswordReset(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<PasswordResetConfirmResponseDto> {
+    const email = await this.authService.consumePasswordResetToken(dto.token);
+    if (!email) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const user = await this.usersService.findByEmail(email);
+    if (!user || user.isActive === false) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    await this.usersService.setPassword(user.id, dto.password);
+    // A password change must not leave other sessions logged in.
+    await this.authService.revokeSessionsForEmail(email);
+
+    return { success: true };
   }
 
   @Get('me')
@@ -197,10 +272,34 @@ export class AuthController {
     return { success: true };
   }
 
-  /** Exposes the OTP in local development only, where no mailer is configured. */
+  /**
+   * Sends an OTP over SMTP. Local development still tolerates a missing mail
+   * server, because the API also returns the code in that environment.
+   */
+  private async deliverOtp(email: string, otp: string): Promise<void> {
+    try {
+      await this.mailService.sendOtp(email, otp);
+    } catch (error) {
+      if (this.config.get('nodeEnv', { infer: true }) !== 'local') {
+        throw error;
+      }
+      this.logger.warn(
+        `OTP mail failed in local mode: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /** Exposes the OTP in local development so the flow works without Mailpit. */
   private devOtp(otp: string): { otp?: string } {
     return this.config.get('nodeEnv', { infer: true }) === 'local'
       ? { otp }
+      : {};
+  }
+
+  /** Exposes the reset link in local development, where Mailpit is used. */
+  private devResetUrl(resetUrl: string): { resetUrl?: string } {
+    return this.config.get('nodeEnv', { infer: true }) === 'local'
+      ? { resetUrl }
       : {};
   }
 }

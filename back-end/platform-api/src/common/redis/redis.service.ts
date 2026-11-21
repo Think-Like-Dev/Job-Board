@@ -17,9 +17,12 @@ import { AppConfig } from '@src/config/configuration';
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   readonly client: Redis;
+  /** Redis key namespace, e.g. `jobboard:`. Needed for SCAN patterns. */
+  readonly keyPrefix: string;
 
   constructor(config: ConfigService<AppConfig, true>) {
     const redis = config.get('redis', { infer: true });
+    this.keyPrefix = redis.keyPrefix;
     this.client = new Redis({
       host: redis.host,
       port: redis.port,

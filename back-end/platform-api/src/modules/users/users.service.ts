@@ -59,4 +59,12 @@ export class UsersService extends GenericCrudService<User> {
     if (!user.passwordHash) return false;
     return argon2.verify(user.passwordHash, password);
   }
+
+  /** Replaces a user's password (admin reset, onboarding, password reset). */
+  async setPassword(id: string, password: string): Promise<void> {
+    await this.update(
+      { id },
+      { passwordHash: await argon2.hash(password), updatedAt: new Date() },
+    );
+  }
 }

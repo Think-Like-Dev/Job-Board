@@ -25,6 +25,8 @@ services:
       DATABASE_HOST: postgres
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
+      # Mailpit runs in this stack; the host view uses localhost:1025.
+      MAIL_HOST: mailpit
 
     volumes:
       - ../../platform-api:/app
@@ -107,6 +109,12 @@ services:
   redis:
     ports:
       - "6379:6379"
+
+  # Mailpit: SMTP on 1025, web inbox on http://localhost:8025.
+  mailpit:
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
   rabbitmq:
     ports:

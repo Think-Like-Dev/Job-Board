@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -22,11 +23,14 @@ import {
 } from '@nestjs/swagger';
 import { SessionAuth } from '@modules/auth/session-auth.decorator';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
+import { PERMISSIONS } from '@modules/rbac/permissions';
+import { RequirePermission } from '@modules/rbac/require-permission.decorator';
 import { CandidateJobApplicationsQueryDto } from '@modules/applications/dto/application-query.dto';
 import { CandidateJobApplicationListResponseDto } from '@modules/applications/dto/application-response.dto';
 import { RecruiterApplicationsService } from '@modules/applications/recruiter-applications.service';
 import { MAX_APPLICATION_UPLOAD_BYTES } from '@modules/files/file-validation';
 import { CandidateCreateService } from './candidate-create.service';
+import { CandidateDeleteService } from './candidate-delete.service';
 import { CandidateDetailService } from './candidate-detail.service';
 import { CandidateListService } from './candidate-list.service';
 import {
@@ -44,6 +48,7 @@ export class RecruiterCandidatesController {
     private readonly listService: CandidateListService,
     private readonly detailService: CandidateDetailService,
     private readonly createService: CandidateCreateService,
+    private readonly deleteService: CandidateDeleteService,
     private readonly applications: RecruiterApplicationsService,
   ) {}
 
@@ -146,6 +151,17 @@ export class RecruiterCandidatesController {
       message: 'Candidate created successfully',
       data,
     };
+  }
+
+  @Delete(':id')
+  @RequirePermission(PERMISSIONS.CANDIDATE_DELETE)
+  @ApiOperation({ summary: 'Hard-delete an invited candidate profile' })
+  @ApiOkResponse({ description: 'Candidate deleted' })
+  async remove(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<boolean> {
+    return this.deleteService.deleteInvited(req.session, id);
   }
 
   @Get(':id/applications')

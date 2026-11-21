@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   CANDIDATE_READ: 'candidate.read',
   CANDIDATE_CREATE: 'candidate.create',
   CANDIDATE_UPDATE: 'candidate.update',
+  CANDIDATE_DELETE: 'candidate.delete',
 
   USER_READ: 'user.read',
   USER_CREATE: 'user.create',

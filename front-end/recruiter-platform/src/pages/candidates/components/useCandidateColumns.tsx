@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { EyeIcon } from "lucide-react";
+import { EyeIcon, Trash2Icon } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 
 import { Badge } from "@ui/badge";
 import { Button } from "@ui/button";
 
 import type { CandidateListItem } from "@/api/schemas/candidates.schema";
+import { CandidateStatus } from "@/types/candidate.types";
 import {
   candidateDisplayName,
   candidateInitials,
@@ -16,11 +17,15 @@ import { CandidateSkillsCell } from "./CandidateSkillsCell";
 
 interface UseCandidateColumnsOptions {
   onViewOverview: (candidate: CandidateListItem) => void;
+  canDelete: (candidate: CandidateListItem) => boolean;
+  onDelete: (candidate: CandidateListItem) => void;
 }
 
 /** Candidate directory columns. Sorting is server-side via `meta.sortable`. */
 export function useCandidateColumns({
   onViewOverview,
+  canDelete,
+  onDelete,
 }: UseCandidateColumnsOptions): ColumnDef<CandidateListItem>[] {
   const { t } = useTranslation();
 
@@ -43,6 +48,9 @@ export function useCandidateColumns({
                 <Badge variant="secondary">
                   {t("candidate.source.recruiter")}
                 </Badge>
+              ) : null}
+              {candidate.status === CandidateStatus.INVITED ? (
+                <Badge variant="outline">{t("candidate.status.invited")}</Badge>
               ) : null}
             </div>
           </div>
@@ -101,19 +109,36 @@ export function useCandidateColumns({
       id: "actions",
       header: t("candidate.list.columns.actions"),
       cell: ({ row }) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={t("candidate.list.viewOverview")}
-          title={t("candidate.list.viewOverview")}
-          onClick={(event) => {
-            event.stopPropagation();
-            onViewOverview(row.original);
-          }}
-        >
-          <EyeIcon className="size-4" />
-        </Button>
+        <div className="flex justify-end gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("candidate.list.viewOverview")}
+            title={t("candidate.list.viewOverview")}
+            onClick={(event) => {
+              event.stopPropagation();
+              onViewOverview(row.original);
+            }}
+          >
+            <EyeIcon className="size-4" />
+          </Button>
+          {canDelete(row.original) ? (
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              aria-label={t("candidate.list.delete")}
+              title={t("candidate.list.delete")}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(row.original);
+              }}
+            >
+              <Trash2Icon className="size-4" />
+            </Button>
+          ) : null}
+        </div>
       ),
     },
   ];

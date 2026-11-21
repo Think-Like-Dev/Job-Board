@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -9,15 +11,32 @@ import {
 } from "lucide-react";
 
 import { Button } from "@ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
 
-import { useGetCandidates } from "@/api/hooks/useCandidates";
+import {
+  useDeleteCandidate,
+  useGetCandidates,
+} from "@/api/hooks/useCandidates";
 import {
   DataTable,
   type DataTableSorting,
 } from "@/components/common/DataTable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { CandidateListItem } from "@/api/schemas/candidates.schema";
+import { CandidateStatus } from "@/types/candidate.types";
+import { usePermissions } from "@/permissions/usePermissions";
+import { PERMISSIONS } from "@/permissions/permissions";
+import type { RootState } from "@/store";
 import { CandidateCreateDialog } from "./components/CandidateCreateDialog";
 import { CandidateOverviewDialog } from "./components/CandidateOverviewDialog";
 import { CandidatesToolbar } from "./components/CandidatesToolbar";
@@ -55,6 +74,10 @@ const TABLE_TO_SORT: Record<string, CandidateSortValue> = {
 const Candidates = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = usePermissions();
+  const currentUserId = useSelector(
+    (state: RootState) => state.auth.user?.id,
+  );
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -62,6 +85,9 @@ const Candidates = () => {
     useState<CandidateSortValue>(DEFAULT_CANDIDATE_SORT);
   const [overviewId, setOverviewId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] =
+    useState<CandidateListItem | null>(null);
+  const removeCandidate = useDeleteCandidate();
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   // Clearing the search should take effect immediately, not after the debounce.
@@ -100,9 +126,28 @@ const Candidates = () => {
     setSortBy(value ?? DEFAULT_CANDIDATE_SORT);
   };
 
+  const isAdmin = can(PERMISSIONS.ADMIN_ACCESS);
+  const canDeleteCandidate = (candidate: CandidateListItem) =>
+    can(PERMISSIONS.CANDIDATE_DELETE) &&
+    candidate.status === CandidateStatus.INVITED &&
+    (isAdmin || candidate.createdBy === currentUserId);
+
+  const onConfirmDelete = () => {
+    if (!pendingDelete) return;
+    removeCandidate.mutate(pendingDelete.id, {
+      onSuccess: () => {
+        toast.success(t("candidate.list.deleteSuccess"));
+        setPendingDelete(null);
+      },
+      onError: (error) => toast.error(error.message),
+    });
+  };
+
   const columns = useCandidateColumns({
     onViewOverview: (candidate: CandidateListItem) =>
       setOverviewId(candidate.id),
+    canDelete: canDeleteCandidate,
+    onDelete: (candidate: CandidateListItem) => setPendingDelete(candidate),
   });
 
   const isFiltered = search.trim() !== "" || sortBy !== DEFAULT_CANDIDATE_SORT;
@@ -225,6 +270,42 @@ const Candidates = () => {
           </Button>
         </div>
       </div>
+
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("candidate.list.deleteTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? t("candidate.list.deleteDescription", {
+                    email: pendingDelete.email,
+                  })
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeCandidate.isPending}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={onConfirmDelete}
+              disabled={removeCandidate.isPending}
+            >
+              {removeCandidate.isPending
+                ? t("common.deleting")
+                : t("candidate.list.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CandidateOverviewDialog
         candidateId={overviewId}

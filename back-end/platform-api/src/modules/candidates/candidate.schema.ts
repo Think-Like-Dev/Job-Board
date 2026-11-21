@@ -4,6 +4,11 @@ import {
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
 import { UserSchema } from '@modules/users/user.schema';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 import { FileSchema } from '../files/file.schema';
 
 /**
@@ -13,7 +18,7 @@ import { FileSchema } from '../files/file.schema';
  *
  * Defined with the MikroORM v7 `EntitySchema` API (decorators were removed in v7).
  */
-export interface Candidate {
+export interface Candidate extends SoftDeletable {
   id: string;
   email: string;
   firstName?: string;
@@ -42,9 +47,17 @@ export const CandidateSchema = new EntitySchema<Candidate>({
   name: 'Candidate',
   tableName: 'candidates',
   indexes: [{ name: 'candidates_created_by_index', properties: ['createdBy'] }],
+  uniques: [
+    {
+      name: 'candidates_email_unique',
+      properties: ['email'],
+      where: { deletedAt: null },
+    },
+  ],
+  filters: softDeleteFilter,
   properties: {
     id: { type: 'uuid', primary: true, defaultRaw: 'gen_random_uuid()' },
-    email: { type: 'string', unique: true },
+    email: { type: 'string' },
     firstName: { type: 'string', nullable: true },
     lastName: { type: 'string', nullable: true },
     phone: { type: 'string', nullable: true },
@@ -104,6 +117,7 @@ export const CandidateSchema = new EntitySchema<Candidate>({
       foreignKeyName: 'fk_users_id_candidates_created_by',
     } as unknown as EntitySchemaProperty<string, Candidate>,
     totalExperienceMonths: { type: 'integer', default: 0 },
+    ...softDeleteProperty,
     createdAt: { type: 'datetime', nullable: true },
     updatedAt: { type: 'datetime', nullable: true },
   },

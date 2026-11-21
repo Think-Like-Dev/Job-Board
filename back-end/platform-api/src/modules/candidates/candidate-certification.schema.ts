@@ -6,12 +6,17 @@ import {
 import { FileSchema } from '@modules/files/file.schema';
 import { SkillSchema } from '@modules/skills/skill.schema';
 import { CandidateSchema } from './candidate.schema';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 
 /**
  * A certification on the candidate's live profile. A credential is either a
  * URL, an uploaded soft copy, or both; the migration enforces at least one.
  */
-export interface CandidateCertification {
+export interface CandidateCertification extends SoftDeletable {
   id: string;
   candidateId: string;
   title: string;
@@ -29,6 +34,7 @@ export const CandidateCertificationSchema =
   new EntitySchema<CandidateCertification>({
     name: 'CandidateCertification',
     tableName: 'candidate_certifications',
+    filters: softDeleteFilter,
     indexes: [
       {
         name: 'candidate_certifications_candidate_id_index',
@@ -80,6 +86,7 @@ export const CandidateCertificationSchema =
       } as unknown as EntitySchemaProperty<string, CandidateCertification>,
       issueDate: { type: 'date', nullable: true },
       expiryDate: { type: 'date', nullable: true },
+      ...softDeleteProperty,
       createdAt: { type: 'datetime', defaultRaw: 'now()' },
       updatedAt: {
         type: 'datetime',

@@ -38,8 +38,10 @@ const Login = () => {
         setStep("otp");
         toast.success(t("auth.otpSendSuccess"));
       },
-      onError: () => {
-        toast.error(t("auth.loginError"));
+      onError: (error) => {
+        // The API explains why (invitation not finished, account disabled);
+        // fall back to the generic copy only when it sent nothing.
+        toast.error(error.message || t("auth.loginError"));
       },
     });
   };
@@ -58,8 +60,8 @@ const Login = () => {
           setStep("email");
           navigate("/");
         },
-        onError: () => {
-          toast.error(t("auth.otpVerifyError"));
+        onError: (error) => {
+          toast.error(error.message || t("auth.otpVerifyError"));
         },
       },
     );

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
 import { UserRole, UserStatus } from '@common/constants/enums';
+import { appUrl } from '@common/utils/app-url';
 import type { User } from './user.schema';
 import { MailService } from '@modules/mail/mail.service';
 import type { AppConfig } from '@src/config/configuration';
@@ -61,7 +62,7 @@ export class InvitationService {
   }
 
   invitationUrl(token: string): string {
-    return `${this.appBaseUrl}/onboard/${token}`;
+    return appUrl(this.appBaseUrl, `/onboard/${token}`);
   }
 
   /** Sends (or resends) the invitation email. */

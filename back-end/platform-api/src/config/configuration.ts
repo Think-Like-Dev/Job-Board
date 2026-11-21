@@ -182,7 +182,7 @@ export default (): AppConfig => ({
     user: process.env.MAIL_USER || undefined,
     password: process.env.MAIL_PASSWORD || undefined,
     from: process.env.MAIL_FROM ?? 'no-reply@jobboard.local',
-    appBaseUrl: process.env.RECRUITER_APP_URL ?? 'http://localhost:5174',
+    appBaseUrl: process.env.RECRUITER_APP_URL ?? 'http://localhost:5173',
     passwordResetExpiryMinutes: parseInt(
       process.env.PASSWORD_RESET_EXPIRY_MINUTES ?? '30',
       10,

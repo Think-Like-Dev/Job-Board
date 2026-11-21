@@ -6,6 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { QUERY_KEYS } from './queryKeys';
 import { login, verifyOtp, getMe, logoutUser } from '../services/auth.service';
+import {
+  confirmPasswordReset,
+  requestPasswordReset,
+} from '../services/auth.service';
 import { loginSuccess, logout, setInitialized } from '@store/slices/authSlice';
 import type { RootState } from '@/store';
 import type { LoginPayload, VerifyOtpPayload } from '@/types/auth.types';
@@ -55,6 +59,21 @@ export function useVerifyOtp() {
     onSuccess: (data) => {
       dispatch(loginSuccess(data.user));
     },
+  });
+}
+
+/** Step 1 of the reset flow: email a single-use link. */
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: (payload: { email: string }) => requestPasswordReset(payload),
+  });
+}
+
+/** Step 2 of the reset flow: set the new password from the link token. */
+export function useConfirmPasswordReset() {
+  return useMutation({
+    mutationFn: (payload: { token: string; password: string }) =>
+      confirmPasswordReset(payload),
   });
 }
 

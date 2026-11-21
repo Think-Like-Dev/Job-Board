@@ -5,6 +5,10 @@ import {
   AuthResponseSchema,
   LoginPayloadSchema,
   LoginResponseSchema,
+  PasswordResetConfirmResponseSchema,
+  PasswordResetRequestResponseSchema,
+  RequestPasswordResetPayloadSchema,
+  ResetPasswordPayloadSchema,
   VerifyOtpPayloadSchema,
 } from '../schemas/auth.schema';
 import type { LoginPayload, VerifyOtpPayload, AuthResponse, LoginResponse, UserProfile } from '@/types/auth.types';
@@ -31,4 +35,43 @@ export async function getMe(): Promise<UserProfile> {
 
 export async function logoutUser(): Promise<void> {
   await api.post(API_ENDPOINTS.AUTH.LOGOUT);
+}
+
+/** Asks the API to email a reset link. Always resolves, even for unknown mail. */
+export async function requestPasswordReset(payload: { email: string }) {
+  const validated = parseSchema(
+    RequestPasswordResetPayloadSchema,
+    payload,
+    'requestPasswordReset',
+  );
+  const response = await api.post<unknown>(
+    API_ENDPOINTS.AUTH.RESET_PASSWORD_REQUEST,
+    validated,
+  );
+  return parseSchema(
+    PasswordResetRequestResponseSchema,
+    response,
+    'requestPasswordReset Response',
+  );
+}
+
+/** Exchanges the emailed token for a new password. */
+export async function confirmPasswordReset(payload: {
+  token: string;
+  password: string;
+}) {
+  const validated = parseSchema(
+    ResetPasswordPayloadSchema,
+    payload,
+    'confirmPasswordReset',
+  );
+  const response = await api.post<unknown>(
+    API_ENDPOINTS.AUTH.RESET_PASSWORD_CONFIRM,
+    validated,
+  );
+  return parseSchema(
+    PasswordResetConfirmResponseSchema,
+    response,
+    'confirmPasswordReset Response',
+  );
 }

@@ -8,7 +8,7 @@ import { useLogin, useVerifyOtp } from "@api/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const Login = () => {
@@ -120,6 +120,9 @@ const Login = () => {
               t("auth.login")
             )}
           </Button>
+          <Link className="text-sm text-center underline" to="/reset-password">
+            {t("auth.forgotPassword")}
+          </Link>
         </form>
       )}
       {step === "otp" && (

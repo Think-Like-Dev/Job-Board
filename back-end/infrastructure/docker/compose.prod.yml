@@ -1,6 +1,10 @@
 name: job-board-prod
 
 services:
+  # Mailpit is local-only; production uses a real relay through MAIL_*.
+  mailpit:
+    profiles: ["mailcatcher"]
+
   platform-api:
     env_file:
       - ../../env/.env.production

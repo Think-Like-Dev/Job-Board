@@ -23,6 +23,7 @@ const Applications = lazy(() => import('@pages/jobs/Applications'));
 const Candidates = lazy(() => import('@pages/candidates'));
 const CandidateDetail = lazy(() => import('@pages/candidates/detail'));
 const Team = lazy(() => import('@pages/team'));
+const Sessions = lazy(() => import('@pages/sessions'));
 const Onboard = lazy(() => import('@pages/Onboard'));
 
 function RouteFallback() {
@@ -117,6 +118,14 @@ const AppRoutes = () => {
               element={
                 <PermissionRoute permission={PERMISSIONS.USER_READ}>
                   <Team />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="sessions"
+              element={
+                <PermissionRoute permission={PERMISSIONS.SESSION_READ_SELF}>
+                  <Sessions />
                 </PermissionRoute>
               }
             />

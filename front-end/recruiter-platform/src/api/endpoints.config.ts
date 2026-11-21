@@ -8,6 +8,13 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD_CONFIRM: '/auth/password/reset/confirm',
     INVITATION_PREVIEW: (token: string) => `/auth/invitation/${token}`,
     INVITATION_ACCEPT: '/auth/invitation/accept',
+    SESSIONS: '/auth/sessions',
+    SESSION_REVOKE: (sid: string) => `/auth/sessions/${sid}`,
+  },
+  ADMIN: {
+    SESSIONS: '/admin/sessions',
+    SESSION_REVOKE: (sid: string, principalType: string, principalId: string) =>
+      `/admin/sessions/${sid}?principalType=${principalType}&principalId=${principalId}`,
   },
   USERS: {
     LIST: '/users',

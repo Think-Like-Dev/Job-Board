@@ -14,6 +14,7 @@ backend/secrets/*
 *.md
 !README.md
 !AI-Readme.md
+!FUTURE_IMPROVISATIONS.md
 
 # Agent memory (never commit)
 .agent-memory/

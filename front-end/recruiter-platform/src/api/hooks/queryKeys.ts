@@ -44,6 +44,11 @@ export const QUERY_KEYS = {
     LIST: (filters: unknown) => ["team", "list", filters] as const,
     INVITATION: (token: string) => ["team", "invitation", token] as const,
   },
+  SESSIONS: {
+    ALL: ["sessions"] as const,
+    SELF: ["sessions", "self"] as const,
+    ADMIN: (filters: unknown) => ["sessions", "admin", filters] as const,
+  },
   PROFILE: {
     ME: ["profile", "me"] as const,
   },

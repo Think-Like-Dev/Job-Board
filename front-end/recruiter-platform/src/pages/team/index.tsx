@@ -1,11 +1,21 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@ui/button";
 import { Input } from "@ui/input";
 import { Badge } from "@ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -24,8 +34,8 @@ import {
 
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
+  useDeleteInvitation,
   useResendInvite,
-  useRevokeInvite,
   useTeam,
   useUpdateMember,
 } from "@/api/hooks/useTeam";
@@ -64,8 +74,9 @@ const Team = () => {
 
   const { data, isLoading, isError, refetch } = useTeam(filters);
   const resend = useResendInvite();
-  const revoke = useRevokeInvite();
+  const removeInvitation = useDeleteInvitation();
   const update = useUpdateMember();
+  const [pendingDelete, setPendingDelete] = useState<TeamMember | null>(null);
 
   const canInvite = can(PERMISSIONS.USER_INVITE);
   const canManageStatus = can(PERMISSIONS.USER_DELETE);
@@ -77,9 +88,13 @@ const Team = () => {
     });
   };
 
-  const onRevoke = (member: TeamMember) => {
-    revoke.mutate(member.id, {
-      onSuccess: () => toast.success(t("team.revokeSuccess")),
+  const onConfirmDelete = () => {
+    if (!pendingDelete) return;
+    removeInvitation.mutate(pendingDelete.id, {
+      onSuccess: () => {
+        toast.success(t("team.deleteInvitationSuccess"));
+        setPendingDelete(null);
+      },
       onError: (error) => toast.error(error.message),
     });
   };
@@ -247,10 +262,11 @@ const Team = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            disabled={revoke.isPending}
-                            onClick={() => onRevoke(member)}
+                            disabled={removeInvitation.isPending}
+                            onClick={() => setPendingDelete(member)}
                           >
-                            {t("team.revoke")}
+                            <Trash2Icon className="size-4" />
+                            {t("team.deleteInvitation")}
                           </Button>
                         </>
                       )}
@@ -266,6 +282,12 @@ const Team = () => {
                               ? t("team.suspend")
                               : t("team.activate")}
                           </Button>
+                        )}
+                      {member.status !== UserStatus.INVITED &&
+                        !canManageStatus && (
+                          <span className="text-sm text-muted-foreground">
+                            —
+                          </span>
                         )}
                     </div>
                   </TableCell>
@@ -301,6 +323,42 @@ const Team = () => {
           </Button>
         </div>
       </div>
+
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("team.deleteInvitationTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? t("team.deleteInvitationDescription", {
+                    email: pendingDelete.email,
+                  })
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeInvitation.isPending}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={onConfirmDelete}
+              disabled={removeInvitation.isPending}
+            >
+              {removeInvitation.isPending
+                ? t("common.deleting")
+                : t("team.deleteInvitation")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </div>

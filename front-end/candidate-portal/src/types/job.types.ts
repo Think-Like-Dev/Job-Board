@@ -27,13 +27,7 @@ export enum CompensationType {
   NEGOTIABLE = 'NEGOTIABLE',
 }
 
-/** Currency values stored by the recruiter job form. */
-export enum Currency {
-  USD = '$ USD',
-  INR = '₹ INR',
-  EUR = '€ EUR',
-  AED_DIRH = 'د.إ AED (UAE)',
-}
+/** Currency values are ISO 4217 codes; labels come from Intl at render time. */
 
 export interface JobCompensation {
   type: CompensationType;

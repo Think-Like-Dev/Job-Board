@@ -72,3 +72,8 @@ export async function createCandidate(
     "createCandidate Response",
   );
 }
+
+/** Hard-deletes a candidate profile the current user created (INVITED only). */
+export async function deleteCandidate(id: string): Promise<void> {
+  await api.delete(API_ENDPOINTS.CANDIDATES.DELETE(id));
+}

@@ -4,8 +4,10 @@ import { SessionModule } from '@modules/auth/session.module';
 import { CandidatesModule } from '@modules/candidates/candidates.module';
 import { FilesModule } from '@modules/files/files.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
+import { RbacModule } from '@modules/rbac/rbac.module';
 import { SkillsModule } from '@modules/skills/skills.module';
 import { CandidateCreateService } from './candidate-create.service';
+import { CandidateDeleteService } from './candidate-delete.service';
 import { CandidateDetailService } from './candidate-detail.service';
 import { CandidateListService } from './candidate-list.service';
 import { CandidateQueries } from './candidate-queries';
@@ -22,6 +24,7 @@ import { RecruiterCandidatesController } from './recruiter-candidates.controller
     CandidatesModule,
     ProfilesModule,
     FilesModule,
+    RbacModule,
     SkillsModule,
     ApplicationsModule,
   ],
@@ -31,6 +34,7 @@ import { RecruiterCandidatesController } from './recruiter-candidates.controller
     CandidateListService,
     CandidateDetailService,
     CandidateCreateService,
+    CandidateDeleteService,
   ],
 })
 export class RecruiterCandidatesModule {}

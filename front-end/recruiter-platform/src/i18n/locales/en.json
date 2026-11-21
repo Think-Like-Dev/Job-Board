@@ -536,6 +536,10 @@
         "actions": "Actions"
       },
       "viewOverview": "View overview",
+      "delete": "Delete profile",
+      "deleteTitle": "Delete this invited profile?",
+      "deleteDescription": "The profile for {{email}} was created before the candidate signed in. Deleting it removes the record and its files permanently; you can create it again later.",
+      "deleteSuccess": "Candidate profile deleted",
       "empty": "No candidates found.",
       "loadFailedTitle": "Could not load candidates",
       "loadFailed": "Something went wrong while loading the candidate list.",
@@ -543,6 +547,9 @@
     },
     "source": {
       "recruiter": "Added by recruiter"
+    },
+    "status": {
+      "invited": "Invited"
     },
     "experience": {
       "fresher": "Fresher",

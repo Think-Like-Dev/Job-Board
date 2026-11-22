@@ -48,7 +48,7 @@ export function CandidateFormBody({
         <BasicsSection form={form} />
       </FormSection>
 
-      <FormSection title={t("candidate.form.sections.documents")}>
+      <FormSection title={t("common.documents")}>
         <FileField
           id="resumeFile"
           label={t("common.resume")}
@@ -95,21 +95,21 @@ export function CandidateFormBody({
       </FormSection>
 
       <FormSection
-        title={t("candidate.form.sections.education")}
+        title={t("common.education")}
         defaultOpen={false}
       >
         <EducationSection form={form} />
       </FormSection>
 
       <FormSection
-        title={t("candidate.form.sections.experience")}
+        title={t("common.experience")}
         defaultOpen={false}
       >
         <ExperienceSection form={form} />
       </FormSection>
 
       <FormSection
-        title={t("candidate.form.sections.certifications")}
+        title={t("common.certifications")}
         defaultOpen={false}
       >
         <CertificationsSection form={form} />

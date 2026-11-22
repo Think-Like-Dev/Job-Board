@@ -145,17 +145,17 @@ export function InviteMemberDialog({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="invite-first">{t("team.firstNameLabel")}</Label>
+                <Label htmlFor="invite-first">{t("common.firstName")}</Label>
                 <Input id="invite-first" {...form.register("firstName")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="invite-last">{t("team.lastNameLabel")}</Label>
+                <Label htmlFor="invite-last">{t("common.lastName")}</Label>
                 <Input id="invite-last" {...form.register("lastName")} />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>{t("team.roleLabel")}</Label>
+              <Label>{t("common.role")}</Label>
               <Select
                 value={form.watch("role")}
                 onValueChange={(value) =>

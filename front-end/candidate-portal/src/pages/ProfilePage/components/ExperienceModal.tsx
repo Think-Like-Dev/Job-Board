@@ -121,7 +121,7 @@ export function ExperienceModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t('profile.experience.startDate')}</Label>
+              <Label>{t('common.startDate')}</Label>
               <Input type="date" {...register('startDate')} />
               {errors.startDate && (
                 <p className="text-xs text-destructive">
@@ -130,7 +130,7 @@ export function ExperienceModal({
               )}
             </div>
             <div className="space-y-2">
-              <Label>{t('profile.experience.endDate')}</Label>
+              <Label>{t('common.endDate')}</Label>
               <Input type="date" disabled={isCurrent} {...register('endDate')} />
               {errors.endDate && (
                 <p className="text-xs text-destructive">

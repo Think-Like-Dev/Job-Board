@@ -175,7 +175,7 @@ const Team = () => {
           <TableHeader>
             <TableRow>
               <TableHead>{t("team.columnMember")}</TableHead>
-              <TableHead>{t("team.columnRole")}</TableHead>
+              <TableHead>{t("common.role")}</TableHead>
               <TableHead>{t("common.status")}</TableHead>
               <TableHead>{t("team.columnInvited")}</TableHead>
               <TableHead className="text-right">

@@ -121,7 +121,7 @@ const ResetPassword = () => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             {confirmMutation.isPending
-              ? t("auth.resetPasswordSubmitting")
+              ? t("common.saving")
               : t("auth.resetPasswordSubmit")}
           </Button>
           <Link className="text-sm text-center underline" to="/login">

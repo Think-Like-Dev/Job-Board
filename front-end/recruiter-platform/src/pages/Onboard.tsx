@@ -124,7 +124,7 @@ const Onboard = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="firstName">{t("onboard.firstName")}</Label>
+            <Label htmlFor="firstName">{t("common.firstName")}</Label>
             <Input id="firstName" {...form.register("firstName")} />
             {form.formState.errors.firstName && (
               <p className="text-sm text-destructive">
@@ -133,7 +133,7 @@ const Onboard = () => {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName">{t("onboard.lastName")}</Label>
+            <Label htmlFor="lastName">{t("common.lastName")}</Label>
             <Input id="lastName" {...form.register("lastName")} />
             {form.formState.errors.lastName && (
               <p className="text-sm text-destructive">
@@ -144,7 +144,7 @@ const Onboard = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">{t("onboard.phone")}</Label>
+          <Label htmlFor="phone">{t("common.phone")}</Label>
           <Input id="phone" {...form.register("phone")} />
           {form.formState.errors.phone && (
             <p className="text-sm text-destructive">
@@ -154,7 +154,7 @@ const Onboard = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="jobTitle">{t("onboard.jobTitle")}</Label>
+          <Label htmlFor="jobTitle">{t("common.jobTitle")}</Label>
           <Input id="jobTitle" {...form.register("jobTitle")} />
           {form.formState.errors.jobTitle && (
             <p className="text-sm text-destructive">
@@ -164,7 +164,7 @@ const Onboard = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">{t("onboard.password")}</Label>
+          <Label htmlFor="password">{t("common.password")}</Label>
           <Input
             id="password"
             type="password"

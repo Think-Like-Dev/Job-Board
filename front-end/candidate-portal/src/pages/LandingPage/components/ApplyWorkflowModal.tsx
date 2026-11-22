@@ -288,7 +288,7 @@ export function ApplyWorkflowModal({
                       : t('apply.profile.none')}
                   </span>
                   <span className="text-muted-foreground">
-                    {t('apply.profile.education')}
+                    {t('common.education')}
                   </span>
                   <span>
                     {profile?.education.length

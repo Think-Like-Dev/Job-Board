@@ -32,7 +32,7 @@ export function CandidateOverviewPanel({
       title={
         candidate
           ? candidateDisplayName(candidate)
-          : t("candidate.overview.title")
+          : t("common.candidateOverview")
       }
       description={candidate?.email ?? t("candidate.overview.loading")}
       closeLabel={t("common.close")}

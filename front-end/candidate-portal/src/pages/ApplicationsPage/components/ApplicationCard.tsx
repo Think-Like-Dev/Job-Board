@@ -105,7 +105,7 @@ export function ApplicationCard({
           onClick={(event) => event.stopPropagation()}
         >
           <Button size="sm" onClick={() => onContinue(app)}>
-            {t('applications.continueDraft')}
+            {t('common.continueDraft')}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger

@@ -40,7 +40,7 @@ export function CertificationsSection({ form }: CertificationsSectionProps) {
           <RepeaterEntry
             key={field.id}
             index={index}
-            label={t("candidate.form.sections.certifications")}
+            label={t("common.certifications")}
             removeLabel={t("candidate.form.removeEntry")}
             onRemove={() => remove(index)}
           >

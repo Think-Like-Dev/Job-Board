@@ -19,7 +19,7 @@ export function BasicsSection({ form }: BasicsSectionProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <Field
-        label={t("candidate.form.fields.firstName")}
+        label={t("common.firstName")}
         htmlFor="firstName"
         required
         error={errors.firstName?.message}
@@ -27,7 +27,7 @@ export function BasicsSection({ form }: BasicsSectionProps) {
         <Input id="firstName" {...register("firstName")} aria-invalid={Boolean(errors.firstName)} />
       </Field>
       <Field
-        label={t("candidate.form.fields.lastName")}
+        label={t("common.lastName")}
         htmlFor="lastName"
         required
         error={errors.lastName?.message}
@@ -49,7 +49,7 @@ export function BasicsSection({ form }: BasicsSectionProps) {
         />
       </Field>
       <Field
-        label={t("candidate.form.fields.phone")}
+        label={t("common.phone")}
         htmlFor="phone"
         error={errors.phone?.message}
       >

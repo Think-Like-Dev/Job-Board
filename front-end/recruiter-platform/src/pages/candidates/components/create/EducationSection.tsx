@@ -38,7 +38,7 @@ export function EducationSection({ form }: EducationSectionProps) {
           <RepeaterEntry
             key={field.id}
             index={index}
-            label={t("candidate.form.sections.education")}
+            label={t("common.education")}
             removeLabel={t("candidate.form.removeEntry")}
             onRemove={() => remove(index)}
           >

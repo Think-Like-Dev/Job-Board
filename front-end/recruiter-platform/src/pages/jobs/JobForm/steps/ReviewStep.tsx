@@ -44,19 +44,19 @@ export function ReviewStep({ form }: ReviewStepProps) {
   const rows: Array<{ label: string; value: string }> = [
     { label: t("jobForm.fields.title"), value: reviewValue(values.title) },
     {
-      label: t("jobForm.fields.category"),
+      label: t("common.category"),
       value: reviewValue(values.category),
     },
     {
-      label: t("jobForm.fields.department"),
+      label: t("common.department"),
       value: reviewValue(values.department),
     },
     {
-      label: t("jobForm.fields.designation"),
+      label: t("common.designation"),
       value: reviewValue(values.designation),
     },
     {
-      label: t("jobForm.fields.employmentType"),
+      label: t("common.employmentType"),
       value: formatEnumToStartCase(values.employmentType),
     },
     {
@@ -64,7 +64,7 @@ export function ReviewStep({ form }: ReviewStepProps) {
       value: reviewValue(values.location),
     },
     {
-      label: t("jobForm.fields.workMode"),
+      label: t("common.workMode"),
       value: reviewValue(
         values.workMode.map((mode) => formatEnumToStartCase(mode)),
       ),
@@ -74,41 +74,41 @@ export function ReviewStep({ form }: ReviewStepProps) {
       value: reviewValue(values.skills),
     },
     {
-      label: t("jobForm.fields.keywords"),
+      label: t("common.keywords"),
       value: reviewValue(values.keywords),
     },
     {
-      label: t("jobForm.fields.vacancies"),
+      label: t("common.vacancies"),
       value: reviewValue(values.vacancies),
     },
     {
-      label: t("jobForm.fields.compensationType"),
+      label: t("common.compensation"),
       value: formatCompensation(values.compensation),
     },
     {
-      label: t("jobForm.fields.benefits"),
+      label: t("common.benefits"),
       value: reviewValue(values.benefits),
     },
     {
-      label: t("jobForm.fields.workShiftTiming"),
+      label: t("common.workShiftTiming"),
       value: reviewValue(values.workShiftTiming),
     },
     {
-      label: t("jobForm.fields.totalInterviewRounds"),
+      label: t("common.totalInterviewRounds"),
       value: reviewValue(values.totalInterviewRounds),
     },
     {
-      label: t("jobForm.fields.lastApplicationDate"),
+      label: t("common.lastApplicationDate"),
       value: reviewValue(values.lastApplicationDate),
     },
     {
-      label: t("jobForm.fields.coverLetterRequired"),
+      label: t("common.coverLetterRequired"),
       value: values.applicationSettings?.coverLetterRequired
         ? t("jobForm.review.yes")
         : t("jobForm.review.no"),
     },
     {
-      label: t("jobForm.fields.attachmentsAllowed"),
+      label: t("common.attachmentsAllowed"),
       value: values.applicationSettings?.attachmentsAllowed
         ? t("jobForm.review.yes")
         : t("jobForm.review.no"),

@@ -19,7 +19,7 @@ function DateRange({
 }) {
   const { t } = useTranslation();
   const start = formatIsoDate(startDate);
-  const end = endDate ? formatIsoDate(endDate) : t("job.applications.drawer.profile.present");
+  const end = endDate ? formatIsoDate(endDate) : t("common.present");
   return (
     <p className="text-xs text-muted-foreground">
       {start} – {end}
@@ -38,7 +38,7 @@ export function CandidateProfileSnapshot({
       <section className="space-y-2">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold">
           <GraduationCapIcon className="size-4" />
-          {t("job.applications.drawer.profile.education")}
+          {t("common.education")}
         </h3>
         {profile.education.length ? (
           <ul className="space-y-3">

@@ -50,7 +50,7 @@ export function CandidateOverviewDialog({
     .filter(Boolean)
     .join(" ")
     .trim();
-  const title = fullName || t("candidate.dialog.overviewTitle");
+  const title = fullName || t("common.candidateOverview");
   const description = candidate?.email ?? t("candidate.overview.loading");
 
   const footer = (

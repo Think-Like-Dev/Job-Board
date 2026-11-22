@@ -43,7 +43,7 @@ export function BasicsStep({ form }: BasicsStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="department">
-          {t("jobForm.fields.department")}
+          {t("common.department")}
         </FormLabel>
         <Input
           id="department"
@@ -54,7 +54,7 @@ export function BasicsStep({ form }: BasicsStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="designation">
-          {t("jobForm.fields.designation")}
+          {t("common.designation")}
         </FormLabel>
         <Input
           id="designation"
@@ -65,7 +65,7 @@ export function BasicsStep({ form }: BasicsStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="category" required>
-          {t("jobForm.fields.category")}
+          {t("common.category")}
         </FormLabel>
         <Input
           id="category"
@@ -78,7 +78,7 @@ export function BasicsStep({ form }: BasicsStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="employmentType" required>
-          {t("jobForm.fields.employmentType")}
+          {t("common.employmentType")}
         </FormLabel>
         <Controller
           control={form.control}
@@ -124,7 +124,7 @@ export function BasicsStep({ form }: BasicsStepProps) {
       </div>
 
       <div className="space-y-2 md:col-span-2">
-        <FormLabel required>{t("jobForm.fields.workMode")}</FormLabel>
+        <FormLabel required>{t("common.workMode")}</FormLabel>
         <Controller
           control={form.control}
           name="workMode"

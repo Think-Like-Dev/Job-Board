@@ -284,12 +284,12 @@ export function JobDetails({ jobId, onClose, className }: JobDetailsProps) {
             className="w-1/2 px-8 sm:w-auto"
             onClick={() => setIsApplyModalOpen(true)}
           >
-            {hasDraft ? t('jobs.continueDraft') : t('jobs.applyNow')}
+            {hasDraft ? t('common.continueDraft') : t('common.apply')}
           </Button>
         ) : (
           <AuthModal>
             <Button size="lg" className="w-1/2 px-8 sm:w-auto">
-              {t('jobs.applyNow')}
+              {t('common.apply')}
             </Button>
           </AuthModal>
         )}

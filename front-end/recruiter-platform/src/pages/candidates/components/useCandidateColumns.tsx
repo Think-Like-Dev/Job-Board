@@ -32,7 +32,7 @@ export function useCandidateColumns({
   return [
     {
       id: "candidate",
-      header: t("candidate.list.columns.candidate"),
+      header: t("common.candidate"),
       cell: ({ row }) => {
         const candidate = row.original;
         return (
@@ -83,7 +83,7 @@ export function useCandidateColumns({
     },
     {
       id: "experience",
-      header: t("candidate.list.columns.experience"),
+      header: t("common.experience"),
       meta: { sortable: true, sortKey: "experience" },
       cell: ({ row }) => (
         <span className="text-sm">

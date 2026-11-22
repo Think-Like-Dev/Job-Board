@@ -39,7 +39,7 @@ export function ExperienceSection({ form }: ExperienceSectionProps) {
           <RepeaterEntry
             key={field.id}
             index={index}
-            label={t("candidate.form.sections.experience")}
+            label={t("common.experience")}
             removeLabel={t("candidate.form.removeEntry")}
             onRemove={() => remove(index)}
           >
@@ -56,7 +56,7 @@ export function ExperienceSection({ form }: ExperienceSectionProps) {
                 />
               </Field>
               <Field
-                label={t("candidate.form.fields.jobTitle")}
+                label={t("common.jobTitle")}
                 htmlFor={`experience-${index}-title`}
                 required
                 error={itemErrors?.jobTitle?.message}

@@ -34,7 +34,7 @@ export function EducationTable({
     const startLabel = start ? new Date(start).getFullYear() : '—';
     const endLabel = end
       ? new Date(end).getFullYear()
-      : t('profile.education.present');
+      : t('common.present');
     return `${startLabel} – ${endLabel}`;
   }
 
@@ -43,7 +43,7 @@ export function EducationTable({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">
-            {t('profile.education.title')}
+            {t('common.education')}
             {required && <span className="text-destructive"> *</span>}
           </h3>
           <p className="text-sm text-muted-foreground">
@@ -69,7 +69,7 @@ export function EducationTable({
               <TableHead>{t('profile.education.institution')}</TableHead>
               <TableHead>{t('profile.education.degree')}</TableHead>
               <TableHead>{t('profile.education.field')}</TableHead>
-              <TableHead>{t('profile.education.duration')}</TableHead>
+              <TableHead>{t('common.duration')}</TableHead>
               <TableHead className="w-[90px] text-right">
                 {t('common.edit')}
               </TableHead>

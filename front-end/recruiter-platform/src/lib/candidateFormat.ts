@@ -49,5 +49,5 @@ export function formatExperienceMonths(
   if (years) {
     return t("candidate.experience.years", { count: years });
   }
-  return t("candidate.experience.months", { count: remaining });
+  return t("common.months", { count: remaining });
 }

@@ -29,7 +29,14 @@
     "draft": "Draft",
     "pageOf": "Page {{page}} of {{total}}",
     "resumeInvalid": "Resume must be a PDF or DOCX file under 2 MB",
-    "coverLetterInvalid": "Cover letter must be a PDF or DOCX file under 1 MB"
+    "coverLetterInvalid": "Cover letter must be a PDF or DOCX file under 1 MB",
+    "present": "Present",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "duration": "Duration",
+    "education": "Education",
+    "category": "Category",
+    "continueDraft": "Continue draft"
   },
   "validation": {
     "required": "This field is required",
@@ -62,8 +69,6 @@
     "bookmarkFailed": "Could not update the saved job",
     "applied": "Applied",
     "draft": "Draft",
-    "applyNow": "Apply Now",
-    "continueDraft": "Continue draft",
     "selectJob": "Select a job to see the details.",
     "empty": "No jobs match your search.",
     "loadFailed": "Could not load jobs. Please try again.",
@@ -94,7 +99,6 @@
       "salaryRange": "Salary range",
       "currency": "Currency",
       "anyCurrency": "Any currency",
-      "category": "Category",
       "categoryPlaceholder": "e.g. Engineering",
       "locationPlaceholder": "e.g. Bengaluru",
       "experience": "Years of experience",
@@ -116,7 +120,6 @@
     "appliedOn": "Applied on {{date}}",
     "createdOn": "Created on {{date}}",
     "loadFailed": "Could not load your applications.",
-    "continueDraft": "Continue draft",
     "deleteDraft": "Delete draft",
     "withdraw": "Withdraw",
     "view": "View application",
@@ -151,8 +154,7 @@
       "AUTO_REJECTED": "Auto Rejected"
     },
     "details": {
-      "yourApplication": "Your application",
-      "jobCategory": "Category"
+      "yourApplication": "Your application"
     }
   },
   "apply": {
@@ -182,7 +184,6 @@
       "name": "Name",
       "phone": "Phone",
       "experience": "Experience",
-      "education": "Education",
       "none": "Not provided",
       "edit": "Edit profile"
     },
@@ -266,7 +267,6 @@
       "remove": "Remove {{name}}"
     },
     "education": {
-      "title": "Education",
       "description": "Your academic qualifications.",
       "add": "Add education",
       "edit": "Edit education",
@@ -276,14 +276,10 @@
       "institution": "Institution",
       "degree": "Degree",
       "field": "Field",
-      "duration": "Duration",
-      "present": "Present",
       "modalTitleAdd": "Add education",
       "modalTitleEdit": "Edit education",
       "institutionName": "Institution name",
       "fieldOfStudy": "Field of study",
-      "startDate": "Start date",
-      "endDate": "End date",
       "currentlyStudying": "I am currently studying here",
       "grade": "Grade (optional)",
       "gradePlaceholder": "e.g. A",
@@ -300,14 +296,10 @@
       "empty": "No work experience added yet.",
       "company": "Company",
       "role": "Role",
-      "duration": "Duration",
-      "present": "Present",
       "modalTitleAdd": "Add experience",
       "modalTitleEdit": "Edit experience",
       "companyName": "Company name",
       "jobTitle": "Job title",
-      "startDate": "Start date",
-      "endDate": "End date",
       "currentlyWorking": "I currently work here",
       "salary": "Salary (optional)",
       "salaryPlaceholder": "e.g. $90,000 / year",

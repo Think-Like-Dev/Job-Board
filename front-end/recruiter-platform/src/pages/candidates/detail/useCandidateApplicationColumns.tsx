@@ -31,7 +31,7 @@ export function useCandidateApplicationColumns({
     },
     {
       id: "department",
-      header: t("candidate.applications.columns.department"),
+      header: t("common.department"),
       cell: ({ row }) => (
         <span className="text-sm">{row.original.jobDepartment ?? "—"}</span>
       ),
@@ -45,14 +45,14 @@ export function useCandidateApplicationColumns({
     },
     {
       accessorKey: "status",
-      header: t("candidate.applications.columns.status"),
+      header: t("common.stage"),
       cell: ({ row }) => (
         <ApplicationStatusBadge status={row.original.status} />
       ),
     },
     {
       accessorKey: "appliedAt",
-      header: t("candidate.applications.columns.appliedAt"),
+      header: t("common.appliedOn"),
       cell: ({ row }) =>
         formatIsoDate(row.original.appliedAt ?? row.original.createdAt),
     },

@@ -60,7 +60,7 @@ function DateRange({
   return (
     <p className="text-xs text-muted-foreground">
       {formatIsoDate(startDate)} –{" "}
-      {endDate ? formatIsoDate(endDate) : t("candidate.overview.present")}
+      {endDate ? formatIsoDate(endDate) : t("common.present")}
     </p>
   );
 }
@@ -85,7 +85,7 @@ function GapRow({ gap }: { gap: CandidateGap }) {
         {formatIsoDate(gap.startDate)} – {formatIsoDate(gap.endDate)}
       </span>
       <Badge variant="outline">
-        {t("candidate.overview.gapMonths", { count: gap.months })}
+        {t("common.months", { count: gap.months })}
       </Badge>
     </li>
   );
@@ -166,7 +166,7 @@ export function CandidateOverview({
             className="inline-flex items-center gap-1.5 text-primary hover:underline"
           >
             <LinkIcon className="size-3.5" />
-            {t("candidate.overview.linkedin")}
+            {t("common.linkedin")}
           </a>
         ) : null}
         {candidate.portfolioUrl ? (
@@ -177,7 +177,7 @@ export function CandidateOverview({
             className="inline-flex items-center gap-1.5 text-primary hover:underline"
           >
             <GlobeIcon className="size-3.5" />
-            {t("candidate.overview.portfolio")}
+            {t("common.portfolio")}
           </a>
         ) : null}
       </div>
@@ -289,7 +289,7 @@ export function CandidateOverview({
       </Section>
 
       <Section
-        title={t("candidate.overview.education")}
+        title={t("common.education")}
         icon={<GraduationCapIcon className="size-4" />}
       >
         {candidate.education.length ? (
@@ -320,7 +320,7 @@ export function CandidateOverview({
       </Section>
 
       <Section
-        title={t("candidate.overview.certifications")}
+        title={t("common.certifications")}
         icon={<AwardIcon className="size-4" />}
       >
         {candidate.certifications.length ? (

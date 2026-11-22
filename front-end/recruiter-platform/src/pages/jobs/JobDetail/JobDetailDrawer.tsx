@@ -59,7 +59,7 @@ export function JobDetailDrawer({
               {job?.title ?? t("job.detail.title")}
             </DialogTitle>
             <DialogDescription>
-              {job?.code ?? t("job.detail.loading")}
+              {job?.code ?? t("common.loading")}
             </DialogDescription>
           </div>
           <DialogClose

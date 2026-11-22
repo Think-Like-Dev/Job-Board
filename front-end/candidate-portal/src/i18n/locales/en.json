@@ -19,7 +19,15 @@
     "remove": "Remove",
     "uploading": "Uploading...",
     "close": "Close",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "location": "Location",
+    "skills": "Skills",
+    "email": "Email",
+    "resume": "Resume",
+    "coverLetter": "Cover letter",
+    "next": "Next",
+    "previous": "Previous",
+    "draft": "Draft"
   },
   "validation": {
     "required": "This field is required",
@@ -68,8 +76,6 @@
     "vacancies_one": "{{count}} vacancy",
     "vacancies_other": "{{count}} vacancies",
     "pageOf": "Page {{page}} of {{total}}",
-    "previous": "Previous",
-    "next": "Next",
     "employmentType": {
       "fullTime": "Full time",
       "partTime": "Part time",
@@ -89,7 +95,6 @@
       "anyCurrency": "Any currency",
       "category": "Category",
       "categoryPlaceholder": "e.g. Engineering",
-      "location": "Location",
       "locationPlaceholder": "e.g. Bengaluru",
       "experience": "Years of experience",
       "experiencePlaceholder": "e.g. 3-5 years",
@@ -111,8 +116,6 @@
     "createdOn": "Created on {{date}}",
     "loadFailed": "Could not load your applications.",
     "pageOf": "Page {{page}} of {{total}}",
-    "previous": "Previous",
-    "next": "Next",
     "continueDraft": "Continue draft",
     "deleteDraft": "Delete draft",
     "withdraw": "Withdraw",
@@ -149,11 +152,7 @@
     },
     "details": {
       "yourApplication": "Your application",
-      "resume": "Resume",
-      "coverLetter": "Cover letter",
-      "jobCategory": "Category",
-      "jobLocation": "Location",
-      "close": "Close"
+      "jobCategory": "Category"
     }
   },
   "apply": {
@@ -164,7 +163,6 @@
       "declaration": "Step 3: Declaration"
     },
     "resume": {
-      "label": "Resume",
       "central": "Use my central resume",
       "noCentral": "You have no central resume. Upload one for this application or add one to your profile.",
       "jobSpecific": "Upload a resume for this job (PDF/DOCX, max 2 MB)",
@@ -173,7 +171,6 @@
       "updateCentral": "Also replace my central resume with this file"
     },
     "coverLetter": {
-      "label": "Cover letter",
       "optional": "Optional",
       "required": "This job requires a cover letter",
       "central": "Use my central cover letter",
@@ -185,9 +182,7 @@
     "profile": {
       "description": "Review the profile that will be shown to the recruiter.",
       "name": "Name",
-      "email": "Email",
       "phone": "Phone",
-      "skills": "Skills",
       "experience": "Experience",
       "education": "Education",
       "none": "Not provided",
@@ -198,7 +193,6 @@
     },
     "actions": {
       "draft": "Save as Draft",
-      "next": "Next",
       "back": "Back",
       "submit": "Submit Application",
       "submitting": "Submitting…"
@@ -222,7 +216,6 @@
     "fields": {
       "firstName": "First name",
       "lastName": "Last name",
-      "email": "Email",
       "phone": "Phone number",
       "currentLocation": "Current location",
       "address": "Address",
@@ -252,7 +245,6 @@
     "documents": {
       "uploadFailed": "Could not upload the file",
       "resume": {
-        "title": "Resume",
         "description": "Your central resume is used for applications unless you upload a job-specific copy.",
         "required": "A central resume is required before saving your profile.",
         "upload": "Upload resume",
@@ -262,7 +254,6 @@
         "none": "No resume uploaded yet."
       },
       "coverLetter": {
-        "title": "Cover letter",
         "description": "Optional. Used for applications that ask for a cover letter unless you upload a job-specific copy.",
         "upload": "Upload cover letter",
         "replace": "Replace cover letter",
@@ -272,7 +263,6 @@
       }
     },
     "skills": {
-      "title": "Skills",
       "description": "Add the skills you want recruiters and matching to see.",
       "placeholder": "Search or add a skill…",
       "searching": "Searching…",

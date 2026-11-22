@@ -156,7 +156,7 @@ const Login = () => {
               variant="ghost"
               onClick={() => setStep("email")}
             >
-              {t("nav.back")}
+              {t("common.back")}
             </Button>
             <Button type="submit" disabled={verifyOtpMutation.isPending}>
               {verifyOtpMutation.isPending ? (

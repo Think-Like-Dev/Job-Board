@@ -126,7 +126,7 @@ export function JobFiltersForm({ value, onChange }: JobFiltersFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="filter-location" className="font-medium text-sm">
-            {t('jobs.filters.location')}
+            {t('common.location')}
           </Label>
           <Input
             id="filter-location"

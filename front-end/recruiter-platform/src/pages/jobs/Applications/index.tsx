@@ -276,7 +276,7 @@ const Applications = () => {
             variant="outline"
             onClick={() => void applicationsQuery.refetch()}
           >
-            {t("job.applications.retry")}
+            {t("common.retry")}
           </Button>
         </div>
       ) : (
@@ -374,7 +374,7 @@ const Applications = () => {
                   disabled={page >= totalPages}
                   onClick={() => setPage((current) => current + 1)}
                 >
-                  {t("job.pagination.next")}
+                  {t("common.next")}
                   <ChevronRightIcon data-icon="inline-end" />
                 </Button>
               </div>

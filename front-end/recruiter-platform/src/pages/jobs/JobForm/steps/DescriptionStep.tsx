@@ -59,7 +59,7 @@ export function DescriptionStep({ form }: DescriptionStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="skills" required>
-          {t("jobForm.fields.skills")}
+          {t("common.skills")}
         </FormLabel>
         <Controller
           control={form.control}

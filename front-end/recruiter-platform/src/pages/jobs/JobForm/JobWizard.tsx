@@ -142,7 +142,7 @@ export function JobWizard({
                 onClick={goBack}
                 disabled={currentStep === 0}
               >
-                {t("jobForm.actions.back")}
+                {t("common.back")}
               </Button>
 
               <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export function JobWizard({
                   </Button>
                 ) : (
                   <Button type="button" onClick={goNext}>
-                    {t("jobForm.actions.next")}
+                    {t("common.next")}
                   </Button>
                 )}
               </div>

@@ -228,7 +228,7 @@ const Candidates = () => {
             variant="outline"
             onClick={() => void candidatesQuery.refetch()}
           >
-            {t("candidate.list.retry")}
+            {t("common.retry")}
           </Button>
         </div>
       ) : (
@@ -265,7 +265,7 @@ const Candidates = () => {
             disabled={page >= totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
-            {t("job.pagination.next")}
+            {t("common.next")}
             <ChevronRightIcon data-icon="inline-end" />
           </Button>
         </div>

@@ -112,7 +112,7 @@ export function BasicsStep({ form }: BasicsStepProps) {
 
       <div className="space-y-2 md:col-span-2">
         <FormLabel htmlFor="location" required>
-          {t("jobForm.fields.location")}
+          {t("common.location")}
         </FormLabel>
         <Input
           id="location"

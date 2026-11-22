@@ -249,7 +249,7 @@ export function JobsList({
             onClick={() => onPageChange(currentPage - 1)}
           >
             <ChevronLeftIcon />
-            {t('jobs.previous')}
+            {t('common.previous')}
           </Button>
           <Button
             variant="outline"
@@ -257,7 +257,7 @@ export function JobsList({
             disabled={currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
           >
-            {t('jobs.next')}
+            {t('common.next')}
             <ChevronRightIcon />
           </Button>
         </div>

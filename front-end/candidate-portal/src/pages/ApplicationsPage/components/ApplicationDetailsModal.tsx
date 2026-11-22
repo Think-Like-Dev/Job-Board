@@ -89,7 +89,7 @@ export function ApplicationDetailsModal({
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={close}>
-                {t('applications.details.close')}
+                {t('common.close')}
               </Button>
             </DialogFooter>
           </>
@@ -131,13 +131,13 @@ export function ApplicationDetailsModal({
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <span className="text-muted-foreground">
-                      {t('applications.details.jobLocation')}
+                      {t('common.location')}
                     </span>
                     <span>{app.jobLocation}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <span className="text-muted-foreground">
-                      {t('applications.details.resume')}
+                      {t('common.resume')}
                     </span>
                     <button
                       type="button"
@@ -150,7 +150,7 @@ export function ApplicationDetailsModal({
                   {app.coverLetterFileId && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="text-muted-foreground">
-                        {t('applications.details.coverLetter')}
+                        {t('common.coverLetter')}
                       </span>
                       <button
                         type="button"
@@ -259,7 +259,7 @@ export function ApplicationDetailsModal({
 
             <DialogFooter>
               <Button variant="outline" onClick={close}>
-                {t('applications.details.close')}
+                {t('common.close')}
               </Button>
             </DialogFooter>
           </>

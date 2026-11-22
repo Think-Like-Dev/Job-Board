@@ -66,7 +66,7 @@ function SessionsTable({
           <TableHead>{t("sessions.columnLastSeen")}</TableHead>
           <TableHead>{t("sessions.columnExpires")}</TableHead>
           {onRevoke && (
-            <TableHead className="text-right">{t("sessions.columnActions")}</TableHead>
+            <TableHead className="text-right">{t("common.actions")}</TableHead>
           )}
         </TableRow>
       </TableHeader>

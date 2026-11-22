@@ -41,7 +41,7 @@ function DocumentRow({
           onClick={() => onView({ fileId, fileName: fileName ?? undefined })}
         >
           <EyeIcon data-icon="inline-start" />
-          {t("job.applications.drawer.documents.view")}
+          {t("common.view")}
         </Button>
         <Button
           type="button"
@@ -54,7 +54,7 @@ function DocumentRow({
           }}
         >
           <DownloadIcon data-icon="inline-start" />
-          {t("job.applications.drawer.documents.download")}
+          {t("common.download")}
         </Button>
       </div>
     </div>
@@ -82,7 +82,7 @@ export function CandidateDocuments({
   return (
     <div className="space-y-2">
       <DocumentRow
-        label={t("job.applications.drawer.documents.resume")}
+        label={t("common.resume")}
         fileId={resumeFileId}
         fileName={resumeFileName}
         onView={onViewDocument}

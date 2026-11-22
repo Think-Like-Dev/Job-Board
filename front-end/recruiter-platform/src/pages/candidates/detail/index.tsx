@@ -131,7 +131,7 @@ const CandidateDetail = () => {
             variant="outline"
             onClick={() => void candidateQuery.refetch()}
           >
-            {t("candidate.detail.retry")}
+            {t("common.retry")}
           </Button>
         </div>
       ) : (
@@ -168,7 +168,7 @@ const CandidateDetail = () => {
               >
                 <SelectTrigger
                   className="w-full sm:w-48"
-                  aria-label={t("candidate.applications.statusFilter")}
+                  aria-label={t("common.status")}
                 >
                   <SelectValue>
                     {status
@@ -199,7 +199,7 @@ const CandidateDetail = () => {
                   variant="outline"
                   onClick={() => void applicationsQuery.refetch()}
                 >
-                  {t("candidate.applications.retry")}
+                  {t("common.retry")}
                 </Button>
               </div>
             ) : (
@@ -239,7 +239,7 @@ const CandidateDetail = () => {
                   disabled={page >= totalPages}
                   onClick={() => setPage((current) => current + 1)}
                 >
-                  {t("job.pagination.next")}
+                  {t("common.next")}
                   <ChevronRightIcon data-icon="inline-end" />
                 </Button>
               </div>

@@ -67,7 +67,7 @@ export function useApplicationColumns({
     },
     {
       id: "resume",
-      header: t("job.applications.columns.resume"),
+      header: t("common.resume"),
       cell: ({ row }) => (
         <ResumeCell
           application={row.original}

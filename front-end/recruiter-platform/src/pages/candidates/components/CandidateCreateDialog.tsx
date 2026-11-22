@@ -125,7 +125,7 @@ export function CandidateCreateDialog({
           onClick={() => handleOpenChange(false)}
           disabled={createMutation.isPending}
         >
-          {t("candidate.form.cancel")}
+          {t("common.cancel")}
         </Button>
         <Button type="submit" disabled={createMutation.isPending}>
           {createMutation.isPending ? (

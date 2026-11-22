@@ -1,5 +1,5 @@
 {
-"common": {
+  "common": {
     "loading": "Loading...",
     "save": "Save",
     "saving": "Saving...",
@@ -18,7 +18,17 @@
       "sortAscending": "Click to sort ascending",
       "sortDescending": "Sorted ascending. Click to sort descending",
       "clearSort": "Sorted descending. Click to clear sorting"
-    }
+    },
+    "location": "Location",
+    "skills": "Skills",
+    "actions": "Actions",
+    "retry": "Retry",
+    "resume": "Resume",
+    "status": "Status",
+    "view": "View",
+    "download": "Download",
+    "next": "Next",
+    "back": "Back"
   },
   "job": {
     "saveAsDraft": "Save as Draft",
@@ -28,11 +38,10 @@
     "archive": "Archive",
     "archiving": "Archiving...",
     "unarchive": "Unarchive",
-    "unarchiving":"Unarchiving...",
+    "unarchiving": "Unarchiving...",
     "createJob": "Create Job",
     "updatingJob": "Updating Job...",
     "listTitle": "Jobs",
-    "actions": "Actions",
     "edit": "Edit job",
     "editDisabled": "Only draft jobs can be edited",
     "clone": "Clone job",
@@ -49,9 +58,7 @@
       "code": "Job Code",
       "title": "Title",
       "category": "Category",
-      "status": "Status",
       "compensation": "Compensation",
-      "location": "Location",
       "createdAt": "Created Date",
       "updatedAt": "Updated Date",
       "applications": "Applications",
@@ -74,8 +81,7 @@
     },
     "pagination": {
       "pageOf": "Page {{page}} of {{total}}",
-      "previous": "Previous",
-      "next": "Next"
+      "previous": "Previous"
     },
     "detail": {
       "title": "Job details",
@@ -93,19 +99,16 @@
         "lifecycle": "Lifecycle"
       },
       "fields": {
-        "status": "Status",
         "code": "Job Code",
         "category": "Category",
         "department": "Department",
         "designation": "Designation",
         "employmentType": "Employment Type",
-        "location": "Location",
         "workMode": "Work Mode",
         "vacancies": "Vacancies",
         "description": "Description",
         "responsibilities": "Responsibilities",
         "yearsOfExperience": "Years of Experience",
-        "skills": "Skills",
         "keywords": "Keywords",
         "compensation": "Compensation",
         "benefits": "Benefits",
@@ -121,8 +124,6 @@
         "archivedAt": "Archived"
       },
       "actions": {
-        "edit": "Edit",
-        "delete": "Delete",
         "publish": "Publish",
         "archive": "Archive",
         "viewApplications": "View Applications"
@@ -144,7 +145,7 @@
     },
     "applications": {
       "title": "Applications",
-      "back": "Back to jobs", 
+      "back": "Back to jobs",
       "candidateCount_one": "{{count}} candidate",
       "candidateCount_other": "{{count}} candidates",
       "searchPlaceholder": "Search by candidate name or email",
@@ -154,7 +155,6 @@
       "empty": "No applications match your filters.",
       "loadFailedTitle": "Could not load applications",
       "loadFailed": "Please check your connection and try again.",
-      "retry": "Retry",
       "aiScorePending": "The AI score is not available yet",
       "aiScore": {
         "none": "No score yet",
@@ -196,7 +196,6 @@
       "columns": {
         "candidate": "Candidate",
         "contact": "Email / Phone",
-        "resume": "Resume",
         "status": "Stage",
         "aiScore": "AI Score",
         "appliedAt": "Applied On"
@@ -232,15 +231,11 @@
           "timeline": "Recruitment Activity"
         },
         "documents": {
-          "resume": "Resume",
-          "coverLetter": "Cover letter",
-          "view": "View",
-          "download": "Download"
+          "coverLetter": "Cover letter"
         },
         "profile": {
           "education": "Education",
           "experience": "Work Experience",
-          "skills": "Skills",
           "noEducation": "No education details",
           "noExperience": "No work experience",
           "noSkills": "No skills listed",
@@ -263,18 +258,17 @@
           "summary": "Fit analysis",
           "strengths": "Strengths",
           "risks": "Risks",
-          "skills": "Skills",
           "interviewQuestions": "Suggested questions"
         },
         "timeline": {
           "applied": "Applied",
           "empty": "No activity yet."
         }
-      }
+      },
+      "hideJobDescription": "Hide job description"
     }
   },
   "nav": {
-    "back": "Back",
     "activeSessions": "Active sessions",
     "logout": "Logout",
     "loggingOut": "Logging out..."
@@ -359,9 +353,7 @@
     "status_SUSPENDED": "Suspended",
     "columnMember": "Member",
     "columnRole": "Role",
-    "columnStatus": "Status",
     "columnInvited": "Invited",
-    "columnActions": "Actions",
     "resend": "Resend",
     "deleteInvitation": "Delete invitation",
     "deleteInvitationTitle": "Delete this invitation?",
@@ -373,11 +365,11 @@
     "statusUpdated": "User updated",
     "empty": "No teammates yet.",
     "loadError": "Could not load the team.",
-    "retry": "Retry",
     "total": "{{total}} members"
   },
   "onboard": {
-    "title": "Finish your profile",    "subtitle": "Joining as {{role}} with {{email}}.",
+    "title": "Finish your profile",
+    "subtitle": "Joining as {{role}} with {{email}}.",
     "firstName": "First name",
     "lastName": "Last name",
     "phone": "Phone",
@@ -403,7 +395,6 @@
     "columnCreated": "Signed in",
     "columnLastSeen": "Last seen",
     "columnExpires": "Expires",
-    "columnActions": "Actions",
     "current": "This device",
     "revoke": "Revoke",
     "revoked": "Session revoked",
@@ -450,12 +441,10 @@
       "designation": "Designation",
       "category": "Category",
       "employmentType": "Employment Type",
-      "location": "Location",
       "workMode": "Work Mode",
       "description": "Job Description",
       "responsibilities": "Responsibilities",
       "yearsOfExperience": "Years of Experience",
-      "skills": "Skills",
       "keywords": "Keywords",
       "compensationType": "Compensation",
       "currency": "Currency",
@@ -496,8 +485,6 @@
       "Hourly": "Hourly"
     },
     "actions": {
-      "next": "Next",
-      "back": "Back",
       "saveDraft": "Save as Draft"
     },
     "review": {
@@ -541,12 +528,9 @@
       "columns": {
         "candidate": "Candidate",
         "contact": "Contact",
-        "location": "Location",
-        "skills": "Skills",
         "experience": "Experience",
         "applications": "Applications",
-        "registeredAt": "Registered",
-        "actions": "Actions"
+        "registeredAt": "Registered"
       },
       "viewOverview": "View overview",
       "delete": "Delete profile",
@@ -555,8 +539,7 @@
       "deleteSuccess": "Candidate profile deleted",
       "empty": "No candidates found.",
       "loadFailedTitle": "Could not load candidates",
-      "loadFailed": "Something went wrong while loading the candidate list.",
-      "retry": "Retry"
+      "loadFailed": "Something went wrong while loading the candidate list."
     },
     "source": {
       "recruiter": "Added by recruiter"
@@ -580,9 +563,6 @@
       "registered": "Registered {{date}}",
       "linkedin": "LinkedIn",
       "portfolio": "Portfolio",
-      "resume": "Resume",
-      "viewResume": "View",
-      "downloadResume": "Download",
       "noResume": "No resume on file",
       "downloadFailed": "Could not download the resume",
       "career": "Career",
@@ -610,13 +590,11 @@
       "back": "Back to candidates",
       "loadFailedTitle": "Could not load the candidate",
       "loadFailed": "The candidate profile is unavailable right now.",
-      "retry": "Retry",
       "notFound": "Candidate not found"
     },
     "applications": {
       "title": "Applications",
       "empty": "This candidate has not applied to any job yet.",
-      "statusFilter": "Status",
       "allStatuses": "All statuses",
       "clearFilters": "Clear filters",
       "total_one": "{{count}} application",
@@ -624,14 +602,11 @@
       "view": "View application",
       "panelTitle": "Application details",
       "loadFailed": "Could not load applications.",
-      "retry": "Retry",
       "columns": {
         "job": "Job",
         "department": "Department",
-        "location": "Location",
         "status": "Stage",
-        "appliedAt": "Applied On",
-        "actions": "Actions"
+        "appliedAt": "Applied On"
       }
     },
     "form": {
@@ -639,7 +614,6 @@
       "description": "Create a candidate profile. First name, last name, email and resume are required.",
       "submit": "Create candidate",
       "submitting": "Creating...",
-      "cancel": "Cancel",
       "success": "Candidate created successfully",
       "failure": "Could not create the candidate. Please try again.",
       "duplicateEmail": "A candidate with this email already exists. An existing resume cannot be replaced.",
@@ -647,9 +621,7 @@
       "sections": {
         "basics": "Basic details",
         "documents": "Documents",
-        "location": "Location",
         "links": "Links",
-        "skills": "Skills",
         "education": "Education",
         "experience": "Experience",
         "certifications": "Certifications"
@@ -686,7 +658,6 @@
         "credentialUrl": "Credential URL",
         "issueDate": "Issue date",
         "expiryDate": "Expiry date",
-        "resume": "Resume",
         "profileImage": "Profile photo"
       },
       "resumeHint": "PDF or DOCX up to 2 MB. Required.",

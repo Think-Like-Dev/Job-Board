@@ -104,7 +104,7 @@ export function ApplicationsTab() {
             size="sm"
             onClick={() => setPage((current) => Math.max(1, current - 1))}
           >
-            {t('applications.previous')}
+            {t('common.previous')}
           </Button>
         )}
       </div>
@@ -138,7 +138,7 @@ export function ApplicationsTab() {
               disabled={page <= 1}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
             >
-              {t('applications.previous')}
+              {t('common.previous')}
             </Button>
             <Button
               variant="outline"
@@ -148,7 +148,7 @@ export function ApplicationsTab() {
                 setPage((current) => Math.min(totalPages, current + 1))
               }
             >
-              {t('applications.next')}
+              {t('common.next')}
             </Button>
           </div>
         </div>

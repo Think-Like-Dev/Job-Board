@@ -179,7 +179,8 @@
         "none": "No score yet",
         "scoring": "Scoring…",
         "failed": "Failed",
-        "needsReviewHint": "The document could not be read reliably. Ask the candidate for a text-based PDF."
+        "needsReviewHint": "The document could not be read reliably. Ask the candidate for a text-based PDF.",
+        "scoreOnlyHint": "Score only: no written assessment was produced for this run."
       },
       "viewResume": "View resume",
       "downloadResume": "Download resume",
@@ -260,10 +261,13 @@
           "needsReviewNextStep": "Ask the candidate to upload a text-based PDF (not a scan or a two-column layout).",
           "scored": "Assessed",
           "scoreOnly": "Score only",
+          "scoreOnlyDescription": "This run produced the score but no written assessment. The score still comes from the resume and the job requirements.",
           "weights": "Weights {{version}}",
           "summary": "Fit analysis",
           "strengths": "Strengths",
           "risks": "Risks",
+          "matchedSkills": "Matched skills",
+          "missingSkills": "Missing skills",
           "interviewQuestions": "Suggested questions"
         },
         "timeline": {

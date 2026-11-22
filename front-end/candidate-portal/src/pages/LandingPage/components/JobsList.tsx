@@ -39,12 +39,7 @@ interface JobCardProps {
   applicationStatus?: ApplicationStatus;
 }
 
-export function JobCard({
-  job,
-  isSelected = false,
-  onSelect,
-  applicationStatus,
-}: JobCardProps) {
+export function JobCard({ job, isSelected = false, onSelect, applicationStatus }: JobCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const bookmarkedIds = useBookmarkedJobIds();
@@ -52,9 +47,7 @@ export function JobCard({
   const bookmarked = bookmarkedIds.has(job.id);
   const compensation = formatCompensation(job.compensation);
   const postedAt = job.publishedAt ?? job.createdAt;
-  const applied =
-    applicationStatus !== undefined &&
-    applicationStatus !== ApplicationStatus.DRAFT;
+  const applied = applicationStatus !== undefined && applicationStatus !== ApplicationStatus.DRAFT;
   const draft = applicationStatus === ApplicationStatus.DRAFT;
 
   const handleShare = (event: React.MouseEvent) => {
@@ -119,11 +112,7 @@ export function JobCard({
           >
             <Share2 className="h-4 w-4" />
           </Button>
-          {isAuthenticated ? (
-            bookmarkButton
-          ) : (
-            <AuthModal>{bookmarkButton}</AuthModal>
-          )}
+          {isAuthenticated ? bookmarkButton : <AuthModal>{bookmarkButton}</AuthModal>}
         </div>
       </div>
 
@@ -138,11 +127,7 @@ export function JobCard({
             {job.yearsOfExperience}
           </div>
         )}
-        {compensation && (
-          <div className="flex items-center gap-1.5">
-            {compensation}
-          </div>
-        )}
+        {compensation && <div className="flex items-center gap-1.5">{compensation}</div>}
         <div className="flex items-center gap-1.5">
           <Clock className="h-4 w-4" />
           {formatIsoDate(postedAt)}
@@ -150,9 +135,7 @@ export function JobCard({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Badge variant="secondary">
-          {t(EMPLOYMENT_LABEL_KEYS[job.employmentType])}
-        </Badge>
+        <Badge variant="secondary">{t(EMPLOYMENT_LABEL_KEYS[job.employmentType])}</Badge>
         {job.keywords.slice(0, 3).map((keyword) => (
           <Badge key={keyword} variant="secondary">
             {keyword}
@@ -192,9 +175,10 @@ export function JobsList({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" role="status" aria-busy="true" aria-live="polite">
+        <span className="sr-only">{t('jobs.loading')}</span>
         {[1, 2, 3].map((index) => (
-          <Card key={index} className="gap-3 p-5">
+          <Card key={index} className="gap-3 p-5" aria-hidden="true">
             <Skeleton className="h-5 w-2/3" />
             <Skeleton className="h-4 w-1/3" />
             <div className="flex gap-4 pt-2">
@@ -210,19 +194,11 @@ export function JobsList({
   }
 
   if (isError) {
-    return (
-      <Card className="p-10 text-center text-muted-foreground">
-        {t('jobs.loadFailed')}
-      </Card>
-    );
+    return <Card className="p-10 text-center text-muted-foreground">{t('jobs.loadFailed')}</Card>;
   }
 
   if (!jobs.length) {
-    return (
-      <Card className="p-10 text-center text-muted-foreground">
-        {t('jobs.empty')}
-      </Card>
-    );
+    return <Card className="p-10 text-center text-muted-foreground">{t('jobs.empty')}</Card>;
   }
 
   return (

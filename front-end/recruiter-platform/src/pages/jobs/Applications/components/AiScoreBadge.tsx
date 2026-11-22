@@ -20,10 +20,7 @@ export function AiScoreBadge({ score }: AiScoreBadgeProps) {
 
   if (!score) {
     return (
-      <span
-        className="text-sm text-muted-foreground"
-        title={t("job.applications.aiScore.none")}
-      >
+      <span className="text-sm text-muted-foreground" title={t("job.applications.aiScore.none")}>
         —
       </span>
     );
@@ -49,26 +46,24 @@ export function AiScoreBadge({ score }: AiScoreBadgeProps) {
         </span>
       );
     }
-    return (
-      <span className="text-sm text-destructive">
-        {t("job.applications.aiScore.failed")}
-      </span>
-    );
+    return <span className="text-sm text-destructive">{t("job.applications.aiScore.failed")}</span>;
   }
 
   if (score.score === null || score.score === undefined) {
     return (
-      <span
-        className="text-sm text-muted-foreground"
-        title={t("job.applications.aiScore.none")}
-      >
+      <span className="text-sm text-muted-foreground" title={t("job.applications.aiScore.none")}>
         —
       </span>
     );
   }
 
   return (
-    <span className={cn("text-sm font-medium tabular-nums", scoreTone(score.score))}>
+    <span
+      className={cn("text-sm font-medium tabular-nums", scoreTone(score.score))}
+      title={
+        score.status === "SCORE_ONLY" ? t("job.applications.aiScore.scoreOnlyHint") : undefined
+      }
+    >
       {Math.round(score.score)}
     </span>
   );

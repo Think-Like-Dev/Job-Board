@@ -61,6 +61,7 @@
   "jobs": {
     "openPositions": "Open positions",
     "openPositionsSubtitle": "Browse roles and see the details before you apply.",
+    "loading": "Loading open positions…",
     "searchPlaceholder": "Search for job title, keywords, or company...",
     "search": "Search",
     "share": "Share job",

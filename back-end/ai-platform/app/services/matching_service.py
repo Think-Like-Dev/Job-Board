@@ -12,6 +12,7 @@ from app.schemas.job_match import QualitativeEvaluationSchema
 from app.schemas.resume import ResumeExtractionSchema
 from app.schemas.scoring import ComponentScores
 from app.services.embedding_service import EmbeddingService
+from app.services.evaluation_quality import sanitise_evaluation
 from app.services.job_service import JobService
 from app.services.match_store import upsert_match
 from app.services.orchestrator import LLMOrchestrator
@@ -59,10 +60,9 @@ class MatchingService:
         qualitative = await self._orchestrator.structured_output(
             QualitativeEvaluationSchema,
             system=EVALUATION_SYSTEM,
-            user=evaluation_user_prompt(
-                extracted, spec, deterministic.components, self._settings.max_text_chars
-            ),
+            user=evaluation_user_prompt(extracted, spec, self._settings.max_text_chars),
         )
+        qualitative = sanitise_evaluation(qualitative)
         record = await upsert_match(
             self._session,
             application_id=payload.application_id,

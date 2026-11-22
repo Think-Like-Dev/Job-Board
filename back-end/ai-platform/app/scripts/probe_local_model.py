@@ -21,7 +21,6 @@ import time
 from app.core.config import get_settings
 from app.schemas.job_match import JobSpec, QualitativeEvaluationSchema
 from app.schemas.resume import ResumeExtractionSchema
-from app.schemas.scoring import ComponentScores
 from app.services.job_spec import build_deterministic_job_spec
 from app.services.local_llm import structured_output
 from app.services.prompts import (
@@ -148,7 +147,6 @@ async def main() -> int:
             user=evaluation_user_prompt(
                 extracted,
                 spec,
-                ComponentScores(skills=70, experience=60, semantic=75, role=80),
                 settings.local_llm_max_input_chars,
                 args.language,
             ),

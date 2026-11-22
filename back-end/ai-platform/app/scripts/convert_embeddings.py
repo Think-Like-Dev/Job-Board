@@ -28,6 +28,7 @@ from app.core.security import CredentialCipher, get_cipher
 from app.db.session import async_session_factory
 from app.models.ats import JobAnalysis, JobEmbedding, ResumeAnalysis, ResumeEmbedding
 from app.models.documents import ResumeChunk
+from app.services.canonical import embedding_text
 from app.services.embedding_service import EmbeddingService
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,12 @@ async def convert_resumes(session, embedder: EmbeddingService) -> int:
     converted = 0
 
     for analysis in analyses:
-        text = (analysis.raw_text or analysis.summary or "").strip()
+        text = embedding_text(
+            canonical_text=analysis.canonical_text,
+            extracted_data=analysis.extracted_data,
+            raw_text=analysis.raw_text,
+            summary=analysis.summary,
+        )
         if not text:
             logger.warning("Resume analysis %s has no text; skipped", analysis.id)
             continue

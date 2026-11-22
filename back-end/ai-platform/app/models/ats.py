@@ -53,6 +53,10 @@ class ResumeAnalysis(SQLModel, table=True):
     )
     raw_text: str = Field(sa_column=Column(Text, nullable=False, server_default=text("''")))
     extracted_data: dict[str, Any] = Field(sa_column=Column(JSONB, nullable=False))
+    # The deterministic rendering of `extracted_data`: what the embeddings are
+    # computed from. Kept next to the JSON so a model swap re-embeds without a
+    # new extraction.
+    canonical_text: str = Field(sa_column=Column(Text, nullable=False, server_default=text("''")))
     summary: str = Field(sa_column=Column(Text, nullable=False, server_default=text("''")))
     created_at: datetime = Field(sa_column=created_at_column())
 
@@ -154,6 +158,11 @@ class CandidateJobMatch(SQLModel, table=True):
         sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     )
     ai_summary: str = Field(sa_column=Column(Text, nullable=False, server_default=text("''")))
+    # The whole qualitative evaluation, so a re-review reuses the narrative and
+    # the status instead of calling the model again and flipping the badge.
+    qualitative: dict[str, Any] = Field(
+        sa_column=Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    )
     component_scores: dict[str, float] = Field(
         sa_column=Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     )

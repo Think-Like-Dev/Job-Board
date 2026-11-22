@@ -38,7 +38,11 @@ def build_resume_scoring_graph(deps: GraphDependencies) -> CompiledStateGraph:
         {"extract": "llm_extraction", "manual_review": "manual_review"},
     )
     graph.add_edge("llm_extraction", "persist_resume")
-    graph.add_edge("persist_resume", "embed_job")
+    graph.add_conditional_edges(
+        "persist_resume",
+        nodes["route_after_extraction"],
+        {"score": "embed_job", "manual_review": "manual_review"},
+    )
     graph.add_edge("embed_job", "deterministic_scoring")
     graph.add_edge("deterministic_scoring", "evaluation")
     graph.add_edge("evaluation", "persist_match")

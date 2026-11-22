@@ -234,11 +234,13 @@ of spending the budget on a dead server.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | `AI_LOCAL_LLM_TIMEOUT_SECONDS` | `180` | per-call timeout for the local route |
-| `AI_LOCAL_LLM_MAX_INPUT_CHARS` | `8000` | how much of the prompt the model reads |
-| `AI_LOCAL_LLM_MAX_TOKENS` | `900` | hard cap on one answer |
+| `AI_LOCAL_LLM_MAX_INPUT_CHARS` | `16000` | how much of the prompt the model reads (about three pages) |
+| `AI_LOCAL_LLM_MAX_TOKENS` | `2500` | hard cap on one answer |
 | `AI_LOCAL_LLM_TEMPERATURE` | `0` | structured output wants no creativity |
+| `AI_LOCAL_LLM_REPEAT_PENALTY` | `1.1` | stops the small model looping on a list |
+| `AI_LOCAL_LLM_REPEAT_LAST_N` | `256` | how far back the repetition penalty looks |
 
-The server's context is 8192 tokens (`CONTEXT_SIZE` in the launcher). One call
+The server's context is 16384 tokens (`CONTEXT_SIZE` in the launcher). One call
 has to fit the capped input, the field list and the answer in that window, so
 raise both together if you raise the input cap.
 

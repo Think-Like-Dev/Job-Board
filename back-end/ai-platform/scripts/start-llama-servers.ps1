@@ -37,7 +37,7 @@ param(
     [int]$ChatPort = 9931,
     [int]$EmbeddingPort = 9932,
     [int]$Threads = 4,
-    [int]$ContextSize = 8192
+    [int]$ContextSize = 16384
 )
 
 $ErrorActionPreference = 'Stop'

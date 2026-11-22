@@ -15,6 +15,7 @@ from app.core.constants import EXTRACTION_VERSION
 from app.core.exceptions import UnreadableDocument
 from app.models.ats import ResumeAnalysis
 from app.schemas.resume import ResumeExtractionSchema
+from app.services.canonical import render_resume_text
 from app.services.orchestrator import LLMOrchestrator
 from app.services.parser import DocumentParser
 from app.services.prompts import RESUME_EXTRACTION_SYSTEM
@@ -71,6 +72,7 @@ class ResumeService:
             extraction_version=EXTRACTION_VERSION,
             raw_text=document.text[: self._settings.max_text_chars],
             extracted_data=extracted.model_dump(mode="json"),
+            canonical_text=render_resume_text(extracted),
             summary=extracted.executive_summary,
         )
         self._session.add(record)

@@ -110,13 +110,26 @@ class Settings(BaseSettings):
     # call is therefore bounded: a longer timeout than a paid provider, a
     # shorter input, and a hard cap on the answer. These are per call, so a
     # model that ignores the schema cannot hold a worker for long.
+    #
+    # A 3-page resume is roughly 9 000 characters. The 16 000-character input
+    # and 2 500-token answer fit the 8 192-token context of the default
+    # llama.cpp server; the repetition penalty is what stops the small model
+    # from looping on a skills list at temperature 0.
     local_llm_timeout_seconds: int = Field(
         default=180, validation_alias="AI_LOCAL_LLM_TIMEOUT_SECONDS", gt=0
     )
     local_llm_max_input_chars: int = Field(
-        default=8_000, validation_alias="AI_LOCAL_LLM_MAX_INPUT_CHARS", gt=0
+        default=16_000, validation_alias="AI_LOCAL_LLM_MAX_INPUT_CHARS", gt=0
     )
-    local_llm_max_tokens: int = Field(default=900, validation_alias="AI_LOCAL_LLM_MAX_TOKENS", gt=0)
+    local_llm_max_tokens: int = Field(
+        default=2_500, validation_alias="AI_LOCAL_LLM_MAX_TOKENS", gt=0
+    )
+    local_llm_repeat_penalty: float = Field(
+        default=1.1, validation_alias="AI_LOCAL_LLM_REPEAT_PENALTY", ge=1.0, le=2.0
+    )
+    local_llm_repeat_last_n: int = Field(
+        default=256, validation_alias="AI_LOCAL_LLM_REPEAT_LAST_N", gt=0
+    )
     local_llm_temperature: float = Field(
         default=0.0, validation_alias="AI_LOCAL_LLM_TEMPERATURE", ge=0, le=2
     )

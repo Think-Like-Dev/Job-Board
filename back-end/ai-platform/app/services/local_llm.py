@@ -216,6 +216,13 @@ async def _invoke[SchemaT: BaseModel](
         "max_retries": 0,
         "temperature": settings.local_llm_temperature,
         "max_tokens": settings.local_llm_max_tokens,
+        # llama.cpp accepts these as request extensions. At temperature 0 a
+        # 0.5 B model repeats a skills list until the token cap; a repetition
+        # penalty is what makes it close the object instead.
+        "extra_body": {
+            "repeat_penalty": settings.local_llm_repeat_penalty,
+            "repeat_last_n": settings.local_llm_repeat_last_n,
+        },
     }
     if mode == "json_object":
         kwargs["model_kwargs"] = {"response_format": {"type": "json_object"}}

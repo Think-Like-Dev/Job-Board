@@ -39,6 +39,16 @@ export function AiScoreBadge({ score }: AiScoreBadgeProps) {
   }
 
   if (score.status === "FAILED") {
+    if (score.needsReview) {
+      return (
+        <span
+          className="text-sm font-medium text-amber-600 dark:text-amber-500"
+          title={t("job.applications.aiScore.needsReviewHint")}
+        >
+          {t("job.applications.aiScore.needsReview")}
+        </span>
+      );
+    }
     return (
       <span className="text-sm text-destructive">
         {t("job.applications.aiScore.failed")}

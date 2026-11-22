@@ -51,6 +51,25 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
   }
 
   if (assessment.status === "FAILED") {
+    if (assessment.needsReview) {
+      return (
+        <div className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+          <AlertTriangleIcon className="mt-0.5 size-4 text-amber-600 dark:text-amber-500" />
+          <div className="space-y-1">
+            <Badge variant="outline">
+              {t("job.applications.drawer.ai.needsReview")}
+            </Badge>
+            <p className="text-sm text-muted-foreground">
+              {assessment.failureMessage ||
+                t("job.applications.drawer.ai.needsReviewDescription")}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t("job.applications.drawer.ai.needsReviewNextStep")}
+            </p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
         <AlertTriangleIcon className="mt-0.5 size-4 text-destructive" />

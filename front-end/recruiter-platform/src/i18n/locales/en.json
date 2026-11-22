@@ -159,7 +159,9 @@
       "aiScore": {
         "none": "No score yet",
         "scoring": "Scoring…",
-        "failed": "Failed"
+        "failed": "Failed",
+        "needsReview": "Needs review",
+        "needsReviewHint": "The document could not be read reliably. Ask the candidate for a text-based PDF."
       },
       "noResume": "Not provided",
       "viewResume": "View resume",
@@ -244,6 +246,9 @@
           "pendingDescription": "The resume is being read and scored. The result appears here as soon as it is ready.",
           "failed": "Scoring failed",
           "failedDescription": "The resume could not be scored.",
+          "needsReview": "Needs review",
+          "needsReviewDescription": "The document could not be read reliably, so no score was produced.",
+          "needsReviewNextStep": "Ask the candidate to upload a text-based PDF (not a scan or a two-column layout).",
           "scored": "Assessed",
           "scoreOnly": "Score only",
           "weights": "Weights {{version}}",

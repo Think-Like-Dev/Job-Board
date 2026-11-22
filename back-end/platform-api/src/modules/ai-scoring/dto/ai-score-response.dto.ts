@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AiScoreStatus } from '@common/constants/enums';
+import { AiScoreFailureCode, AiScoreStatus } from '@common/constants/enums';
 import type { ApplicationAiScore } from '../application-ai-score.schema';
 
 /**
@@ -15,6 +15,12 @@ export class ApplicationAiScoreSummaryDto {
 
   @ApiPropertyOptional({ nullable: true, description: '0 to 100' })
   score?: number | null;
+
+  @ApiProperty({
+    description:
+      'True when the document failed the quality gate and needs a human review instead of a retry',
+  })
+  needsReview!: boolean;
 }
 
 /**
@@ -79,6 +85,7 @@ export function toApplicationAiScoreSummaryDto(
   return {
     status: score.status,
     score: toNumber(score.score),
+    needsReview: score.failureCode === AiScoreFailureCode.NEEDS_REVIEW,
   };
 }
 

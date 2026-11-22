@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.v1.endpoints import health as health_endpoints
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import AppError
@@ -67,6 +68,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+    @app.get("/health", include_in_schema=False)
+    def root_health() -> dict[str, str]:
+        """Alias for the versioned probe, so `curl host:8000/health` works."""
+        return health_endpoints.health()
 
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:

@@ -111,6 +111,7 @@ export const AiScoreStatusSchema = z.enum([
 export const AiScoreSummarySchema = z.object({
   status: AiScoreStatusSchema,
   score: z.number().nullable().optional(),
+  needsReview: z.boolean(),
 });
 
 export const AiScoreAssessmentSchema = AiScoreSummarySchema.extend({

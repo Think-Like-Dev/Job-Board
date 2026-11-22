@@ -95,4 +95,7 @@ class ScoringFailedEvent(EventEnvelope):
     jobId: UUID
     attempt: int = 1
     reason: str = ""
+    # "needs_review" when the quality gate blocked scoring (the recruiter can
+    # ask for a better file), "scoring_failed" otherwise.
+    code: str = "scoring_failed"
     message: str = ""

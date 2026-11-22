@@ -1,18 +1,8 @@
-"use client"
+"use client";
 
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-import {
-  ArrowDownIcon,
-  ArrowUpDownIcon,
-  ArrowUpIcon,
-  Loader2,
-} from "lucide-react"
-import { useTranslation } from "react-i18next"
+import type { ReactNode } from "react";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import {
   Table,
@@ -21,15 +11,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
-export type DataTableSortDirection = "ASC" | "DESC"
+export type DataTableSortDirection = "ASC" | "DESC";
 
 export interface DataTableSorting {
   /** Backend sort key; defaults to the column id. */
-  sortKey: string
-  direction: DataTableSortDirection
+  sortKey: string;
+  direction: DataTableSortDirection;
 }
 
 /**
@@ -37,37 +27,54 @@ export interface DataTableSorting {
  * sortable only when its definition sets `meta.sortable`.
  */
 export interface DataTableColumnMeta {
-  sortable?: boolean
+  sortable?: boolean;
   /** Overrides the column id as the backend sort key. */
-  sortKey?: string
+  sortKey?: string;
 }
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  isLoading: boolean
-  onRowClick?: (row: TData) => void
-  emptyMessage?: string
+export interface DataTableCellContext<TData> {
+  row: { original: TData };
+  getValue: () => unknown;
+}
+
+export interface DataTableColumn<TData> {
+  /** Stable key; defaults to `accessorKey`. */
+  id?: string;
+  /** Property read from the row when no `cell` is given. */
+  accessorKey?: string;
+  header: ReactNode | (() => ReactNode);
+  cell?: (context: DataTableCellContext<TData>) => ReactNode;
+  meta?: DataTableColumnMeta;
+}
+
+interface DataTableProps<TData> {
+  columns: DataTableColumn<TData>[];
+  data: TData[];
+  isLoading: boolean;
+  onRowClick?: (row: TData) => void;
+  emptyMessage?: string;
   /** Controlled server-side sorting. Omit to render plain headers. */
-  sorting?: DataTableSorting | null
-  onSortingChange?: (sorting: DataTableSorting | null) => void
+  sorting?: DataTableSorting | null;
+  onSortingChange?: (sorting: DataTableSorting | null) => void;
   /** Extra classes for the scroll container (e.g. to bound the height). */
-  containerClassName?: string
+  containerClassName?: string;
 }
 
 function SortIcon({ direction }: { direction: DataTableSortDirection | null }) {
   if (direction === "ASC") {
-    return <ArrowUpIcon className="size-3.5 shrink-0" />
+    return <ArrowUpIcon className="size-3.5 shrink-0" />;
   }
   if (direction === "DESC") {
-    return <ArrowDownIcon className="size-3.5 shrink-0" />
+    return <ArrowDownIcon className="size-3.5 shrink-0" />;
   }
-  return (
-    <ArrowUpDownIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
-  )
+  return <ArrowUpDownIcon className="size-3.5 shrink-0 text-muted-foreground/60" />;
 }
 
-export function DataTable<TData, TValue>({
+function columnKey<TData>(column: DataTableColumn<TData>, index: number) {
+  return column.id ?? column.accessorKey ?? `column-${index}`;
+}
+
+export function DataTable<TData>({
   columns,
   data,
   isLoading,
@@ -76,91 +83,72 @@ export function DataTable<TData, TValue>({
   sorting,
   onSortingChange,
   containerClassName,
-}: DataTableProps<TData, TValue>) {
-  const { t } = useTranslation()
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
+}: DataTableProps<TData>) {
+  const { t } = useTranslation();
 
   const sortLabel = (direction: DataTableSortDirection | null) => {
-    if (direction === "ASC") return t("common.table.sortDescending")
-    if (direction === "DESC") return t("common.table.clearSort")
-    return t("common.table.sortAscending")
-  }
+    if (direction === "ASC") return t("common.table.sortDescending");
+    if (direction === "DESC") return t("common.table.clearSort");
+    return t("common.table.sortAscending");
+  };
 
   const handleSort = (sortKey: string) => {
-    if (!onSortingChange) return
+    if (!onSortingChange) return;
 
     if (sorting?.sortKey !== sortKey) {
-      onSortingChange({ sortKey, direction: "ASC" })
-      return
+      onSortingChange({ sortKey, direction: "ASC" });
+      return;
     }
     if (sorting.direction === "ASC") {
-      onSortingChange({ sortKey, direction: "DESC" })
-      return
+      onSortingChange({ sortKey, direction: "DESC" });
+      return;
     }
-    onSortingChange(null)
-  }
+    onSortingChange(null);
+  };
 
   return (
-    <div
-      className={cn(
-        "overflow-x-auto rounded-md border",
-        containerClassName,
-      )}
-    >
+    <div className={cn("overflow-x-auto rounded-md border", containerClassName)}>
       <Table>
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef
-                  .meta as DataTableColumnMeta | undefined
-                const sortKey = meta?.sortKey ?? header.column.id
-                const canSort = Boolean(meta?.sortable && onSortingChange)
-                const direction =
-                  sorting?.sortKey === sortKey ? sorting.direction : null
+          <TableRow>
+            {columns.map((column, index) => {
+              const key = columnKey(column, index);
+              const sortKey = column.meta?.sortKey ?? key;
+              const canSort = Boolean(column.meta?.sortable && onSortingChange);
+              const direction = sorting?.sortKey === sortKey ? sorting.direction : null;
+              const header = typeof column.header === "function" ? column.header() : column.header;
 
-                return (
-                  <TableHead
-                    key={header.id}
-                    aria-sort={
-                      canSort
-                        ? direction === "ASC"
-                          ? "ascending"
-                          : direction === "DESC"
-                            ? "descending"
-                            : "none"
-                        : undefined
-                    }
-                  >
-                    {header.isPlaceholder ? null : canSort ? (
-                      <button
-                        type="button"
-                        onClick={() => handleSort(sortKey)}
-                        title={sortLabel(direction)}
-                        className="-mx-2 inline-flex items-center gap-1.5 rounded px-2 py-1 text-start font-medium transition-colors hover:bg-muted/60"
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                        <SortIcon direction={direction} />
-                        <span className="sr-only">{sortLabel(direction)}</span>
-                      </button>
-                    ) : (
-                      flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )
-                    )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
+              return (
+                <TableHead
+                  key={key}
+                  aria-sort={
+                    canSort
+                      ? direction === "ASC"
+                        ? "ascending"
+                        : direction === "DESC"
+                          ? "descending"
+                          : "none"
+                      : undefined
+                  }
+                >
+                  {canSort ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSort(sortKey)}
+                      title={sortLabel(direction)}
+                      className="-mx-2 inline-flex items-center gap-1.5 rounded px-2 py-1 text-start font-medium transition-colors hover:bg-muted/60"
+                    >
+                      {header}
+                      <SortIcon direction={direction} />
+                      <span className="sr-only">{sortLabel(direction)}</span>
+                    </button>
+                  ) : (
+                    header
+                  )}
+                </TableHead>
+              );
+            })}
+          </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
@@ -173,21 +161,28 @@ export function DataTable<TData, TValue>({
                 <Loader2 className="w-4 h-4 animate-spin mx-auto" />
               </TableCell>
             </TableRow>
-          ) : table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
+          ) : data.length ? (
+            data.map((row, rowIndex) => (
               <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-                onClick={
-                  onRowClick ? () => onRowClick(row.original) : undefined
-                }
+                key={rowIndex}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={onRowClick ? "cursor-pointer" : undefined}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {columns.map((column, columnIndex) => {
+                  const value = column.accessorKey
+                    ? (row as Record<string, unknown>)[column.accessorKey]
+                    : undefined;
+                  return (
+                    <TableCell key={columnKey(column, columnIndex)}>
+                      {column.cell
+                        ? column.cell({
+                            row: { original: row },
+                            getValue: () => value,
+                          })
+                        : (value as ReactNode)}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))
           ) : (
@@ -200,5 +195,5 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

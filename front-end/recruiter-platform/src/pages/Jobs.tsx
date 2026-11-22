@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,6 @@ import {
   PlusIcon,
   UsersIcon,
 } from "lucide-react";
-import { type ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@ui/button";
 import type { SliderRange } from "@ui/slider";
@@ -19,6 +18,7 @@ import type { SliderRange } from "@ui/slider";
 import { useGetJobs } from "@/api/hooks/useJobs";
 import {
   DataTable,
+  type DataTableColumn,
   type DataTableSorting,
 } from "@/components/common/DataTable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -27,10 +27,7 @@ import { type RootState } from "@/store";
 import { type Job, JobStatus } from "@/types/job.types";
 import { JobDetailDrawer } from "./jobs/JobDetail/JobDetailDrawer";
 import { JobApplicationStatsCell } from "./jobs/JobList/JobApplicationStatsCell";
-import {
-  JOB_TAB_STATUS,
-  type JobTabKey,
-} from "./jobs/JobList/jobTabs.constants";
+import { JOB_TAB_STATUS, type JobTabKey } from "./jobs/JobList/jobTabs.constants";
 import { JobTabs } from "./jobs/JobList/JobTabs";
 import { JobListToolbar } from "./jobs/JobList/JobListToolbar";
 import {
@@ -46,17 +43,13 @@ type DetailMode = "view" | "clone";
 const Jobs = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const currentUserId = useSelector(
-    (state: RootState) => state.auth.user?.id,
-  );
+  const currentUserId = useSelector((state: RootState) => state.auth.user?.id);
 
   const [activeTab, setActiveTab] = useState<JobTabKey>(JobStatus.PUBLISHED);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [compensationMode, setCompensationMode] =
-    useState<CompensationFilterMode>("ALL");
-  const [salaryRange, setSalaryRange] =
-    useState<SliderRange>(DEFAULT_SALARY_RANGE);
+  const [compensationMode, setCompensationMode] = useState<CompensationFilterMode>("ALL");
+  const [salaryRange, setSalaryRange] = useState<SliderRange>(DEFAULT_SALARY_RANGE);
   const [sorting, setSorting] = useState<DataTableSorting | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<DetailMode>("view");
@@ -85,17 +78,14 @@ const Jobs = () => {
   const pagination = jobs?.pagination;
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
 
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab, effectiveSearch, compensationMode, salaryRange, sorting]);
+  // The server can return fewer pages than the current one after a delete or
+  // an archive. Clamping during render is React's recommended alternative to
+  // a synchronising effect; filter changes reset the page in their handlers.
+  if (page > totalPages) {
+    setPage(Math.max(1, totalPages));
+  }
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(Math.max(1, totalPages));
-    }
-  }, [page, totalPages]);
-
-  const columns: Array<ColumnDef<Partial<Job>>> = [
+  const columns: Array<DataTableColumn<Partial<Job>>> = [
     { accessorKey: "code", header: t("common.jobCode") },
     { accessorKey: "title", header: t("job.list.title") },
     { accessorKey: "category", header: t("common.category") },
@@ -103,9 +93,7 @@ const Jobs = () => {
       accessorKey: "compensation",
       header: t("common.compensation"),
       meta: { sortable: true },
-      cell: ({ row }) =>
-        formatCompensation(row.original.compensation) ||
-        t("common.notProvided"),
+      cell: ({ row }) => formatCompensation(row.original.compensation) || t("common.notProvided"),
     },
     { accessorKey: "location", header: t("common.location") },
     {
@@ -140,34 +128,38 @@ const Jobs = () => {
         const canEdit = job.status === JobStatus.DRAFT && isOwner;
         return (
           <div className="flex items-center gap-1">
-            { activeTab !== JOB_TAB_STATUS.DRAFT && (<Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={!job.id || job.status === JobStatus.DRAFT}
-              title={t("job.detail.actions.viewApplications")}
-              aria-label={t("job.detail.actions.viewApplications")}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (job.id) navigate(`/jobs/${job.id}/applications`);
-              }}
-            >
-              <UsersIcon className="size-4" />
-            </Button>)}
-            {activeTab === JOB_TAB_STATUS.DRAFT && (<Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={!canEdit || !job.id}
-              title={canEdit ? t("job.edit") : t("job.editDisabled")}
-              aria-label={canEdit ? t("job.edit") : t("job.editDisabled")}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (canEdit && job.id) navigate(`/jobs/${job.id}/edit`);
-              }}
-            >
-              <PencilIcon className="size-4" />
-            </Button>)}
+            {activeTab !== JOB_TAB_STATUS.DRAFT && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={!job.id || job.status === JobStatus.DRAFT}
+                title={t("job.detail.actions.viewApplications")}
+                aria-label={t("job.detail.actions.viewApplications")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (job.id) navigate(`/jobs/${job.id}/applications`);
+                }}
+              >
+                <UsersIcon className="size-4" />
+              </Button>
+            )}
+            {activeTab === JOB_TAB_STATUS.DRAFT && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={!canEdit || !job.id}
+                title={canEdit ? t("job.edit") : t("job.editDisabled")}
+                aria-label={canEdit ? t("job.edit") : t("job.editDisabled")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (canEdit && job.id) navigate(`/jobs/${job.id}/edit`);
+                }}
+              >
+                <PencilIcon className="size-4" />
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -192,6 +184,7 @@ const Jobs = () => {
 
   const handleTabChange = (tab: JobTabKey) => {
     setActiveTab(tab);
+    setPage(1);
   };
 
   const handleRowClick = (job: Partial<Job>) => {
@@ -200,14 +193,14 @@ const Jobs = () => {
     setSelectedJobId(job.id);
   };
 
-  const isFiltered =
-    search.trim() !== "" || compensationMode !== "ALL" || sorting !== null;
+  const isFiltered = search.trim() !== "" || compensationMode !== "ALL" || sorting !== null;
 
   const clearFilters = () => {
     setSearch("");
     setCompensationMode("ALL");
     setSalaryRange(DEFAULT_SALARY_RANGE);
     setSorting(null);
+    setPage(1);
   };
 
   return (
@@ -224,11 +217,20 @@ const Jobs = () => {
 
       <JobListToolbar
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
         compensationMode={compensationMode}
-        onCompensationModeChange={setCompensationMode}
+        onCompensationModeChange={(mode) => {
+          setCompensationMode(mode);
+          setPage(1);
+        }}
         salaryRange={salaryRange}
-        onSalaryRangeChange={setSalaryRange}
+        onSalaryRangeChange={(range) => {
+          setSalaryRange(range);
+          setPage(1);
+        }}
         onClear={clearFilters}
         isFiltered={isFiltered}
       />
@@ -240,7 +242,10 @@ const Jobs = () => {
         emptyMessage={t("job.list.empty")}
         onRowClick={handleRowClick}
         sorting={sorting}
-        onSortingChange={setSorting}
+        onSortingChange={(next) => {
+          setSorting(next);
+          setPage(1);
+        }}
       />
 
       <div className="flex items-center justify-between gap-2">

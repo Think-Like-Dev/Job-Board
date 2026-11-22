@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@ui/dialog';
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { Label } from '@ui/label';
@@ -18,10 +12,7 @@ import { useDeleteFile, useUploadProfileFile } from '@api/hooks/useProfile';
 import { validateCertificationFile } from '@utils/validators';
 import { getErrorMessage } from '@utils/errorMessage';
 import { openAuthenticatedFile } from '@utils/fileActions';
-import type {
-  CertificationPayload,
-  Skill,
-} from '../../../types/profile.types';
+import type { CertificationPayload, Skill } from '../../../types/profile.types';
 import { SkillsInput } from './SkillsInput';
 
 const EMPTY: CertificationPayload = {
@@ -54,7 +45,7 @@ export function CertificationModal({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     setValue,
     setError,
     formState: { errors },
@@ -72,18 +63,18 @@ export function CertificationModal({
   useEffect(() => {
     if (open) {
       reset(initialData ?? EMPTY);
-      setUploaded(null);
     }
   }, [open, initialData, reset]);
 
-  const skillId = watch('skillId');
-  const fileId = watch('fileId');
-  const credentialUrl = watch('credentialUrl');
+  const skillId = useWatch({ control, name: 'skillId' });
+  const fileId = useWatch({ control, name: 'fileId' });
+  const credentialUrl = useWatch({ control, name: 'credentialUrl' });
 
   function closeWithoutSaving() {
     if (uploaded && uploaded.id !== initialData?.fileId) {
       void removeFile.mutateAsync(uploaded.id).catch(() => undefined);
     }
+    setUploaded(null);
     onClose();
   }
 
@@ -102,9 +93,7 @@ export function CertificationModal({
       setValue('fileId', result.id, { shouldValidate: true });
       setUploaded({ id: result.id, name: result.filename ?? file.name });
     } catch (error) {
-      toast.error(
-        getErrorMessage(error, t('profile.certifications.invalidFile')),
-      );
+      toast.error(getErrorMessage(error, t('profile.certifications.invalidFile')));
     }
   }
 
@@ -122,11 +111,7 @@ export function CertificationModal({
         <form
           className="grid gap-4 py-2"
           onSubmit={handleSubmit((value) => {
-            if (
-              value.issueDate &&
-              value.expiryDate &&
-              value.expiryDate < value.issueDate
-            ) {
+            if (value.issueDate && value.expiryDate && value.expiryDate < value.issueDate) {
               setError('expiryDate', {
                 type: 'validate',
                 message: 'expiryBeforeIssue',
@@ -134,6 +119,7 @@ export function CertificationModal({
               return;
             }
             onSave(value);
+            setUploaded(null);
             onClose();
           })}
         >
@@ -143,11 +129,7 @@ export function CertificationModal({
               {...register('title')}
               placeholder={t('profile.certifications.titlePlaceholder')}
             />
-            {errors.title && (
-              <p className="text-xs text-destructive">
-                {t('validation.required')}
-              </p>
-            )}
+            {errors.title && <p className="text-xs text-destructive">{t('validation.required')}</p>}
           </div>
 
           <div className="space-y-2">
@@ -162,9 +144,7 @@ export function CertificationModal({
             <Label>{t('profile.certifications.skill')}</Label>
             <SkillsInput
               value={skillId ? [skillId] : []}
-              onChange={(ids) =>
-                setValue('skillId', ids[0] ?? null, { shouldValidate: true })
-              }
+              onChange={(ids) => setValue('skillId', ids[0] ?? null, { shouldValidate: true })}
               initialSkills={skills}
               single
               placeholder={t('profile.certifications.skillPlaceholder')}
@@ -195,17 +175,13 @@ export function CertificationModal({
               onChange={(event) => void handleFile(event.target.files?.[0])}
             />
             {upload.isPending && (
-              <p className="text-xs text-muted-foreground">
-                {t('common.uploading')}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('common.uploading')}</p>
             )}
             {fileId && (
               <p className="text-xs text-muted-foreground">
                 {t('profile.certifications.attached', {
                   name:
-                    uploaded?.name ??
-                    initialData?.fileName ??
-                    t('profile.certifications.softCopy'),
+                    uploaded?.name ?? initialData?.fileName ?? t('profile.certifications.softCopy'),
                 })}
                 {fileId && (
                   <button
@@ -237,11 +213,7 @@ export function CertificationModal({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={closeWithoutSaving}
-            >
+            <Button type="button" variant="outline" onClick={closeWithoutSaving}>
               {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={upload.isPending}>

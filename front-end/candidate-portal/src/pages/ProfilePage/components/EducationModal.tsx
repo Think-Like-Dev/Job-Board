@@ -1,14 +1,8 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@ui/dialog';
 import { Button } from '@ui/button';
 import { Checkbox } from '@ui/checkbox';
 import { Input } from '@ui/input';
@@ -35,18 +29,13 @@ interface EducationModalProps {
   initialData?: EducationPayload;
 }
 
-export function EducationModal({
-  open,
-  onClose,
-  onSave,
-  initialData,
-}: EducationModalProps) {
+export function EducationModal({ open, onClose, onSave, initialData }: EducationModalProps) {
   const { t } = useTranslation();
   const {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     setValue,
     setError,
     formState: { errors },
@@ -61,7 +50,7 @@ export function EducationModal({
     }
   }, [open, initialData, reset]);
 
-  const endDate = watch('endDate');
+  const endDate = useWatch({ control, name: 'endDate' });
   const isCurrent = endDate === null;
 
   return (
@@ -85,11 +74,7 @@ export function EducationModal({
               });
               return;
             }
-            if (
-              value.endDate &&
-              value.startDate &&
-              value.endDate < value.startDate
-            ) {
+            if (value.endDate && value.startDate && value.endDate < value.startDate) {
               setError('endDate', {
                 type: 'validate',
                 message: 'endBeforeStart',
@@ -104,9 +89,7 @@ export function EducationModal({
             <Label>{t('profile.education.institutionName')}</Label>
             <Input {...register('institution')} />
             {errors.institution && (
-              <p className="text-xs text-destructive">
-                {t('validation.required')}
-              </p>
+              <p className="text-xs text-destructive">{t('validation.required')}</p>
             )}
           </div>
 
@@ -115,18 +98,14 @@ export function EducationModal({
               <Label>{t('profile.education.degree')}</Label>
               <Input {...register('degree')} />
               {errors.degree && (
-                <p className="text-xs text-destructive">
-                  {t('validation.required')}
-                </p>
+                <p className="text-xs text-destructive">{t('validation.required')}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label>{t('profile.education.fieldOfStudy')}</Label>
               <Input {...register('fieldOfStudy')} />
               {errors.fieldOfStudy && (
-                <p className="text-xs text-destructive">
-                  {t('validation.required')}
-                </p>
+                <p className="text-xs text-destructive">{t('validation.required')}</p>
               )}
             </div>
           </div>
@@ -136,9 +115,7 @@ export function EducationModal({
               <Label>{t('common.startDate')}</Label>
               <Input type="date" {...register('startDate')} />
               {errors.startDate && (
-                <p className="text-xs text-destructive">
-                  {t('validation.required')}
-                </p>
+                <p className="text-xs text-destructive">{t('validation.required')}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -170,10 +147,7 @@ export function EducationModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t('profile.education.grade')}</Label>
-              <Input
-                {...register('grade')}
-                placeholder={t('profile.education.gradePlaceholder')}
-              />
+              <Input {...register('grade')} placeholder={t('profile.education.gradePlaceholder')} />
             </div>
             <div className="space-y-2">
               <Label>{t('profile.education.gpa')}</Label>
@@ -181,8 +155,7 @@ export function EducationModal({
                 type="number"
                 step="0.01"
                 {...register('gpa', {
-                  setValueAs: (value) =>
-                    value === '' || value === null ? null : Number(value),
+                  setValueAs: (value) => (value === '' || value === null ? null : Number(value)),
                 })}
               />
             </div>

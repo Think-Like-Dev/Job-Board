@@ -1,14 +1,8 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@ui/dialog';
 import { Button } from '@ui/button';
 import { Checkbox } from '@ui/checkbox';
 import { Input } from '@ui/input';
@@ -33,18 +27,13 @@ interface ExperienceModalProps {
   initialData?: ExperiencePayload;
 }
 
-export function ExperienceModal({
-  open,
-  onClose,
-  onSave,
-  initialData,
-}: ExperienceModalProps) {
+export function ExperienceModal({ open, onClose, onSave, initialData }: ExperienceModalProps) {
   const { t } = useTranslation();
   const {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     setValue,
     setError,
     formState: { errors },
@@ -59,7 +48,7 @@ export function ExperienceModal({
     }
   }, [open, initialData, reset]);
 
-  const endDate = watch('endDate');
+  const endDate = useWatch({ control, name: 'endDate' });
   const isCurrent = endDate === null;
 
   return (
@@ -83,11 +72,7 @@ export function ExperienceModal({
               });
               return;
             }
-            if (
-              value.endDate &&
-              value.startDate &&
-              value.endDate < value.startDate
-            ) {
+            if (value.endDate && value.startDate && value.endDate < value.startDate) {
               setError('endDate', {
                 type: 'validate',
                 message: 'endBeforeStart',
@@ -103,18 +88,14 @@ export function ExperienceModal({
               <Label>{t('profile.experience.companyName')}</Label>
               <Input {...register('companyName')} />
               {errors.companyName && (
-                <p className="text-xs text-destructive">
-                  {t('validation.required')}
-                </p>
+                <p className="text-xs text-destructive">{t('validation.required')}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label>{t('profile.experience.jobTitle')}</Label>
               <Input {...register('jobTitle')} />
               {errors.jobTitle && (
-                <p className="text-xs text-destructive">
-                  {t('validation.required')}
-                </p>
+                <p className="text-xs text-destructive">{t('validation.required')}</p>
               )}
             </div>
           </div>
@@ -124,9 +105,7 @@ export function ExperienceModal({
               <Label>{t('common.startDate')}</Label>
               <Input type="date" {...register('startDate')} />
               {errors.startDate && (
-                <p className="text-xs text-destructive">
-                  {t('validation.required')}
-                </p>
+                <p className="text-xs text-destructive">{t('validation.required')}</p>
               )}
             </div>
             <div className="space-y-2">

@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  SlidersHorizontalIcon,
-} from "lucide-react";
+import { CheckIcon, ChevronDownIcon, SlidersHorizontalIcon } from "lucide-react";
 
 import { Button } from "@ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@ui/popover";
 import { RangeSlider, type SliderRange } from "@ui/slider";
 
 import {
@@ -57,9 +49,18 @@ export function CompensationFilterDropdown({
   }, [onRangeChange]);
 
   // Keep the draft in sync with the committed value (e.g. after Clear).
+  // Adjusting it during render is React's pattern for a changed prop; an
+  // effect would paint one frame with the previous range.
+  const [syncedRange, setSyncedRange] = useState<SliderRange>(range);
+  if (syncedRange[0] !== range[0] || syncedRange[1] !== range[1]) {
+    setSyncedRange(range);
+    setDraftRange(range);
+  }
+
+  // Refs may not be written during render; the committed value is only read
+  // by the debounce timer below.
   useEffect(() => {
     committedRangeRef.current = range;
-    setDraftRange(range);
   }, [range]);
 
   // Commit two seconds after the last slider movement. The timer keeps
@@ -68,10 +69,7 @@ export function CompensationFilterDropdown({
     if (mode !== "RANGE") return;
 
     const committed = committedRangeRef.current;
-    if (
-      draftRange[0] === committed[0] &&
-      draftRange[1] === committed[1]
-    ) {
+    if (draftRange[0] === committed[0] && draftRange[1] === committed[1]) {
       return;
     }
 
@@ -85,9 +83,7 @@ export function CompensationFilterDropdown({
   }, [draftRange, mode]);
 
   const label =
-    mode === "RANGE"
-      ? formatSalaryRange(range)
-      : t(`job.list.compensationOptions.${mode}`);
+    mode === "RANGE" ? formatSalaryRange(range) : t(`job.list.compensationOptions.${mode}`);
 
   const selectMode = (next: StaticMode) => {
     onModeChange(next);
@@ -164,7 +160,6 @@ export function CompensationFilterDropdown({
               maxLabel={t("job.list.compensationRange.max")}
               onValueChange={setDraftRange}
             />
-
           </div>
         )}
       </PopoverContent>

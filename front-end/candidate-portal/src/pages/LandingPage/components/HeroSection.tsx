@@ -1,9 +1,9 @@
-import { LandingPageContent } from "@/lib/constants";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { LandingPageContent } from '@/lib/constants';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function HeroSection() {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const LandingPageSlides = LandingPageContent(t);
   const [current, setCurrent] = useState(0);
 
@@ -13,7 +13,7 @@ export function HeroSection() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [LandingPageSlides.length]);
 
   return (
     <section className="relative h-[40vh] md:h-[70vh] overflow-hidden">
@@ -22,7 +22,7 @@ export function HeroSection() {
         <div
           key={index}
           className={`absolute inset-0 transition-opacity duration-700 ${
-            current === index ? "opacity-100" : "opacity-0 pointer-events-none"
+            current === index ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
           <img
@@ -54,7 +54,7 @@ export function HeroSection() {
             key={index}
             onClick={() => setCurrent(index)}
             className={`h-2.5 rounded-full transition-all ${
-              current === index ? "w-8 bg-white" : "w-2.5 bg-white/50"
+              current === index ? 'w-8 bg-white' : 'w-2.5 bg-white/50'
             }`}
           />
         ))}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -16,13 +16,7 @@ import {
 } from "@ui/dialog";
 import { Input } from "@ui/input";
 import { Label } from "@ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ui/select";
 import { useInviteMember } from "@/api/hooks/useTeam";
 import { usePermissions } from "@/permissions/usePermissions";
 import { PERMISSIONS } from "@/permissions/permissions";
@@ -43,10 +37,7 @@ interface InviteMemberDialogProps {
 }
 
 /** Invites a teammate; shows the copyable link when mail could not be sent. */
-export function InviteMemberDialog({
-  open,
-  onOpenChange,
-}: InviteMemberDialogProps) {
+export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogProps) {
   const { t } = useTranslation();
   const { can } = usePermissions();
   const isAdmin = can(PERMISSIONS.ADMIN_ACCESS);
@@ -63,6 +54,7 @@ export function InviteMemberDialog({
   });
 
   const invite = useInviteMember();
+  const selectedRole = useWatch({ control: form.control, name: "role" });
 
   const onSubmit = (values: InviteValues) => {
     invite.mutate(
@@ -108,9 +100,7 @@ export function InviteMemberDialog({
 
         {invitationUrl ? (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {t("team.inviteSent")}
-            </p>
+            <p className="text-sm text-muted-foreground">{t("team.inviteSent")}</p>
             <div className="flex items-center gap-2">
               <Input readOnly value={invitationUrl} />
               <Button type="button" variant="outline" onClick={copyLink}>
@@ -137,9 +127,7 @@ export function InviteMemberDialog({
                 {...form.register("email")}
               />
               {form.formState.errors.email && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.email.message}
-                </p>
+                <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
               )}
             </div>
 
@@ -157,24 +145,16 @@ export function InviteMemberDialog({
             <div className="space-y-2">
               <Label>{t("common.role")}</Label>
               <Select
-                value={form.watch("role")}
-                onValueChange={(value) =>
-                  form.setValue("role", value as UserRole)
-                }
+                value={selectedRole}
+                onValueChange={(value) => form.setValue("role", value as UserRole)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {isAdmin && <SelectItem value={UserRole.ADMIN}>{t("team.roleAdmin")}</SelectItem>}
                   {isAdmin && (
-                    <SelectItem value={UserRole.ADMIN}>
-                      {t("team.roleAdmin")}
-                    </SelectItem>
-                  )}
-                  {isAdmin && (
-                    <SelectItem value={UserRole.RECRUITER}>
-                      {t("team.roleRecruiter")}
-                    </SelectItem>
+                    <SelectItem value={UserRole.RECRUITER}>{t("team.roleRecruiter")}</SelectItem>
                   )}
                   <SelectItem value={UserRole.HIRING_MANAGER}>
                     {t("team.roleHiringManager")}
@@ -184,17 +164,11 @@ export function InviteMemberDialog({
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => close(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => close(false)}>
                 {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={invite.isPending}>
-                {invite.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {invite.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("team.sendInvite")}
               </Button>
             </DialogFooter>

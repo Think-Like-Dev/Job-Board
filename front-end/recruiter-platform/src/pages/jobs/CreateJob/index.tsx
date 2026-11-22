@@ -36,7 +36,7 @@ const CreateJob = () => {
         onSuccess: () => {
           toast.success(
             status === JobStatus.PUBLISHED
-              ? t("jobForm.toasts.published")
+              ? t("common.jobPublished")
               : t("jobForm.toasts.draftSaved"),
           );
           navigate("/jobs");
@@ -65,7 +65,7 @@ const CreateJob = () => {
                   {t("jobForm.clone.loadFailedTitle")}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  {t("jobForm.clone.loadFailed")}
+                  {t("common.jobUnavailable")}
                 </p>
               </div>
               <Button type="button" onClick={() => navigate("/jobs")}>

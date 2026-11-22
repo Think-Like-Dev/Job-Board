@@ -78,17 +78,17 @@ const JobSummaryFieldsSchema = z.object({
 export const createJobFormSchema = (t: TFunction) =>
   z.object({
     // Step 1 — Basics
-    title: z.string().min(1, t("jobForm.validation.required")),
+    title: z.string().min(1, t("common.fieldRequired")),
     department: z.string(),
     designation: z.string(),
-    category: z.string().min(1, t("jobForm.validation.required")),
+    category: z.string().min(1, t("common.fieldRequired")),
     employmentType: z.enum(EmploymentType),
-    location: z.string().min(1, t("jobForm.validation.required")),
+    location: z.string().min(1, t("common.fieldRequired")),
     workMode: z
       .array(z.enum(WorkMode))
       .min(1, t("jobForm.validation.selectAtLeastOne")),
     // Step 2 — Description & requirements
-    description: z.string().min(1, t("jobForm.validation.required")),
+    description: z.string().min(1, t("common.fieldRequired")),
     responsibilities: z.string(),
     yearsOfExperience: z.string(),
     skills: z
@@ -105,7 +105,7 @@ export const createJobFormSchema = (t: TFunction) =>
       .number()
       .int()
       .positive(t("jobForm.validation.positiveNumber")),
-    lastApplicationDate: z.string().min(1, t("jobForm.validation.required")),
+    lastApplicationDate: z.string().min(1, t("common.fieldRequired")),
     applicationSettings: ApplicationSettingsSchema,
   });
 

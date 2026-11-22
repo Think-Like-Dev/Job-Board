@@ -82,7 +82,7 @@ export function JobWizard({
     if (!formValues.title.trim()) {
       form.setError("title", {
         type: "manual",
-        message: t("jobForm.validation.required"),
+        message: t("common.fieldRequired"),
       });
       setCurrentStep(0);
       toast.error(t("jobForm.toasts.titleRequired"));
@@ -163,7 +163,7 @@ export function JobWizard({
                 >
                   {isSubmitting
                     ? t("job.savingDraft")
-                    : t("jobForm.actions.saveDraft")}
+                    : t("common.saveAsDraft")}
                 </Button>
 
                 {isReviewStep ? (
@@ -178,7 +178,7 @@ export function JobWizard({
                         {t("job.publishing")}
                       </>
                     ) : (
-                      t("job.publish")
+                      t("common.publish")
                     )}
                   </Button>
                 ) : (

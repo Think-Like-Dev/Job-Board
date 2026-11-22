@@ -124,7 +124,7 @@ const CandidateDetail = () => {
             {t("candidate.detail.loadFailedTitle")}
           </p>
           <p className="text-sm text-muted-foreground">
-            {t("candidate.detail.loadFailed")}
+            {t("common.candidateUnavailable")}
           </p>
           <Button
             type="button"
@@ -173,12 +173,12 @@ const CandidateDetail = () => {
                   <SelectValue>
                     {status
                       ? t(`job.applications.status.${status}`)
-                      : t("candidate.applications.allStatuses")}
+                      : t("common.allStatuses")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL_STATUSES}>
-                    {t("candidate.applications.allStatuses")}
+                    {t("common.allStatuses")}
                   </SelectItem>
                   {APPLICATION_FILTER_STATUSES.map((option) => (
                     <SelectItem key={option} value={option}>

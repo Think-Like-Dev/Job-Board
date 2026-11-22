@@ -45,7 +45,7 @@ export function AiScoreBadge({ score }: AiScoreBadgeProps) {
           className="text-sm font-medium text-amber-600 dark:text-amber-500"
           title={t("job.applications.aiScore.needsReviewHint")}
         >
-          {t("job.applications.aiScore.needsReview")}
+          {t("common.needsReview")}
         </span>
       );
     }

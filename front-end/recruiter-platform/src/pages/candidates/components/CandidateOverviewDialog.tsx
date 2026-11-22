@@ -78,7 +78,7 @@ export function CandidateOverviewDialog({
         {t("candidate.overview.loadFailedTitle")}
       </p>
       <p className="text-sm text-muted-foreground">
-        {t("candidate.overview.loadFailed")}
+        {t("common.candidateUnavailable")}
       </p>
     </div>
   ) : (

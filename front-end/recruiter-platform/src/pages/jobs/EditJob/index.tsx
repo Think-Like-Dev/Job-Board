@@ -39,10 +39,10 @@ const EditJob = () => {
           <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
             <div className="space-y-1">
               <h1 className="text-lg font-semibold">
-                {t("jobForm.edit.loadFailedTitle")}
+                {t("common.jobUnavailableTitle")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {t("jobForm.edit.loadFailed")}
+                {t("common.jobUnavailable")}
               </p>
             </div>
             <Button type="button" onClick={() => navigate("/jobs")}>
@@ -85,7 +85,7 @@ const EditJob = () => {
         onSuccess: () => {
           toast.success(
             status === JobStatus.PUBLISHED
-              ? t("jobForm.toasts.published")
+              ? t("common.jobPublished")
               : t("jobForm.toasts.updated"),
           );
           navigate("/jobs");

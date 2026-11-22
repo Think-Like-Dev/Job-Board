@@ -64,7 +64,7 @@ export function ApplyWorkflowModal({
   function handleResumeFile(selected: File | undefined) {
     if (!selected) return;
     if (!validateResume(selected)) {
-      toast.error(t('apply.resume.invalid'));
+      toast.error(t('common.resumeInvalid'));
       return;
     }
     setResumeFile(selected);
@@ -73,7 +73,7 @@ export function ApplyWorkflowModal({
   function handleCoverLetterFile(selected: File | undefined) {
     if (!selected) return;
     if (!validateCoverLetter(selected)) {
-      toast.error(t('apply.coverLetter.invalid'));
+      toast.error(t('common.coverLetterInvalid'));
       return;
     }
     setCoverLetterFile(selected);

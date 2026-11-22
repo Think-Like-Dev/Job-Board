@@ -29,9 +29,9 @@ export function ResumeCell({
     >
       <span
         className="max-w-40 truncate text-sm"
-        title={fileName || t("job.applications.noResume")}
+        title={fileName || t("common.notProvided")}
       >
-        {fileName || t("job.applications.noResume")}
+        {fileName || t("common.notProvided")}
       </span>
       <Button
         type="button"

@@ -105,7 +105,7 @@ const Jobs = () => {
       meta: { sortable: true },
       cell: ({ row }) =>
         formatCompensation(row.original.compensation) ||
-        t("jobForm.review.notProvided"),
+        t("common.notProvided"),
     },
     { accessorKey: "location", header: t("common.location") },
     {
@@ -173,8 +173,8 @@ const Jobs = () => {
               variant="ghost"
               size="icon"
               disabled={!job.id}
-              title={t("job.clone")}
-              aria-label={t("job.clone")}
+              title={t("common.cloneJob")}
+              aria-label={t("common.cloneJob")}
               onClick={(event) => {
                 event.stopPropagation();
                 if (!job.id) return;

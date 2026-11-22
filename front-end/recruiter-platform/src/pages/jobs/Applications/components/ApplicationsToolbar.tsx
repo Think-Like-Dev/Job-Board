@@ -67,12 +67,12 @@ export function ApplicationsToolbar({
           <SelectValue>
             {status
               ? t(`job.applications.status.${status}`)
-              : t("job.applications.allStatuses")}
+              : t("common.allStatuses")}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL_STATUSES}>
-            {t("job.applications.allStatuses")}
+            {t("common.allStatuses")}
           </SelectItem>
           {APPLICATION_FILTER_STATUSES.map((option) => (
             <SelectItem key={option} value={option}>
@@ -89,7 +89,7 @@ export function ApplicationsToolbar({
         disabled={!isFiltered}
       >
         <XIcon data-icon="inline-start" />
-        {t("job.applications.clearFilters")}
+        {t("common.clearFilters")}
       </Button>
     </div>
   );

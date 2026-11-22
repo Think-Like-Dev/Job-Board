@@ -35,7 +35,7 @@ const ResetPassword = () => {
       confirmPassword: z.string().min(8, t("auth.passwordErrorMessage")),
     })
     .refine((values) => values.password === values.confirmPassword, {
-      message: t("auth.newPasswordMismatch"),
+      message: t("common.passwordMismatch"),
       path: ["confirmPassword"],
     });
 
@@ -125,7 +125,7 @@ const ResetPassword = () => {
               : t("auth.resetPasswordSubmit")}
           </Button>
           <Link className="text-sm text-center underline" to="/login">
-            {t("auth.backToLogin")}
+            {t("common.backToSignIn")}
           </Link>
         </form>
       ) : (
@@ -171,7 +171,7 @@ const ResetPassword = () => {
             </div>
           )}
           <Link className="text-sm text-center underline" to="/login">
-            {t("auth.backToLogin")}
+            {t("common.backToSignIn")}
           </Link>
         </form>
       )}

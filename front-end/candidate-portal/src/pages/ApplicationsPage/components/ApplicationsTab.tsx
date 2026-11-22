@@ -129,7 +129,7 @@ export function ApplicationsTab() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-2 border-t pt-4">
           <p className="text-sm text-muted-foreground">
-            {t('applications.pageOf', { page, total: totalPages })}
+            {t('common.pageOf', { page, total: totalPages })}
           </p>
           <div className="flex items-center gap-2">
             <Button

@@ -239,7 +239,7 @@ export function JobsList({
 
       <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t bg-background/95 py-3 backdrop-blur">
         <p className="text-sm text-muted-foreground">
-          {t('jobs.pageOf', { page: currentPage, total: totalPages })}
+          {t('common.pageOf', { page: currentPage, total: totalPages })}
         </p>
         <div className="flex items-center gap-2">
           <Button

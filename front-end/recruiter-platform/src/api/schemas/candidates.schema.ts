@@ -130,11 +130,11 @@ export const createCandidateFormSchema = (t: (key: string) => string) =>
       firstName: z
         .string()
         .trim()
-        .min(1, t("candidate.form.validation.required")),
+        .min(1, t("common.fieldRequired")),
       lastName: z
         .string()
         .trim()
-        .min(1, t("candidate.form.validation.required")),
+        .min(1, t("common.fieldRequired")),
       email: z.email(t("candidate.form.validation.email")),
       phone: optionalText,
       currentLocation: optionalText,
@@ -151,18 +151,18 @@ export const createCandidateFormSchema = (t: (key: string) => string) =>
           institution: z
             .string()
             .trim()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           degree: z
             .string()
             .trim()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           fieldOfStudy: z
             .string()
             .trim()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           startDate: z
             .string()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           endDate: optionalText,
           grade: optionalText,
           gpa: optionalText,
@@ -174,14 +174,14 @@ export const createCandidateFormSchema = (t: (key: string) => string) =>
           companyName: z
             .string()
             .trim()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           jobTitle: z
             .string()
             .trim()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           startDate: z
             .string()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           endDate: optionalText,
           salary: optionalText,
           description: optionalText,
@@ -192,7 +192,7 @@ export const createCandidateFormSchema = (t: (key: string) => string) =>
           title: z
             .string()
             .trim()
-            .min(1, t("candidate.form.validation.required")),
+            .min(1, t("common.fieldRequired")),
           issuer: optionalText,
           credentialUrl: z.url(t("candidate.form.validation.url")),
           issueDate: optionalText,

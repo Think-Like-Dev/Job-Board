@@ -30,7 +30,7 @@ function DocumentRow({
           {label}
         </p>
         <p className="truncate text-sm" title={fileName ?? undefined}>
-          {fileName?.trim() || t("job.applications.noResume")}
+          {fileName?.trim() || t("common.notProvided")}
         </p>
       </div>
       <div className="flex items-center gap-1">

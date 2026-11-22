@@ -26,15 +26,15 @@ const Onboard = () => {
 
   const schema = z
     .object({
-      firstName: z.string().min(1, t("onboard.required")),
-      lastName: z.string().min(1, t("onboard.required")),
-      phone: z.string().min(1, t("onboard.required")),
-      jobTitle: z.string().min(1, t("onboard.required")),
+      firstName: z.string().min(1, t("common.fieldRequired")),
+      lastName: z.string().min(1, t("common.fieldRequired")),
+      phone: z.string().min(1, t("common.fieldRequired")),
+      jobTitle: z.string().min(1, t("common.fieldRequired")),
       password: z.string().min(8, t("onboard.passwordLength")),
       confirmPassword: z.string().min(8, t("onboard.passwordLength")),
     })
     .refine((values) => values.password === values.confirmPassword, {
-      message: t("onboard.passwordMismatch"),
+      message: t("common.passwordMismatch"),
       path: ["confirmPassword"],
     });
 
@@ -99,7 +99,7 @@ const Onboard = () => {
             {t("onboard.invalidBody")}
           </p>
           <Button className="mt-4" onClick={() => navigate("/login")}>
-            {t("onboard.backToLogin")}
+            {t("common.backToSignIn")}
           </Button>
         </div>
       </section>

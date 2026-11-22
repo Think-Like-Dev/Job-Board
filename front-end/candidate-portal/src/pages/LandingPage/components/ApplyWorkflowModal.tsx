@@ -1,13 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@ui/dialog';
 import { Button } from '@ui/button';
 import { Checkbox } from '@ui/checkbox';
 import { Input } from '@ui/input';
@@ -50,13 +44,10 @@ export function ApplyWorkflowModal({
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [updateCentralResume, setUpdateCentralResume] = useState(false);
-  const [updateCentralCoverLetter, setUpdateCentralCoverLetter] =
-    useState(false);
+  const [updateCentralCoverLetter, setUpdateCentralCoverLetter] = useState(false);
   const [declared, setDeclared] = useState(false);
 
-  const hasResume = Boolean(
-    profile?.resume || draft?.resumeFileId || resumeFile,
-  );
+  const hasResume = Boolean(profile?.resume || draft?.resumeFileId || resumeFile);
   const hasCoverLetter = Boolean(
     profile?.coverLetter || draft?.coverLetterFileId || coverLetterFile,
   );
@@ -105,10 +96,8 @@ export function ApplyWorkflowModal({
       isDraft,
       resumeFile: resumeFile ?? undefined,
       coverLetterFile: coverLetterFile ?? undefined,
-      updateProfileResume:
-        !isDraft && Boolean(resumeFile) && updateCentralResume,
-      updateProfileCoverLetter:
-        !isDraft && Boolean(coverLetterFile) && updateCentralCoverLetter,
+      updateProfileResume: !isDraft && Boolean(resumeFile) && updateCentralResume,
+      updateProfileCoverLetter: !isDraft && Boolean(coverLetterFile) && updateCentralCoverLetter,
     };
   }
 
@@ -120,19 +109,17 @@ export function ApplyWorkflowModal({
         jobId,
         payload: buildPayload(isDraft),
       });
-      toast.success(
-        isDraft ? t('apply.draftSaved') : t('apply.submitted'),
-      );
+      toast.success(isDraft ? t('apply.draftSaved') : t('apply.submitted'));
       if (!isDraft) onApplied();
       onClose();
     } catch (error) {
-      toast.error(getErrorMessage(error, t('apply.failed')));
+      const message = getErrorMessage(error, t('apply.failed'));
+      toast.error(message.includes('pages or fewer') ? t('apply.pageLimit') : message);
     }
   }
 
   const profileName =
-    [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
-    t('apply.profile.none');
+    [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || t('apply.profile.none');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -144,14 +131,11 @@ export function ApplyWorkflowModal({
         <div className="py-4">
           {step === STEPS.DOCUMENTS && (
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">
-                {t('apply.steps.documents')}
-              </h3>
+              <h3 className="text-lg font-medium">{t('apply.steps.documents')}</h3>
 
               <div className="space-y-3">
                 <Label>
-                  {t('common.resume')}{' '}
-                  <span className="text-destructive">*</span>
+                  {t('common.resume')} <span className="text-destructive">*</span>
                 </Label>
                 {profile?.resume ? (
                   <p className="text-sm text-muted-foreground">
@@ -162,16 +146,12 @@ export function ApplyWorkflowModal({
                     {t('common.draft')}: {draft.resumeFileName}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {t('apply.resume.noCentral')}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t('apply.resume.noCentral')}</p>
                 )}
                 <Input
                   type="file"
                   accept=".pdf,.docx"
-                  onChange={(event) =>
-                    handleResumeFile(event.target.files?.[0])
-                  }
+                  onChange={(event) => handleResumeFile(event.target.files?.[0])}
                 />
                 {resumeFile && (
                   <div className="flex items-center gap-2 text-sm">
@@ -181,10 +161,7 @@ export function ApplyWorkflowModal({
                       checked={updateCentralResume}
                       onCheckedChange={setUpdateCentralResume}
                     />
-                    <Label
-                      htmlFor="update-central-resume"
-                      className="font-normal"
-                    >
+                    <Label htmlFor="update-central-resume" className="font-normal">
                       {t('apply.resume.updateCentral')}
                     </Label>
                   </div>
@@ -194,22 +171,16 @@ export function ApplyWorkflowModal({
               <div className="space-y-3">
                 <Label>
                   {t('common.coverLetter')}{' '}
-                  <span className="text-muted-foreground">
-                    ({t('apply.coverLetter.optional')})
-                  </span>
-                  {coverLetterRequired && (
-                    <span className="text-destructive"> *</span>
-                  )}
+                  <span className="text-muted-foreground">({t('apply.coverLetter.optional')})</span>
+                  {coverLetterRequired && <span className="text-destructive"> *</span>}
                 </Label>
                 {profile?.coverLetter ? (
                   <p className="text-sm text-muted-foreground">
-                    {t('apply.coverLetter.central')}:{' '}
-                    {profile.coverLetter.filename}
+                    {t('apply.coverLetter.central')}: {profile.coverLetter.filename}
                   </p>
                 ) : draft?.coverLetterFileId ? (
                   <p className="text-sm text-muted-foreground">
-                    {t('common.draft')}:{' '}
-                    {draft.coverLetterFileName}
+                    {t('common.draft')}: {draft.coverLetterFileName}
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -219,9 +190,7 @@ export function ApplyWorkflowModal({
                 <Input
                   type="file"
                   accept=".pdf,.docx"
-                  onChange={(event) =>
-                    handleCoverLetterFile(event.target.files?.[0])
-                  }
+                  onChange={(event) => handleCoverLetterFile(event.target.files?.[0])}
                 />
                 {coverLetterFile && (
                   <div className="flex items-center gap-2 text-sm">
@@ -231,10 +200,7 @@ export function ApplyWorkflowModal({
                       checked={updateCentralCoverLetter}
                       onCheckedChange={setUpdateCentralCoverLetter}
                     />
-                    <Label
-                      htmlFor="update-central-cover-letter"
-                      className="font-normal"
-                    >
+                    <Label htmlFor="update-central-cover-letter" className="font-normal">
                       {t('apply.coverLetter.updateCentral')}
                     </Label>
                   </div>
@@ -245,57 +211,36 @@ export function ApplyWorkflowModal({
 
           {step === STEPS.PROFILE && (
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">
-                {t('apply.steps.profile')}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t('apply.profile.description')}
-              </p>
+              <h3 className="text-lg font-medium">{t('apply.steps.profile')}</h3>
+              <p className="text-sm text-muted-foreground">{t('apply.profile.description')}</p>
 
               <div className="space-y-4 rounded-md border p-4">
                 <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
-                  <span className="text-muted-foreground">
-                    {t('apply.profile.name')}
-                  </span>
+                  <span className="text-muted-foreground">{t('apply.profile.name')}</span>
                   <span>{profileName}</span>
-                  <span className="text-muted-foreground">
-                    {t('common.email')}
-                  </span>
+                  <span className="text-muted-foreground">{t('common.email')}</span>
                   <span>{profile?.email ?? t('apply.profile.none')}</span>
-                  <span className="text-muted-foreground">
-                    {t('apply.profile.phone')}
-                  </span>
+                  <span className="text-muted-foreground">{t('apply.profile.phone')}</span>
                   <span>{profile?.phone ?? t('apply.profile.none')}</span>
-                  <span className="text-muted-foreground">
-                    {t('common.skills')}
-                  </span>
+                  <span className="text-muted-foreground">{t('common.skills')}</span>
                   <span>
                     {profile?.skills.length
                       ? profile.skills.map((skill) => skill.name).join(', ')
                       : t('apply.profile.none')}
                   </span>
-                  <span className="text-muted-foreground">
-                    {t('apply.profile.experience')}
-                  </span>
+                  <span className="text-muted-foreground">{t('apply.profile.experience')}</span>
                   <span>
                     {profile?.experience.length
                       ? profile.experience
-                          .map(
-                            (item) =>
-                              `${item.jobTitle} · ${item.companyName}`,
-                          )
+                          .map((item) => `${item.jobTitle} · ${item.companyName}`)
                           .join(', ')
                       : t('apply.profile.none')}
                   </span>
-                  <span className="text-muted-foreground">
-                    {t('common.education')}
-                  </span>
+                  <span className="text-muted-foreground">{t('common.education')}</span>
                   <span>
                     {profile?.education.length
                       ? profile.education
-                          .map(
-                            (item) => `${item.degree} · ${item.institution}`,
-                          )
+                          .map((item) => `${item.degree} · ${item.institution}`)
                           .join(', ')
                       : t('apply.profile.none')}
                   </span>
@@ -306,9 +251,7 @@ export function ApplyWorkflowModal({
 
           {step === STEPS.DECLARATION && (
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">
-                {t('apply.steps.declaration')}
-              </h3>
+              <h3 className="text-lg font-medium">{t('apply.steps.declaration')}</h3>
               <div className="flex items-start gap-3">
                 <Checkbox
                   native
@@ -316,10 +259,7 @@ export function ApplyWorkflowModal({
                   checked={declared}
                   onCheckedChange={setDeclared}
                 />
-                <Label
-                  htmlFor="declaration"
-                  className="font-normal leading-relaxed"
-                >
+                <Label htmlFor="declaration" className="font-normal leading-relaxed">
                   {t('apply.declaration.text')}
                 </Label>
               </div>

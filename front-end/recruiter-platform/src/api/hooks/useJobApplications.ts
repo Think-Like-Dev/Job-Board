@@ -1,10 +1,11 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { JobApplicationsFilters } from "@/types/application.types";
 import {
   getAllJobApplicationIds,
   getJobApplication,
   getJobApplications,
+  retryAiReview,
 } from "../services/applications.service";
 import { QUERY_KEYS } from "./queryKeys";
 
@@ -43,5 +44,36 @@ export function useSelectAllFilteredApplications() {
   return useMutation({
     mutationFn: ({ jobId, filters }: SelectAllFilteredVariables) =>
       getAllJobApplicationIds(jobId, filters),
+  });
+}
+
+export interface RetryAiReviewVariables {
+  jobId: string;
+  applicationIds: string[];
+}
+
+/**
+ * Queues a fresh AI review for the selected applications.
+ *
+ * Every list is invalidated so the rows show "Scoring…" straight away, and
+ * the open drawer is refreshed for the same reason: its assessment is about
+ * to be replaced.
+ */
+export function useRetryAiReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ jobId, applicationIds }: RetryAiReviewVariables) =>
+      retryAiReview(jobId, applicationIds),
+    onSuccess: (_response, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.APPLICATIONS.LISTS,
+      });
+      for (const applicationId of variables.applicationIds) {
+        void queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.APPLICATIONS.DETAIL(applicationId),
+        });
+      }
+    },
   });
 }

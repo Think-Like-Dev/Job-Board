@@ -16,6 +16,8 @@ import { CandidateApplicationsController } from './candidate-applications.contro
 import { JobApplicationsController } from './job-applications.controller';
 import { RecruiterApplicationsController } from './recruiter-applications.controller';
 import { AiScoreStreamController } from './ai-score-stream.controller';
+import { ApplicationAiReviewController } from './application-ai-review.controller';
+import { ApplicationAiReviewService } from './application-ai-review.service';
 
 @Module({
   imports: [
@@ -38,11 +40,13 @@ import { AiScoreStreamController } from './ai-score-stream.controller';
     JobApplicationsController,
     RecruiterApplicationsController,
     AiScoreStreamController,
+    ApplicationAiReviewController,
   ],
   providers: [
     ApplicationsService,
     RecruiterApplicationsService,
     ApplicationQueries,
+    ApplicationAiReviewService,
   ],
   exports: [ApplicationsService, RecruiterApplicationsService],
 })

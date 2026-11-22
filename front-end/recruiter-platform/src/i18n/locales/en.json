@@ -176,7 +176,15 @@
         "selected_other": "{{count}} candidates selected",
         "selectingAll": "Selecting all candidates…",
         "selectAllFailed": "Could not select all candidates. Please try again.",
-        "clear": "Clear selection"
+        "clear": "Clear selection",
+        "retryReview": "Retry AI review",
+        "retryReviewTitle": "Review the selected applications again?",
+        "retryReviewDescription_one": "The AI reads the resume of {{count}} application again and replaces its score. This works whether the row was scored, failed or is waiting.",
+        "retryReviewDescription_other": "The AI reads the resumes of {{count}} applications again and replaces their scores. This works whether the rows were scored, failed or are waiting.",
+        "retryReviewQueued_one": "AI review queued for {{count}} application",
+        "retryReviewQueued_other": "AI review queued for {{count}} applications",
+        "retryReviewNone": "No application could be queued for an AI review.",
+        "retryReviewFailed": "Could not queue the AI review. Please try again."
       },
       "viewer": {
         "title": "Document preview",

@@ -5,13 +5,28 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   Loader2,
+  RefreshCwIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@ui/alert-dialog";
 
-import { useGetJobApplications, useSelectAllFilteredApplications } from "@/api/hooks/useJobApplications";
+import {
+  useGetJobApplications,
+  useRetryAiReview,
+  useSelectAllFilteredApplications,
+} from "@/api/hooks/useJobApplications";
 import { useGetJobById } from "@/api/hooks/useJobs";
 import {
   DataTable,
@@ -72,6 +87,7 @@ const Applications = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set<string>(),
   );
+  const [isRetryDialogOpen, setRetryDialogOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   // Clearing the search should take effect immediately, not after the debounce.
@@ -90,6 +106,7 @@ const Applications = () => {
 
   const applicationsQuery = useGetJobApplications(jobId, filters);
   const selectAllMutation = useSelectAllFilteredApplications();
+  const retryAiReview = useRetryAiReview();
   const applications = applicationsQuery.data?.data ?? [];
   const pagination = applicationsQuery.data?.pagination;
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
@@ -129,6 +146,30 @@ const Applications = () => {
   };
 
   const clearSelection = () => setSelectedIds(new Set<string>());
+
+  const confirmRetryAiReview = () => {
+    retryAiReview.mutate(
+      { jobId, applicationIds: [...selectedIds] },
+      {
+        onSuccess: (response) => {
+          setRetryDialogOpen(false);
+          if (response.data.queued === 0) {
+            toast.error(t("job.applications.selection.retryReviewNone"));
+            return;
+          }
+          toast.success(
+            t("job.applications.selection.retryReviewQueued", {
+              count: response.data.queued,
+            }),
+          );
+          clearSelection();
+        },
+        onError: () => {
+          toast.error(t("job.applications.selection.retryReviewFailed"));
+        },
+      },
+    );
+  };
 
   const pageIds = applications.map((application) => application.id);
   const selectedOnPageCount = pageIds.filter((id) =>
@@ -269,15 +310,30 @@ const Applications = () => {
                     count: selectedIds.size,
                   })}
                 </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearSelection}
-                >
-                  <XIcon data-icon="inline-start" />
-                  {t("job.applications.selection.clear")}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setRetryDialogOpen(true)}
+                    disabled={retryAiReview.isPending}
+                  >
+                    {retryAiReview.isPending ? (
+                      <Loader2 className="animate-spin" data-icon="inline-start" />
+                    ) : (
+                      <RefreshCwIcon data-icon="inline-start" />
+                    )}
+                    {t("job.applications.selection.retryReview")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                  >
+                    <XIcon data-icon="inline-start" />
+                    {t("job.applications.selection.clear")}
+                  </Button>
+                </div>
               </div>
             ) : null}
 
@@ -337,6 +393,35 @@ const Applications = () => {
           />
         </div>
       )}
+
+      <AlertDialog open={isRetryDialogOpen} onOpenChange={setRetryDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("job.applications.selection.retryReviewTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("job.applications.selection.retryReviewDescription", {
+                count: selectedIds.size,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={retryAiReview.isPending}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={retryAiReview.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                confirmRetryAiReview();
+              }}
+            >
+              {t("job.applications.selection.retryReview")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 };

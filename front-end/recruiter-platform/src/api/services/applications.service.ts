@@ -4,8 +4,10 @@ import { parseSchema } from "@/lib/schemaValidation";
 import {
   JobApplicationDetailResponseSchema,
   JobApplicationsListResponseSchema,
+  RetryAiReviewResponseSchema,
   type JobApplicationDetailResponse,
   type JobApplicationsListResponse,
+  type RetryAiReviewResponse,
 } from "../schemas/applications.schema";
 import type { JobApplicationsFilters } from "@/types/application.types";
 
@@ -36,6 +38,28 @@ export async function getJobApplication(
     JobApplicationDetailResponseSchema,
     response,
     "getJobApplication Response",
+  );
+}
+
+/**
+ * Queues a fresh AI review for the selected applications.
+ *
+ * The backend re-downloads and re-extracts each resume, then scores it again;
+ * the stored score is cleared while the run is queued.
+ */
+export async function retryAiReview(
+  jobId: string,
+  applicationIds: string[],
+): Promise<RetryAiReviewResponse> {
+  const response = await api.post<RetryAiReviewResponse>(
+    API_ENDPOINTS.APPLICATIONS.RETRY_AI_REVIEW(jobId),
+    { applicationIds },
+  );
+
+  return parseSchema(
+    RetryAiReviewResponseSchema,
+    response,
+    "retryAiReview Response",
   );
 }
 

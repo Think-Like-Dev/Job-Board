@@ -26,11 +26,6 @@ import { FilesService } from '@modules/files/files.service';
 import { JobsService } from '@modules/jobs/jobs.service';
 import type { Job } from '@modules/jobs/job.schema';
 import {
-  buildJobDescriptionText,
-  type ApplicationScoringEvent,
-} from '@modules/messaging/application-scoring-event';
-import {
-  DEFAULT_OUTPUT_LANGUAGE,
   ROUTING_APPLICATION_CANCELLED,
   ROUTING_APPLICATION_SUBMITTED,
 } from '@modules/messaging/messaging.constants';
@@ -52,6 +47,7 @@ import {
 } from './application.presenter';
 import { Application, ApplicationSchema } from './application.schema';
 import { ApplicationStatusHistorySchema } from './application-status-history.schema';
+import { buildApplicationScoringEvent } from './application-scoring-request';
 import type { ApplyJobDto } from './dto/apply-job.dto';
 import type { CandidateApplicationsQueryDto } from './dto/application-query.dto';
 import type {
@@ -601,24 +597,13 @@ export class ApplicationsService {
       txEm,
     );
 
-    const payload: ApplicationScoringEvent = {
-      applicationId: application.id,
-      candidateId,
-      jobId: application.jobId,
-      jobCode: job.code,
-      jobTitle: job.title,
-      jobDescriptionText: buildJobDescriptionText(job),
-      jobSkills: job.skills ?? [],
-      jobYearsOfExperience: job.yearsOfExperience ?? null,
-      outputLanguage: DEFAULT_OUTPUT_LANGUAGE,
-      profileSnapshot: profile,
-      resume: {
-        fileId: file.id,
-        storageKey: file.storagePath,
-        filename: file.filename ?? null,
-        mimeType: file.mimeType ?? null,
-      },
-    };
+    const payload = buildApplicationScoringEvent(
+      application,
+      job,
+      file,
+      file.storagePath,
+      profile,
+    );
 
     this.outboxService.enqueue(txEm, {
       aggregateType: 'application',

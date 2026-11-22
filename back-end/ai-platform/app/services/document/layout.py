@@ -67,20 +67,37 @@ class Line:
         return self.y1 - self.y0
 
 
-def read_in_reading_order(page: pymupdf.Page) -> str | None:
-    """The page's text in reading order, or `None` when there is nothing to fix.
+def read_in_reading_order(page: pymupdf.Page) -> tuple[str | None, bool]:
+    """The page's text in reading order, and whether the order can be trusted.
 
-    `None` means the page has no column break: the caller keeps the text layer
-    exactly as it is, so single-column documents are untouched.
+    The first value is `None` when there is nothing to fix: the caller keeps the
+    text layer exactly as it is, so single-column documents are untouched. The
+    second value is `False` when the page looks like it has columns but no cut
+    could separate them; the caller then reports the order as untrustworthy
+    instead of pretending the text layer is fine.
     """
     lines = _lines(page)
     if len(lines) < MIN_SIDE_LINES * 2:
-        return None
+        return None, True
 
     ordered, has_columns = _arrange(lines, depth=0, page_width=page.rect.width)
-    if not has_columns:
-        return None
-    return _join(ordered)
+    if has_columns:
+        return _join(ordered), True
+
+    # A full-width line across the gutter blocks the XY cut. Split the page
+    # into horizontal bands at those lines and arrange each band on its own.
+    bands = _bands(lines, page.rect.width)
+    if len(bands) > 1:
+        arranged: list[Line] = []
+        found_columns = False
+        for band in bands:
+            band_order, band_columns = _arrange(band, depth=0, page_width=page.rect.width)
+            arranged.extend(band_order)
+            found_columns = found_columns or band_columns
+        if found_columns:
+            return _join(arranged), True
+
+    return None, not _looks_like_columns(lines, page.rect.width)
 
 
 def _lines(page: pymupdf.Page) -> list[Line]:
@@ -96,6 +113,55 @@ def _lines(page: pymupdf.Page) -> list[Line]:
             x0, y0, x1, y1 = line["bbox"]
             collected.append(Line(text=text, x0=x0, y0=y0, x1=x1, y1=y1))
     return collected
+
+
+def _bands(lines: list[Line], page_width: float) -> list[list[Line]]:
+    """Splits a page into horizontal bands at lines that cross the middle.
+
+    A section heading drawn across the gutter (`EXPERIENCE SKILLS`) covers the
+    empty band the XY cut needs, so the body below it is never split. Treating
+    the crossing line as its own band lets the body below be arranged.
+    """
+    middle = page_width / 2
+    margin = page_width * 0.15
+    bands: list[list[Line]] = []
+    current: list[Line] = []
+
+    for line in sorted(lines, key=lambda item: (item.y0, item.x0)):
+        crosses = line.x0 < middle - margin and line.x1 > middle + margin
+        if crosses:
+            if current:
+                bands.append(current)
+                current = []
+            bands.append([line])
+        else:
+            current.append(line)
+
+    if current:
+        bands.append(current)
+    return bands
+
+
+def _looks_like_columns(lines: list[Line], page_width: float) -> bool:
+    """Whether the page has two vertical groups even if no clean cut exists."""
+    middle = page_width / 2
+    left = [line for line in lines if line.x0 < middle]
+    right = [line for line in lines if line.x0 >= middle]
+    if len(left) < MIN_COLUMN_LINES or len(right) < MIN_COLUMN_LINES:
+        return False
+
+    total = sum(len(line.text) for line in lines)
+    if total == 0:
+        return False
+    left_share = sum(len(line.text) for line in left) / total
+    right_share = sum(len(line.text) for line in right) / total
+    if left_share < MIN_COLUMN_SHARE or right_share < MIN_COLUMN_SHARE:
+        return False
+
+    if not _starts_in_one_band(left, page_width) or not _starts_in_one_band(right, page_width):
+        return False
+
+    return _overlaps(left, right)
 
 
 def _arrange(lines: list[Line], depth: int, page_width: float) -> tuple[list[Line], bool]:

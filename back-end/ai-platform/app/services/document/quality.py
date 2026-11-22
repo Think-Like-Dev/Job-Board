@@ -44,12 +44,12 @@ def assess(document: ExtractedDocument, language: str | None = None) -> QualityR
     if not unicode_ok:
         issues.append("the text contains replacement characters")
 
-    # The extractor now puts two-column pages into reading order itself
-    # (`services/document/layout.py`), so there is no separate verdict to take
-    # here. A page it cannot read is left in the text layer's order rather than
-    # guessed at; the other checks below still refuse a file that produced
-    # noise.
-    reading_order_ok = True
+    # A page that looks like it has columns but could not be separated is not
+    # silently accepted: the text layer's order is interleaved and the
+    # extraction must go to a human.
+    reading_order_ok = all(page.reading_order_ok for page in document.pages)
+    if not reading_order_ok:
+        issues.append("the text may be out of reading order")
     confidences = [
         page.ocr_confidence for page in document.pages if page.ocr_confidence is not None
     ]

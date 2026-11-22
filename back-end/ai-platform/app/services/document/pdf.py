@@ -60,8 +60,15 @@ def _read_pages(content: bytes, settings: Settings) -> tuple[list[PageContent], 
             text = page.get_text("text").strip()
 
             if len(text) >= settings.ocr_page_char_threshold:
-                text = read_in_reading_order(page) or text
-                pages.append(PageContent(number=number, text=text, method="text"))
+                ordered, order_ok = read_in_reading_order(page)
+                pages.append(
+                    PageContent(
+                        number=number,
+                        text=ordered or text,
+                        method="text",
+                        reading_order_ok=order_ok,
+                    )
+                )
                 continue
 
             ocr_text, confidence = _ocr_page(page, settings)

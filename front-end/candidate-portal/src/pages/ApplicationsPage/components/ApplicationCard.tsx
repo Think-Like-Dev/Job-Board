@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { EyeIcon } from 'lucide-react';
 import { Card } from '@ui/card';
 import { Badge } from '@ui/badge';
 import { Button } from '@ui/button';
+import { Label } from '@ui/label';
+import { Textarea } from '@ui/textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +26,9 @@ interface ApplicationCardProps {
   onClick: () => void;
   onContinue: (app: Application) => void;
   onDelete: (id: string) => void;
+  onWithdraw: (id: string, reason?: string) => void;
   isDeleting?: boolean;
+  isWithdrawing?: boolean;
 }
 
 function statusLabelKey(status: ApplicationStatus): string {
@@ -55,9 +61,12 @@ export function ApplicationCard({
   onClick,
   onContinue,
   onDelete,
+  onWithdraw,
   isDeleting = false,
+  isWithdrawing = false,
 }: ApplicationCardProps) {
   const { t } = useTranslation();
+  const [reason, setReason] = useState('');
   const isDraft = app.status === ApplicationStatus.DRAFT;
 
   return (
@@ -126,6 +135,73 @@ export function ApplicationCard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+      )}
+
+      {!isDraft && (
+        <div
+          className="mt-4 flex flex-wrap gap-2"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Button size="sm" variant="outline" onClick={onClick}>
+            <EyeIcon className="size-4" />
+            {t('applications.view')}
+          </Button>
+
+          {app.status === ApplicationStatus.APPLIED && (
+            <AlertDialog
+              onOpenChange={(open) => {
+                if (!open) setReason('');
+              }}
+            >
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={isWithdrawing}
+                  />
+                }
+              >
+                {t('applications.withdraw')}
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {t('applications.withdrawTitle')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('applications.withdrawDescription')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor={`withdraw-reason-${app.id}`}>
+                    {t('applications.withdrawReason')}
+                  </Label>
+                  <Textarea
+                    id={`withdraw-reason-${app.id}`}
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    placeholder={t('applications.withdrawReasonPlaceholder')}
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isWithdrawing}>
+                    {t('common.cancel')}
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    disabled={isWithdrawing}
+                    onClick={() =>
+                      onWithdraw(app.id, reason.trim() || undefined)
+                    }
+                  >
+                    {t('applications.confirmWithdraw')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       )}
     </Card>

@@ -174,15 +174,20 @@ export function ApplyWorkflowModal({
                   }
                 />
                 {resumeFile && (
-                  <label className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm">
                     <Checkbox
+                      native
+                      id="update-central-resume"
                       checked={updateCentralResume}
-                      onCheckedChange={(checked) =>
-                        setUpdateCentralResume(checked === true)
-                      }
+                      onCheckedChange={setUpdateCentralResume}
                     />
-                    {t('apply.resume.updateCentral')}
-                  </label>
+                    <Label
+                      htmlFor="update-central-resume"
+                      className="font-normal"
+                    >
+                      {t('apply.resume.updateCentral')}
+                    </Label>
+                  </div>
                 )}
               </div>
 
@@ -219,15 +224,20 @@ export function ApplyWorkflowModal({
                   }
                 />
                 {coverLetterFile && (
-                  <label className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm">
                     <Checkbox
+                      native
+                      id="update-central-cover-letter"
                       checked={updateCentralCoverLetter}
-                      onCheckedChange={(checked) =>
-                        setUpdateCentralCoverLetter(checked === true)
-                      }
+                      onCheckedChange={setUpdateCentralCoverLetter}
                     />
-                    {t('apply.coverLetter.updateCentral')}
-                  </label>
+                    <Label
+                      htmlFor="update-central-cover-letter"
+                      className="font-normal"
+                    >
+                      {t('apply.coverLetter.updateCentral')}
+                    </Label>
+                  </div>
                 )}
               </div>
             </div>
@@ -301,9 +311,10 @@ export function ApplyWorkflowModal({
               </h3>
               <div className="flex items-start gap-3">
                 <Checkbox
+                  native
                   id="declaration"
                   checked={declared}
-                  onCheckedChange={(checked) => setDeclared(checked === true)}
+                  onCheckedChange={setDeclared}
                 />
                 <Label
                   htmlFor="declaration"

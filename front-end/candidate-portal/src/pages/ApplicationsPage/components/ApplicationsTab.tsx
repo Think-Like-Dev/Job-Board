@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import {
   useApplications,
   useDeleteDraft,
+  useWithdrawApplication,
 } from '@api/hooks/useApplications';
 import { getErrorMessage } from '@utils/errorMessage';
 import { Button } from '@ui/button';
@@ -27,6 +28,7 @@ export function ApplicationsTab() {
     limit: PAGE_SIZE,
   });
   const deleteMutation = useDeleteDraft();
+  const withdrawMutation = useWithdrawApplication();
 
   const applications = data?.data ?? [];
   const pagination = data?.pagination;
@@ -49,6 +51,20 @@ export function ApplicationsTab() {
         toast.error(getErrorMessage(error, t('applications.deleteFailed')));
       },
     });
+  };
+
+  const handleWithdraw = (id: string, reason?: string) => {
+    withdrawMutation.mutate(
+      { id, reason },
+      {
+        onSuccess: () => toast.success(t('applications.withdrawn')),
+        onError: (error) => {
+          toast.error(
+            getErrorMessage(error, t('applications.withdrawFailed')),
+          );
+        },
+      },
+    );
   };
 
   if (isLoading) {
@@ -104,7 +120,9 @@ export function ApplicationsTab() {
           onClick={() => setSelectedId(app.id)}
           onContinue={handleContinue}
           onDelete={handleDelete}
+          onWithdraw={handleWithdraw}
           isDeleting={deleteMutation.isPending}
+          isWithdrawing={withdrawMutation.isPending}
         />
       ))}
 

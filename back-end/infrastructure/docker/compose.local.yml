@@ -56,6 +56,11 @@ services:
       # one 8 GB machine.
       OMP_NUM_THREADS: "2"
 
+    # Docker Desktop resolves host.docker.internal to an IPv6 address, which
+    # the container cannot reach; this maps it to the IPv4 gateway instead.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     # The scoring job is the memory peak (OCR + embeddings). Capped so it
     # cannot squeeze the other services out of the machine.
     mem_limit: 1280m

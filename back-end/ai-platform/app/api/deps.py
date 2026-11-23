@@ -28,7 +28,7 @@ def require_internal_token(x_internal_token: str = Header(default="")) -> None:
 
 
 def get_parser(settings: Settings = Depends(get_settings)) -> DocumentParser:
-    return DocumentParser(settings.max_resume_bytes)
+    return DocumentParser(settings)
 
 
 def get_orchestrator(

@@ -13,6 +13,16 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
+# Tesseract for scanned (image-only) pages. Only the English language pack is
+# installed; see the README for adding another language.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        libgl1 \
+        libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock ./
 
 # Dev group included here (ruff), unlike the production Dockerfile.

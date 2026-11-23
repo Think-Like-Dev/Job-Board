@@ -38,6 +38,14 @@ services:
 
     environment:
       AI_ENVIRONMENT: staging
+      # Staging publishes no infrastructure ports: everything talks over the
+      # internal Compose network, so Garage is reached by service name.
+      S3_ENDPOINT: http://garage:3900
+      AI_RABBITMQ_HOST: rabbitmq
+      OMP_NUM_THREADS: "2"
+
+    # Same cap as local: the scoring job (OCR + embeddings) is the peak.
+    mem_limit: 1280m
 
     ports:
       - "8000:8000"

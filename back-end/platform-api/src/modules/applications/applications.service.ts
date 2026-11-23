@@ -24,6 +24,14 @@ import { CandidatesService } from '@modules/candidates/candidates.service';
 import { assertUploadMatchesType } from '@modules/files/file-validation';
 import { FilesService } from '@modules/files/files.service';
 import { JobsService } from '@modules/jobs/jobs.service';
+import type { Job } from '@modules/jobs/job.schema';
+import {
+  buildJobDescriptionText,
+  type ApplicationScoringEvent,
+} from '@modules/messaging/application-scoring-event';
+import { ROUTING_APPLICATION_SUBMITTED } from '@modules/messaging/messaging.constants';
+import { OutboxService } from '@modules/messaging/outbox.service';
+import { ProfileReadService } from '@modules/profiles/profile-read.service';
 import { ProfileWriteService } from '@modules/profiles/profile-write.service';
 import { ApplicationQueries } from './application-queries';
 import { parseApplicationSort } from './application-sort';
@@ -69,6 +77,7 @@ interface PersistResult {
 interface PersistInput {
   candidateId: string;
   jobId: string;
+  job: Job;
   existing: Application | null;
   resumeFileId: string;
   coverLetterFileId: string | null;
@@ -93,6 +102,8 @@ export class ApplicationsService {
     private readonly candidatesService: CandidatesService,
     private readonly filesService: FilesService,
     private readonly profileWriteService: ProfileWriteService,
+    private readonly profileReadService: ProfileReadService,
+    private readonly outboxService: OutboxService,
   ) {}
 
   /**
@@ -151,6 +162,7 @@ export class ApplicationsService {
       const result = await this.persistApplication({
         candidateId,
         jobId,
+        job,
         existing,
         resumeFileId: resume.fileId,
         coverLetterFileId,
@@ -510,6 +522,19 @@ export class ApplicationsService {
 
       await txEm.flush();
 
+      // A submitted application asks the AI service to score it. The event is
+      // written in the same transaction, so it can never exist without the
+      // application it belongs to, and it is never lost if the process dies
+      // right after the commit.
+      if (application.status === ApplicationStatus.APPLIED) {
+        await this.enqueueScoring(
+          txEm,
+          application,
+          input.job,
+          input.candidateId,
+        );
+      }
+
       return {
         applicationId: application.id,
         replacedResumeFileId,
@@ -517,6 +542,57 @@ export class ApplicationsService {
         previousProfileResumeId,
         previousProfileCoverLetterId,
       };
+    });
+  }
+
+  /**
+   * Queues the scoring event for one submitted application.
+   *
+   * The event carries everything the AI service needs: the job description as
+   * text, the candidate's profile, and the pointer to the resume in object
+   * storage. The bytes themselves are never copied into the message.
+   */
+  private async enqueueScoring(
+    txEm: EntityManager,
+    application: Application,
+    job: Job,
+    candidateId: string,
+  ): Promise<void> {
+    const file = await this.filesService.findOne({
+      id: application.resumeFileId,
+    });
+
+    if (!file?.storagePath) {
+      // Without a stored object there is nothing for the AI service to read.
+      return;
+    }
+
+    const profile = await this.profileReadService.getLiveProfile(
+      candidateId,
+      txEm,
+    );
+
+    const payload: ApplicationScoringEvent = {
+      applicationId: application.id,
+      candidateId,
+      jobId: application.jobId,
+      jobCode: job.code,
+      jobDescriptionText: buildJobDescriptionText(job),
+      profileSnapshot: profile,
+      resume: {
+        fileId: file.id,
+        storageKey: file.storagePath,
+        filename: file.filename ?? null,
+        mimeType: file.mimeType ?? null,
+      },
+    };
+
+    this.outboxService.enqueue(txEm, {
+      aggregateType: 'application',
+      aggregateId: application.id,
+      eventType: 'application.submitted',
+      routingKey: ROUTING_APPLICATION_SUBMITTED,
+      payload: payload as unknown as Record<string, unknown>,
     });
   }
 

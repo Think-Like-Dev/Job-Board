@@ -7,7 +7,7 @@ import {
   getTeam,
   inviteMember,
   resendInvite,
-  revokeInvite,
+  deleteInvitation,
   updateMember,
 } from '../services/team.service';
 import { loginSuccess } from '@store/slices/authSlice';
@@ -59,10 +59,10 @@ export function useUpdateMember() {
   });
 }
 
-export function useRevokeInvite() {
+export function useDeleteInvitation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => revokeInvite(id),
+    mutationFn: (id: string) => deleteInvitation(id),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.TEAM.ALL }),
   });

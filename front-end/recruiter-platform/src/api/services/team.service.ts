@@ -74,8 +74,8 @@ export async function updateMember(
   return parseSchema(TeamMemberSchema, response, 'updateMember Response');
 }
 
-export async function revokeInvite(id: string): Promise<void> {
-  await api.delete(API_ENDPOINTS.USERS.DELETE(id));
+export async function deleteInvitation(id: string): Promise<void> {
+  await api.delete(API_ENDPOINTS.USERS.DELETE_INVITATION(id));
 }
 
 export async function getInvitationPreview(

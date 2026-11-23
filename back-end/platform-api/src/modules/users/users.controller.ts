@@ -89,6 +89,16 @@ export class UsersController {
     );
   }
 
+  @Delete(':id/invitation')
+  @RequirePermission(PERMISSIONS.USER_INVITE)
+  @ApiOperation({ summary: 'Delete a pending invitation (hard delete)' })
+  async deleteInvitation(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ): Promise<boolean> {
+    return this.usersService.deleteInvitationByActor(req.session, id);
+  }
+
   @Delete(':id')
   @RequirePermission(PERMISSIONS.USER_DELETE)
   @ApiOperation({ summary: 'Soft-delete a user (admin only)' })

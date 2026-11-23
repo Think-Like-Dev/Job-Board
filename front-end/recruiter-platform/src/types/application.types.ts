@@ -133,6 +133,39 @@ export interface RecruiterCandidateSummary {
   resumeFileId?: string;
 }
 
+/**
+ * State of the AI score for one application.
+ *
+ * - `PENDING` - the score is on its way.
+ * - `SCORED` - the assessment is complete.
+ * - `SCORE_ONLY` - a number without a narrative (no language model was
+ *   available).
+ * - `FAILED` - the AI gave up.
+ */
+export type AiScoreStatus = "PENDING" | "SCORED" | "SCORE_ONLY" | "FAILED";
+
+/** The short form of the score, as the list shows it. */
+export interface AiScoreSummary {
+  status: AiScoreStatus;
+  score?: number | null;
+}
+
+/** The full assessment, as the drawer shows it. */
+export interface AiScoreAssessment extends AiScoreSummary {
+  weightsVersion?: string | null;
+  componentScores?: Record<string, number> | null;
+  matchingSkills?: string[] | null;
+  missingSkills?: string[] | null;
+  aiSummary?: string | null;
+  strengths?: string[] | null;
+  risks?: string[] | null;
+  interviewQuestions?: string[] | null;
+  knockoutReason?: string | null;
+  failureReason?: string | null;
+  failureMessage?: string | null;
+  scoredAt?: string | null;
+}
+
 /** Row shape returned by `GET /jobs/:jobId/applications`. */
 export interface JobApplicationListItem {
   id: string;
@@ -145,6 +178,7 @@ export interface JobApplicationListItem {
   status: ApplicationStatus;
   appliedAt?: string | null;
   createdAt: string;
+  aiScore?: AiScoreSummary | null;
 }
 
 /** Shape returned by `GET /applications/:id`. */
@@ -159,6 +193,7 @@ export interface JobApplicationDetail extends JobApplicationListItem {
   updatedAt?: string;
   candidate: RecruiterCandidateSummary;
   statusHistory: ApplicationStatusHistory[];
+  aiAssessment?: AiScoreAssessment | null;
 }
 
 export interface JobApplicationsFilters {

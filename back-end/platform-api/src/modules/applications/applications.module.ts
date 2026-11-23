@@ -5,6 +5,7 @@ import { CandidatesModule } from '@modules/candidates/candidates.module';
 import { FilesModule } from '@modules/files/files.module';
 import { JobsModule } from '@modules/jobs/jobs.module';
 import { MessagingModule } from '@modules/messaging/messaging.module';
+import { AiScoringModule } from '@modules/ai-scoring/ai-scoring.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { ApplicationStatusHistorySchema } from './application-status-history.schema';
 import { ApplicationQueries } from './application-queries';
@@ -27,6 +28,7 @@ import { RecruiterApplicationsController } from './recruiter-applications.contro
     CandidatesModule,
     ProfilesModule,
     MessagingModule,
+    AiScoringModule,
   ],
   // Candidate routes are registered first so `GET /applications/my` is matched
   // before the recruiter's `GET /applications/:id`.

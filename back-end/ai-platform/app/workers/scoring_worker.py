@@ -51,6 +51,23 @@ from app.services.storage_client import StorageClient
 logger = logging.getLogger(__name__)
 
 
+def _has_narrative(qualitative: object | None) -> bool:
+    """Whether the evaluation carries something a recruiter can read.
+
+    Without a language model the evaluation exists but is empty, so the
+    result is a number and nothing else.
+    """
+    if qualitative is None:
+        return False
+
+    return bool(
+        getattr(qualitative, "fit_analysis", "")
+        or getattr(qualitative, "strengths", None)
+        or getattr(qualitative, "risks", None)
+        or getattr(qualitative, "interview_questions", None)
+    )
+
+
 class _UnavailableCipher:
     """Stands in for the credential cipher when no key is configured.
 
@@ -289,6 +306,11 @@ class ScoringWorker:
                 "risks": list(qualitative.risks if qualitative else []),
                 "interviewQuestions": list(qualitative.interview_questions if qualitative else []),
                 "knockoutReason": deterministic.knockout_reason,
+                # Without a language model there is no narrative, only the
+                # deterministic score. The core API shows the two differently,
+                # so the mode follows the content and not the mere existence
+                # of the evaluation.
+                "mode": "scored" if _has_narrative(qualitative) else "score_only",
             },
         )
         await session.commit()

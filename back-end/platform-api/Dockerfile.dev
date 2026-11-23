@@ -6,6 +6,12 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@12.9.1
 
+# curl for the health check. The production image has it for the same reason,
+# and without it the container is reported as unhealthy while the API works.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy dependency manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 

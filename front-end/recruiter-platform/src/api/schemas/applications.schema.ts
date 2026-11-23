@@ -101,6 +101,33 @@ const ApplicationStatusHistorySchema = z.object({
   createdAt: z.string(),
 });
 
+export const AiScoreStatusSchema = z.enum([
+  "PENDING",
+  "SCORED",
+  "SCORE_ONLY",
+  "FAILED",
+]);
+
+export const AiScoreSummarySchema = z.object({
+  status: AiScoreStatusSchema,
+  score: z.number().nullable().optional(),
+});
+
+export const AiScoreAssessmentSchema = AiScoreSummarySchema.extend({
+  weightsVersion: z.string().nullable().optional(),
+  componentScores: z.record(z.string(), z.number()).nullable().optional(),
+  matchingSkills: z.array(z.string()).nullable().optional(),
+  missingSkills: z.array(z.string()).nullable().optional(),
+  aiSummary: z.string().nullable().optional(),
+  strengths: z.array(z.string()).nullable().optional(),
+  risks: z.array(z.string()).nullable().optional(),
+  interviewQuestions: z.array(z.string()).nullable().optional(),
+  knockoutReason: z.string().nullable().optional(),
+  failureReason: z.string().nullable().optional(),
+  failureMessage: z.string().nullable().optional(),
+  scoredAt: z.string().nullable().optional(),
+});
+
 /* -------------------------------------------------------------------------- */
 /*                             Response Schemas                               */
 /* -------------------------------------------------------------------------- */
@@ -116,6 +143,7 @@ export const JobApplicationListItemSchema = z.object({
   status: z.enum(ApplicationStatus),
   appliedAt: z.string().nullable().optional(),
   createdAt: z.string(),
+  aiScore: AiScoreSummarySchema.nullable().optional(),
 });
 
 export const JobApplicationDetailSchema = JobApplicationListItemSchema.extend({
@@ -129,6 +157,7 @@ export const JobApplicationDetailSchema = JobApplicationListItemSchema.extend({
   updatedAt: z.string().optional(),
   candidate: RecruiterCandidateSummarySchema,
   statusHistory: z.array(ApplicationStatusHistorySchema),
+  aiAssessment: AiScoreAssessmentSchema.nullable().optional(),
 });
 
 export const JobApplicationsListResponseSchema = z.object({

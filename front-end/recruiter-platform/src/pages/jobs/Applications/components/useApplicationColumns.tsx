@@ -7,6 +7,7 @@ import { ApplicationStatusBadge } from "@/components/common/ApplicationStatusBad
 import { formatIsoDate } from "@/lib/jobFormat";
 import type { JobApplicationListItem } from "@/types/application.types";
 import { ResumeCell } from "./ResumeCell";
+import { AiScoreBadge } from "./AiScoreBadge";
 import { SelectAllHeader } from "./SelectAllHeader";
 import type { ApplicationSelection } from "./selection.types";
 
@@ -84,14 +85,7 @@ export function useApplicationColumns({
     {
       id: "aiScore",
       header: t("job.applications.columns.aiScore"),
-      cell: () => (
-        <span
-          className="text-sm text-muted-foreground"
-          title={t("job.applications.aiScorePending")}
-        >
-          —
-        </span>
-      ),
+      cell: ({ row }) => <AiScoreBadge score={row.original.aiScore} />,
     },
     {
       accessorKey: "appliedAt",

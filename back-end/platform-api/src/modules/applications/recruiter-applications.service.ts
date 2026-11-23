@@ -11,6 +11,7 @@ import { ProfileReadService } from '@modules/profiles/profile-read.service';
 import type { ProfileView } from '@modules/profiles/profile.types';
 import { ApplicationQueries } from './application-queries';
 import { parseApplicationSort } from './application-sort';
+import { AiScoringProjectionService } from '@modules/ai-scoring/ai-scoring-projection.service';
 import {
   toCandidateJobApplicationListItemDto,
   toRecruiterApplicationDetailDto,
@@ -37,6 +38,7 @@ export class RecruiterApplicationsService {
     private readonly queries: ApplicationQueries,
     private readonly jobsService: JobsService,
     private readonly profileRead: ProfileReadService,
+    private readonly aiScoring: AiScoringProjectionService,
   ) {}
 
   async listJobApplications(
@@ -87,6 +89,9 @@ export class RecruiterApplicationsService {
     const files = await this.queries.findFiles(
       result.data.map((row) => row.resumeFileId),
     );
+    const scores = await this.aiScoring.findByApplicationIds(
+      result.data.map((row) => row.id),
+    );
 
     return {
       data: result.data.map((application) => {
@@ -103,6 +108,7 @@ export class RecruiterApplicationsService {
           candidate,
           files.get(application.resumeFileId),
           profile,
+          scores.get(application.id),
         );
       }),
       meta: result.meta,
@@ -160,7 +166,7 @@ export class RecruiterApplicationsService {
       throw new NotFoundException('Application not found');
     }
 
-    const [candidate, resume, coverLetter, history, profile] =
+    const [candidate, resume, coverLetter, history, profile, aiScore] =
       await Promise.all([
         this.queries.findCandidate(application.candidateId),
         this.queries.findFile(application.resumeFileId),
@@ -169,6 +175,7 @@ export class RecruiterApplicationsService {
           : Promise.resolve(null),
         this.queries.findStatusHistory(application.id),
         this.profileRead.getApplicationProfile(application),
+        this.aiScoring.findByApplicationId(application.id),
       ]);
 
     if (!candidate) {
@@ -182,6 +189,7 @@ export class RecruiterApplicationsService {
       coverLetter,
       history,
       profile,
+      aiScore,
     );
   }
 }

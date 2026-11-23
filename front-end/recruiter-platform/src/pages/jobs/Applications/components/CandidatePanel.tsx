@@ -15,7 +15,7 @@ import type {
   JobApplicationDetail,
 } from "@/types/application.types";
 import { ActivityTimeline } from "./ActivityTimeline";
-import { AiEvaluationCard } from "./AiEvaluationCard";
+import { AiScorePanel } from "./AiScorePanel";
 import { CandidateDocuments } from "./CandidateDocuments";
 import { CandidateProfileSnapshot } from "./CandidateProfileSnapshot";
 import type { DocumentViewerTarget } from "@/components/common/DocumentViewerPanel";
@@ -184,7 +184,7 @@ export function CandidatePanel({
           </PanelSection>
 
           <PanelSection title={t("job.applications.drawer.sections.ai")}>
-            <AiEvaluationCard />
+            <AiScorePanel assessment={application.aiAssessment} />
           </PanelSection>
 
           <PanelSection title={t("job.applications.drawer.sections.timeline")}>

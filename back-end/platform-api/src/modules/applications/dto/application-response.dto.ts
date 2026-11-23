@@ -1,6 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApplicationStatus } from '@common/constants/enums';
 import { CandidateProfileDto } from '@modules/profiles/dto/profile-response.dto';
+import {
+  ApplicationAiScoreDto,
+  ApplicationAiScoreSummaryDto,
+} from '@modules/ai-scoring/dto/ai-score-response.dto';
 
 export class ApplicationStatusHistoryDto {
   @ApiProperty({ format: 'uuid' })
@@ -138,6 +142,14 @@ export class RecruiterApplicationListItemDto {
 
   @ApiProperty()
   createdAt!: string;
+
+  @ApiPropertyOptional({
+    type: ApplicationAiScoreSummaryDto,
+    nullable: true,
+    description:
+      'The AI score for this application; null when nothing was scored yet',
+  })
+  aiScore?: ApplicationAiScoreSummaryDto | null;
 }
 
 export class RecruiterApplicationDetailDto extends RecruiterApplicationListItemDto {
@@ -178,6 +190,14 @@ export class RecruiterApplicationDetailDto extends RecruiterApplicationListItemD
 
   @ApiProperty({ type: [ApplicationStatusHistoryDto] })
   statusHistory!: ApplicationStatusHistoryDto[];
+
+  @ApiPropertyOptional({
+    type: ApplicationAiScoreDto,
+    nullable: true,
+    description:
+      'The full AI assessment: the score, the narrative and the skills that matched',
+  })
+  aiAssessment?: ApplicationAiScoreDto | null;
 }
 
 export class ApplicationPaginationDto {

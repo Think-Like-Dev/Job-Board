@@ -162,6 +162,7 @@ All commands below are prefixed with `./dk`:
 | `build` | `build:dev` | `build:staging` | api, ai, all, `<image service>` | build images |
 | `infra` | `infra:dev` | `infra:staging` | api, ai, all, `<service>` | start datastores |
 | `up` | `up:dev` | `up:staging` | api, ai, all | start application containers |
+| `recreate` | `recreate:dev` | `recreate:staging` | api, ai, all | recreate application containers from the current image |
 | `migrate` | `migrate:dev` | `migrate:staging` | api, ai, all | run migrations |
 | `seed` | `seed:dev` | `seed:staging` | api, ai, all | run seeders |
 | `run` | `run:dev` | `run:staging` | none | start the whole stack |
@@ -197,6 +198,10 @@ Behaviour worth knowing:
 - **Bash only, cross-platform.** Git Bash on Windows (no PowerShell, no WSL needed), bash on
   macOS/Linux. `./dk` is a launcher; sourcing the script is optional and per-shell only.
 - **`stop` keeps data**; only `--volumes` deletes databases/uploads, and it asks first.
+- **`up` may keep an old container.** Compose reuses a container when its configuration has
+  not changed, so a rebuilt image with the same tag can be ignored. `recreate` passes
+  `--force-recreate`; the normal loop is `build` → `recreate` → `migrate`. Volumes and data
+  are untouched either way. `migrate`/`seed` always run in a fresh one-shot container.
 - `docker compose ...` is still the underlying tool: the explicit commands in §2 and §3 remain
   valid and are the source of truth if a shortcut ever looks wrong.
 

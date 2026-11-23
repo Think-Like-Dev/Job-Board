@@ -361,8 +361,7 @@
     "total": "{{total}} members"
   },
   "onboard": {
-    "title": "Finish your profile",
-    "subtitle": "Joining as {{role}} with {{email}}.",
+    "title": "Finish your profile",    "subtitle": "Joining as {{role}} with {{email}}.",
     "firstName": "First name",
     "lastName": "Last name",
     "phone": "Phone",
@@ -377,6 +376,28 @@
     "invalidTitle": "Invitation unavailable",
     "invalidBody": "This invitation link is invalid, expired or already used.",
     "backToLogin": "Back to sign in"
+  },
+  "sessions": {
+    "title": "Sessions",
+    "subtitle": "Where this account is signed in right now.",
+    "empty": "No active sessions.",
+    "columnOwner": "Account",
+    "columnDevice": "Device",
+    "columnIp": "IP address",
+    "columnCreated": "Signed in",
+    "columnLastSeen": "Last seen",
+    "columnExpires": "Expires",
+    "columnActions": "Actions",
+    "current": "This device",
+    "revoke": "Revoke",
+    "revoked": "Session revoked",
+    "revokeOthers": "Sign out other sessions",
+    "revokedOthers": "{{count}} session(s) revoked",
+    "adminTitle": "Look up any account",
+    "adminSubtitle": "Administrators can inspect and revoke sessions for a user or a candidate by email.",
+    "emailPlaceholder": "name@example.com",
+    "lookup": "Look up",
+    "loadError": "Could not load sessions."
   },
   "jobForm": {
     "createTitle": "Create Job",

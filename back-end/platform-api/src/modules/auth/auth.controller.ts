@@ -24,7 +24,7 @@ import { AuthRole, UserRole, UserStatus } from '@common/constants/enums';
 import type { Candidate } from '@modules/candidates/candidate.schema';
 import type { User } from '@modules/users/user.schema';
 import { MailService } from '@modules/mail/mail.service';
-import { AuthService } from './auth.service';
+import { AuthService, type SessionMetadata } from './auth.service';
 import { UsersService } from '@modules/users/users.service';
 import { CandidatesService } from '@modules/candidates/candidates.service';
 import {
@@ -85,6 +85,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Invalid or expired OTP' })
   async verifyOtp(
     @Body() dto: VerifyOtpDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
     const role = await this.authService.verifyOtp(dto.email, dto.otp);
@@ -96,12 +97,16 @@ export class AuthController {
       const candidate = await this.candidatesService.findOrCreateByEmail(
         dto.email,
       );
-      await this.authService.createSession(res, {
-        principalType: 'candidate',
-        principalId: candidate.id,
-        email: candidate.email,
-        role: AuthRole.CANDIDATE,
-      });
+      await this.authService.createSession(
+        res,
+        {
+          principalType: 'candidate',
+          principalId: candidate.id,
+          email: candidate.email,
+          role: AuthRole.CANDIDATE,
+        },
+        this.sessionMeta(req),
+      );
       return {
         user: toCandidateDto(
           candidate,
@@ -125,12 +130,16 @@ export class AuthController {
       throw new UnauthorizedException('Finish your invitation first');
     }
 
-    await this.authService.createSession(res, {
-      principalType: 'user',
-      principalId: user.id,
-      email: user.email,
-      role: user.role ?? UserRole.RECRUITER,
-    });
+    await this.authService.createSession(
+      res,
+      {
+        principalType: 'user',
+        principalId: user.id,
+        email: user.email,
+        role: user.role ?? UserRole.RECRUITER,
+      },
+      this.sessionMeta(req),
+    );
     return {
       user: toUserDto(
         user,
@@ -189,17 +198,22 @@ export class AuthController {
   @ApiOkResponse({ type: AuthResponseDto })
   async acceptInvitation(
     @Body() dto: AcceptInvitationDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
     const user = await this.usersService.acceptInvitation(dto);
     const role = user.role ?? UserRole.HIRING_MANAGER;
 
-    await this.authService.createSession(res, {
-      principalType: 'user',
-      principalId: user.id,
-      email: user.email,
-      role,
-    });
+    await this.authService.createSession(
+      res,
+      {
+        principalType: 'user',
+        principalId: user.id,
+        email: user.email,
+        role,
+      },
+      this.sessionMeta(req),
+    );
 
     return {
       user: toUserDto(user, this.permissionsService.forRole(role)),
@@ -348,6 +362,14 @@ export class AuthController {
     return this.config.get('nodeEnv', { infer: true }) === 'local'
       ? { resetUrl }
       : {};
+  }
+
+  /** Client metadata stored with the session (device list, audit). */
+  private sessionMeta(req: Request): SessionMetadata {
+    return {
+      ip: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    };
   }
 }
 

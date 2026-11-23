@@ -1,5 +1,6 @@
 import type { FieldErrors, FieldPath } from "react-hook-form";
-import { CompensationType, Currency } from "@/types/job.types";
+import { DEFAULT_CURRENCY } from "@/lib/currency";
+import { CompensationType } from "@/types/job.types";
 import type { JobFormValues, SalaryType } from "@/api/schemas/jobs.schema";
 
 /** Ordered create-job wizard steps. */
@@ -35,9 +36,9 @@ export const buildCompensation = (
 ): SalaryType => {
   switch (type) {
     case CompensationType.FIXED:
-      return { type, currency: Currency.USD, period: "Yearly", amount: 0 };
+      return { type, currency: DEFAULT_CURRENCY, period: "Yearly", amount: 0 };
     case CompensationType.RANGE:
-      return { type, currency: Currency.USD, period: "Yearly", amount: [0, 0] };
+      return { type, currency: DEFAULT_CURRENCY, period: "Yearly", amount: [0, 0] };
     case CompensationType.NEGOTIABLE:
       return { type };
     default:

@@ -12,10 +12,18 @@ import {
 
 import { TagInput } from "@/components/jobs/TagInput";
 import type { JobFormValues } from "@/api/schemas/jobs.schema";
-import { CompensationType, Currency } from "@/types/job.types";
+import {
+  DEFAULT_CURRENCY,
+  currencyLabel,
+  supportedCurrencies,
+} from "@/lib/currency";
+import { CompensationType } from "@/types/job.types";
 import { FieldError } from "../components/FieldError";
 import { FormLabel } from "../components/FormLabel";
 import { PERIODS, buildCompensation } from "../constants";
+
+/** ISO codes the browser knows; the form stores the code, never a label. */
+const CURRENCIES = supportedCurrencies();
 
 interface CompensationStepProps {
   form: UseFormReturn<JobFormValues>;
@@ -23,7 +31,7 @@ interface CompensationStepProps {
 
 /** Step 3 — optional compensation, vacancies, benefits and shift timings. */
 export function CompensationStep({ form }: CompensationStepProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { errors } = form.formState;
   const compensation = form.watch("compensation");
   const compensationType = compensation?.type ?? "NONE";
@@ -77,18 +85,21 @@ export function CompensationStep({ form }: CompensationStepProps) {
               {t("jobForm.fields.currency")}
             </FormLabel>
             <Select
-              value={compensation?.currency ?? Currency.USD}
+              value={compensation?.currency ?? DEFAULT_CURRENCY}
               onValueChange={(value) => updateCompensation({ currency: value })}
             >
               <SelectTrigger id="currency" className="w-full">
                 <SelectValue>
-                  {compensation?.currency ?? Currency.USD}
+                  {currencyLabel(
+                    compensation?.currency ?? DEFAULT_CURRENCY,
+                    i18n.language,
+                  )}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {Object.values(Currency).map((option) => (
+                {CURRENCIES.map((option) => (
                   <SelectItem key={option} value={option}>
-                    {option}
+                    {currencyLabel(option, i18n.language)}
                   </SelectItem>
                 ))}
               </SelectContent>

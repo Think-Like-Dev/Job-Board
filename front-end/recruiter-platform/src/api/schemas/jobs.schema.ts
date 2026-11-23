@@ -3,7 +3,6 @@ import type { TFunction } from "i18next";
 import { ApplicationStatus } from "@/types/application.types";
 import {
   CompensationType,
-  Currency,
   EmploymentType,
   JobStatus,
   WorkMode,
@@ -16,8 +15,13 @@ import {
 /* -------------------------------------------------------------------------- */
 /*                               Shared Schemas                               */
 /* -------------------------------------------------------------------------- */
+/* Currency is an ISO 4217 code ("INR") chosen from the browser's
+ * Intl.supportedValuesOf list. Keep the read schema permissive: one unexpected
+ * value must never invalidate a whole page. `formatCompensation` formats it. */
+const CurrencySchema = z.string().min(1);
+
 const SalaryBaseSchema = z.object({
-  currency: z.enum(Currency),
+  currency: CurrencySchema,
   period: z.enum(["Yearly", "Monthly", "Hourly"]),
 });
 

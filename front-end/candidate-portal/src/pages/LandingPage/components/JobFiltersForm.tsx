@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@ui/select';
-import { Currency } from '@/types/job.types';
 import { formatAmount } from '@/lib/jobFormat';
+import { currencyLabel, supportedCurrencies } from '@/lib/currency';
 import {
   SALARY_MAX,
   SALARY_MIN,
@@ -20,6 +20,9 @@ import {
 } from '../useJobSearch';
 
 const ANY_CURRENCY = 'ANY';
+
+/** ISO codes the browser knows; filters store the code. */
+const CURRENCIES = supportedCurrencies();
 
 interface JobFiltersFormProps {
   value: JobFilterDraft;
@@ -33,7 +36,7 @@ function toFilterValue(value: string): string | undefined {
 
 /** Controlled filter fields shared by the desktop popup and mobile dialog. */
 export function JobFiltersForm({ value, onChange }: JobFiltersFormProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <div className="space-y-6">
@@ -83,16 +86,18 @@ export function JobFiltersForm({ value, onChange }: JobFiltersFormProps) {
         >
           <SelectTrigger className="w-full">
             <SelectValue>
-              {value.currency ?? t('jobs.filters.anyCurrency')}
+              {value.currency
+                ? currencyLabel(value.currency, i18n.language)
+                : t('jobs.filters.anyCurrency')}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY_CURRENCY}>
               {t('jobs.filters.anyCurrency')}
             </SelectItem>
-            {Object.values(Currency).map((currency) => (
+            {CURRENCIES.map((currency) => (
               <SelectItem key={currency} value={currency}>
-                {currency}
+                {currencyLabel(currency, i18n.language)}
               </SelectItem>
             ))}
           </SelectContent>

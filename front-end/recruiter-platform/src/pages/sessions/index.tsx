@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { LogOutIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@ui/button";
@@ -99,10 +100,11 @@ function SessionsTable({
               <TableCell className="text-right">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="destructive"
                   disabled={pending}
                   onClick={() => onRevoke(session)}
                 >
+                  <LogOutIcon data-icon="inline-start" />
                   {t("sessions.revoke")}
                 </Button>
               </TableCell>
@@ -174,10 +176,11 @@ const Sessions = () => {
 
       <div>
         <Button
-          variant="outline"
+          variant="destructive"
           disabled={revokeOthers.isPending}
           onClick={onRevokeOthers}
         >
+          <LogOutIcon data-icon="inline-start" />
           {t("sessions.revokeOthers")}
         </Button>
       </div>

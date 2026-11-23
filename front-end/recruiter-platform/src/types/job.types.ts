@@ -13,13 +13,6 @@ export enum EmploymentType {
   INTERN = "INTERN",
 }
 
-export enum Currency {
-  USD = "$ USD",
-  INR = "₹ INR",
-  EUR = "€ EUR",
-  AED_DIRH = "د.إ AED (UAE)"
-}
-
 export enum WorkMode {
   ON_SITE = "ON_SITE",
   HYBRID = "HYBRID",
@@ -28,7 +21,8 @@ export enum WorkMode {
 
 export const JobStatusArray = Object.values(JobStatus);
 type CompensationBase = {
-  currency: Currency;
+  /** Free-form on the API; the form select writes `Currency` labels. */
+  currency: string;
   period: "Yearly" | "Monthly" | "Hourly";
 };
 

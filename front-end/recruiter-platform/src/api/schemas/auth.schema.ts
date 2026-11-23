@@ -12,6 +12,7 @@ export const UserProfileSchema = z.object({
   avatarUrl: z.string().optional(),
   role: z.enum(UserRole).optional(),
   principalType: z.enum(['candidate', 'user']).optional(),
+  permissions: z.array(z.string()).optional().default([]),
 });
 
 export const AuthResponseSchema = z.object({

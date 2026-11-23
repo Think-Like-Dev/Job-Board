@@ -15,6 +15,7 @@ import {
 import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
 import { useSelector } from "react-redux"
 import { navMain } from '@lib/constants';
+import { usePermissions } from '@/permissions/usePermissions';
 import type { RootState } from "@/store"
 
 // This is sample data.
@@ -174,6 +175,8 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const authUser = useSelector((state: RootState) => state.auth.user);
+  const { can } = usePermissions();
+  const visibleNavMain = navMain.filter((item) => can(item.permission));
 
   const displayName =
     authUser?.name?.trim() ||
@@ -191,7 +194,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
 
-        <NavMain items={navMain}/>
+        <NavMain items={visibleNavMain} />
 
       </SidebarContent>
       <SidebarFooter>

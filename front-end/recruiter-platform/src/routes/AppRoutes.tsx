@@ -44,25 +44,27 @@ const AppRoutes = () => {
     return <RouteFallback />;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/onboard/:token" element={<Onboard />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
-
   // The workspace is the set of screens behind `dashboard.read`. Roles without
   // it (hiring managers today, more roles later) land on the welcome screen.
-  if (can(PERMISSIONS.DASHBOARD_READ)) {
-    return (
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
+  const hasWorkspace = can(PERMISSIONS.DASHBOARD_READ);
+
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        {/*
+         * Public by design: an invitation or reset link must render even when
+         * the visitor already has a session (an admin previewing the page, or
+         * someone finishing an invitation in a second tab).
+         */}
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/onboard/:token" element={<Onboard />} />
+
+        {!isAuthenticated ? (
+          <>
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </>
+        ) : hasWorkspace ? (
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route
@@ -131,16 +133,12 @@ const AppRoutes = () => {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
-        </Routes>
-      </Suspense>
-    );
-  }
-
-  return (
-    <Suspense fallback={<RouteFallback />}>
-      <Routes>
-        <Route path="/" element={<Welcome />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        ) : (
+          <>
+            <Route path="/" element={<Welcome />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
       </Routes>
     </Suspense>
   );

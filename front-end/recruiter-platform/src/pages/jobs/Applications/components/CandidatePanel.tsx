@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { useGetJobApplication } from "@/api/hooks/useJobApplications";
+import { useAiScoreStream } from "@/api/hooks/useAiScoreStream";
 import type {
   ApplicationProfileSnapshot,
   JobApplicationDetail,
@@ -131,6 +132,8 @@ export function CandidatePanel({
 }: CandidatePanelProps) {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useGetJobApplication(applicationId);
+  // A score that arrives while this panel is open appears without a reload.
+  useAiScoreStream(applicationId);
   const application = data?.data;
 
   return (

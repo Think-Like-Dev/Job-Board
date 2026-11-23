@@ -5,6 +5,11 @@ import {
 } from '@mikro-orm/core';
 import { CandidateSchema } from '@modules/candidates/candidate.schema';
 import { UserSchema } from '@modules/users/user.schema';
+import {
+  softDeleteFilter,
+  softDeleteProperty,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 import { FileSchema } from './file.schema';
 
 /**
@@ -15,7 +20,7 @@ import { FileSchema } from './file.schema';
  * Ownership (`files.owner_type`/`owner_id`) stays immutable; grants are
  * additive and revocable.
  */
-export interface FileAccessGrant {
+export interface FileAccessGrant extends SoftDeletable {
   id: string;
   fileId: string;
   candidateId: string;
@@ -31,6 +36,8 @@ export const FileAccessGrantSchema = new EntitySchema<FileAccessGrant>({
     {
       name: 'file_access_grants_file_candidate_unique',
       properties: ['fileId', 'candidateId'],
+      // A revoked grant is soft-deleted; re-sharing revives it.
+      where: { deletedAt: null },
     },
   ],
   indexes: [
@@ -39,6 +46,7 @@ export const FileAccessGrantSchema = new EntitySchema<FileAccessGrant>({
       properties: ['candidateId'],
     },
   ],
+  filters: softDeleteFilter,
   properties: {
     id: { type: 'uuid', primary: true, defaultRaw: 'gen_random_uuid()' },
     fileId: {
@@ -73,5 +81,6 @@ export const FileAccessGrantSchema = new EntitySchema<FileAccessGrant>({
       foreignKeyName: 'fk_users_id_file_access_grants',
     } as unknown as EntitySchemaProperty<string, FileAccessGrant>,
     createdAt: { type: 'datetime', defaultRaw: 'now()' },
+    ...softDeleteProperty,
   },
 });

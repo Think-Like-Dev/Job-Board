@@ -9,6 +9,7 @@ import {
   JobStatus,
   WorkMode,
 } from '@common/constants/enums';
+import { softDeleteFilter } from '@common/persistence/soft-delete';
 import { UserSchema } from '@modules/users/user.schema';
 
 /** Compensation payload stored as JSONB, mirroring the recruiter form union. */
@@ -75,6 +76,7 @@ export interface Job {
 export const JobSchema = new EntitySchema<Job>({
   name: 'Job',
   tableName: 'jobs',
+  filters: softDeleteFilter,
   indexes: [
     { name: 'jobs_status_index', properties: ['status'] },
     { name: 'jobs_created_by_index', properties: ['createdBy'] },

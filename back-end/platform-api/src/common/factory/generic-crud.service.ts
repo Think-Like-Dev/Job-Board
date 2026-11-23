@@ -8,6 +8,10 @@ import {
 import { NotFoundException } from '@nestjs/common';
 import { IPaginatedResult } from '@common/interfaces/paginated-result.interface';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
+import {
+  markDeleted,
+  type SoftDeletable,
+} from '@common/persistence/soft-delete';
 
 /**
  * Reusable base CRUD service. Extend it per module with the entity type.
@@ -87,7 +91,28 @@ export abstract class GenericCrudService<Entity extends object> {
     return entity as Loaded<Entity, P>;
   }
 
+  /**
+   * Soft-deletes a row by setting `deleted_at`. The default `softDelete`
+   * filter hides it from every later query.
+   *
+   * File metadata is the only entity allowed to be hard-deleted; it overrides
+   * this method (see `FilesService.remove`) so the Garage object goes away too.
+   */
   async remove(where: FilterQuery<Entity>): Promise<boolean> {
+    const entity = await this.repository.findOne(where);
+    if (!entity) {
+      throw new NotFoundException('Resource not found');
+    }
+    markDeleted(entity as Entity & SoftDeletable);
+    await this.repository.getEntityManager().flush();
+    return true;
+  }
+
+  /**
+   * Permanently removes the row. Reserved for file metadata, which must be
+   * deleted together with its stored object.
+   */
+  async hardRemove(where: FilterQuery<Entity>): Promise<boolean> {
     const entity = await this.repository.findOne(where);
     if (!entity) {
       throw new NotFoundException('Resource not found');

@@ -2,6 +2,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 import { CandidatesService } from '@modules/candidates/candidates.service';
+import { markDeleted, markRestored } from '@common/persistence/soft-delete';
 import {
   FileAccessGrant,
   FileAccessGrantSchema,
@@ -31,8 +32,17 @@ export class FileAccessGrantsService {
     // Throws 404 when the candidate does not exist.
     await this.candidatesService.findOne({ id: candidateId });
 
-    const existing = await this.repository.findOne({ fileId, candidateId });
+    const existing = await this.repository.findOne(
+      { fileId, candidateId },
+      { filters: false },
+    );
     if (existing) {
+      // Re-sharing a revoked grant revives the original row.
+      if (existing.deletedAt) {
+        existing.grantedBy = grantedBy;
+        markRestored(existing);
+        await this.repository.getEntityManager().flush();
+      }
       return existing;
     }
 
@@ -56,7 +66,7 @@ export class FileAccessGrantsService {
     }
 
     const em = this.repository.getEntityManager();
-    em.remove(grant);
+    markDeleted(grant);
     await em.flush();
     return true;
   }

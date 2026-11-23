@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { type ColumnDef } from "@tanstack/react-table";
 
 import { Checkbox } from "@ui/checkbox";
 
 import { ApplicationStatusBadge } from "@/components/common/ApplicationStatusBadge";
+import { type DataTableColumn } from "@/components/common/DataTable";
 import { formatIsoDate } from "@/lib/jobFormat";
 import type { JobApplicationListItem } from "@/types/application.types";
 import { ResumeCell } from "./ResumeCell";
@@ -20,7 +20,7 @@ interface UseApplicationColumnsOptions {
 export function useApplicationColumns({
   selection,
   onViewResume,
-}: UseApplicationColumnsOptions): ColumnDef<JobApplicationListItem>[] {
+}: UseApplicationColumnsOptions): DataTableColumn<JobApplicationListItem>[] {
   const { t } = useTranslation();
 
   return [
@@ -28,15 +28,10 @@ export function useApplicationColumns({
       id: "select",
       header: () => <SelectAllHeader selection={selection} />,
       cell: ({ row }) => (
-        <div
-          className="flex items-center"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="flex items-center" onClick={(event) => event.stopPropagation()}>
           <Checkbox
             checked={selection.selectedIds.has(row.original.id)}
-            onCheckedChange={(checked) =>
-              selection.onToggleRow(row.original.id, checked)
-            }
+            onCheckedChange={(checked) => selection.onToggleRow(row.original.id, checked)}
             aria-label={t("job.applications.selection.selectCandidate", {
               name: row.original.candidateName,
             })}
@@ -47,9 +42,7 @@ export function useApplicationColumns({
     {
       accessorKey: "candidateName",
       header: t("common.candidate"),
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.candidateName}</span>
-      ),
+      cell: ({ row }) => <span className="font-medium">{row.original.candidateName}</span>,
     },
     {
       id: "contact",
@@ -58,9 +51,7 @@ export function useApplicationColumns({
         <div className="space-y-0.5 text-sm">
           <p className="break-all">{row.original.candidateEmail}</p>
           {row.original.candidatePhone ? (
-            <p className="text-muted-foreground">
-              {row.original.candidatePhone}
-            </p>
+            <p className="text-muted-foreground">{row.original.candidatePhone}</p>
           ) : null}
         </div>
       ),
@@ -68,19 +59,12 @@ export function useApplicationColumns({
     {
       id: "resume",
       header: t("common.resume"),
-      cell: ({ row }) => (
-        <ResumeCell
-          application={row.original}
-          onViewResume={onViewResume}
-        />
-      ),
+      cell: ({ row }) => <ResumeCell application={row.original} onViewResume={onViewResume} />,
     },
     {
       accessorKey: "status",
       header: t("common.stage"),
-      cell: ({ row }) => (
-        <ApplicationStatusBadge status={row.original.status} />
-      ),
+      cell: ({ row }) => <ApplicationStatusBadge status={row.original.status} />,
     },
     {
       id: "aiScore",
@@ -91,8 +75,7 @@ export function useApplicationColumns({
       accessorKey: "appliedAt",
       header: t("common.appliedOn"),
       meta: { sortable: true, sortKey: "appliedAt" },
-      cell: ({ row }) =>
-        formatIsoDate(row.original.appliedAt ?? row.original.createdAt),
+      cell: ({ row }) => formatIsoDate(row.original.appliedAt ?? row.original.createdAt),
     },
   ];
 }

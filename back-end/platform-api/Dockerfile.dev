@@ -4,7 +4,7 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm@12.9.1
+RUN npm install -g pnpm@12.21.0
 
 # curl for the health check. The production image has it for the same reason,
 # and without it the container is reported as unhealthy while the API works.

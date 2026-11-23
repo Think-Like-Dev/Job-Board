@@ -1,13 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Loader2,
-  RefreshCwIcon,
-  XIcon,
-} from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, Loader2, RefreshCwIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@ui/button";
@@ -28,16 +22,10 @@ import {
   useSelectAllFilteredApplications,
 } from "@/api/hooks/useJobApplications";
 import { useGetJobById } from "@/api/hooks/useJobs";
-import {
-  DataTable,
-  type DataTableSorting,
-} from "@/components/common/DataTable";
+import { DataTable, type DataTableSorting } from "@/components/common/DataTable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useIsDesktopPanel } from "@/hooks/useIsDesktopPanel";
-import type {
-  ApplicationStatus,
-  JobApplicationListItem,
-} from "@/types/application.types";
+import type { ApplicationStatus, JobApplicationListItem } from "@/types/application.types";
 import { ApplicationsHeader } from "./components/ApplicationsHeader";
 import { ApplicationsToolbar } from "./components/ApplicationsToolbar";
 import { CandidatePanel } from "./components/CandidatePanel";
@@ -68,25 +56,15 @@ const Applications = () => {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<ApplicationStatus | undefined>(
-    undefined,
-  );
-  const [sorting, setSorting] = useState<DataTableSorting | null>(
-    DEFAULT_SORTING,
-  );
+  const [status, setStatus] = useState<ApplicationStatus | undefined>(undefined);
+  const [sorting, setSorting] = useState<DataTableSorting | null>(DEFAULT_SORTING);
   // Desktop opens the job description inline; mobile starts with the table
   // uncovered and opens every panel as a sheet on demand.
   const isDesktopPanel = useIsDesktopPanel();
   const [showJobDescription, setShowJobDescription] = useState(isDesktopPanel);
-  const [selectedApplicationId, setSelectedApplicationId] = useState<
-    string | null
-  >(null);
-  const [viewerTarget, setViewerTarget] = useState<DocumentViewerTarget | null>(
-    null,
-  );
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set<string>(),
-  );
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [viewerTarget, setViewerTarget] = useState<DocumentViewerTarget | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set<string>());
   const [isRetryDialogOpen, setRetryDialogOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
@@ -114,35 +92,44 @@ const Applications = () => {
   // when a status filter is applied.
   const candidateCount = job?.totalApplications ?? pagination?.total ?? 0;
 
-  useEffect(() => {
+  // Server-side totals can shrink after a withdrawal. Clamping during render
+  // is the documented alternative to a synchronising effect; the filter
+  // handlers below reset the page themselves.
+  if (page > totalPages) {
+    setPage(Math.max(1, totalPages));
+  }
+
+  // A different job, filter or search describes a different candidate set, so
+  // nothing selected for the previous one may survive. The handlers reset the
+  // page and the selection together; the job id is a route param and is
+  // adjusted here.
+  const [lastJobId, setLastJobId] = useState(jobId);
+  if (lastJobId !== jobId) {
+    setLastJobId(jobId);
     setPage(1);
-  }, [effectiveSearch, status, sorting]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(Math.max(1, totalPages));
-    }
-  }, [page, totalPages]);
-
-  // A different filter describes a different candidate set, so stale
-  // selections from the previous filter must not survive.
-  useEffect(() => {
     setSelectedIds(new Set<string>());
-  }, [jobId, effectiveSearch, status]);
+    setSelectedApplicationId(null);
+    setViewerTarget(null);
+  }
 
   // The layout switches at 861px. Desktop shows the JD inline by default;
-  // mobile starts uncovered and opens panels as sheets on demand.
-  useEffect(() => {
+  // mobile starts uncovered and opens panels as sheets on demand. Adjusting
+  // dependent state during render avoids a frame rendered with the old layout.
+  const [wasDesktopPanel, setWasDesktopPanel] = useState(isDesktopPanel);
+  if (wasDesktopPanel !== isDesktopPanel) {
+    setWasDesktopPanel(isDesktopPanel);
     setShowJobDescription(isDesktopPanel);
     setSelectedApplicationId(null);
     setViewerTarget(null);
-  }, [isDesktopPanel]);
+  }
 
   const isFiltered = search.trim() !== "" || status !== undefined;
 
   const clearFilters = () => {
     setSearch("");
     setStatus(undefined);
+    setPage(1);
+    setSelectedIds(new Set<string>());
   };
 
   const clearSelection = () => setSelectedIds(new Set<string>());
@@ -172,13 +159,9 @@ const Applications = () => {
   };
 
   const pageIds = applications.map((application) => application.id);
-  const selectedOnPageCount = pageIds.filter((id) =>
-    selectedIds.has(id),
-  ).length;
-  const isAllCurrentPageSelected =
-    pageIds.length > 0 && selectedOnPageCount === pageIds.length;
-  const isSomeCurrentPageSelected =
-    selectedOnPageCount > 0 && !isAllCurrentPageSelected;
+  const selectedOnPageCount = pageIds.filter((id) => selectedIds.has(id)).length;
+  const isAllCurrentPageSelected = pageIds.length > 0 && selectedOnPageCount === pageIds.length;
+  const isSomeCurrentPageSelected = selectedOnPageCount > 0 && !isAllCurrentPageSelected;
 
   const toggleRow = (id: string, checked: boolean) => {
     setSelectedIds((current) => {
@@ -208,8 +191,7 @@ const Applications = () => {
       },
       {
         onSuccess: (ids) => setSelectedIds(new Set(ids)),
-        onError: () =>
-          toast.error(t("job.applications.selection.selectAllFailed")),
+        onError: () => toast.error(t("job.applications.selection.selectAllFailed")),
       },
     );
   };
@@ -265,17 +247,9 @@ const Applications = () => {
 
       {applicationsQuery.isError ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border bg-background p-8 text-center">
-          <p className="text-sm font-medium">
-            {t("job.applications.loadFailedTitle")}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t("job.applications.loadFailed")}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void applicationsQuery.refetch()}
-          >
+          <p className="text-sm font-medium">{t("job.applications.loadFailedTitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("job.applications.loadFailed")}</p>
+          <Button type="button" variant="outline" onClick={() => void applicationsQuery.refetch()}>
             {t("common.retry")}
           </Button>
         </div>
@@ -291,9 +265,17 @@ const Applications = () => {
           <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border bg-background p-3">
             <ApplicationsToolbar
               search={search}
-              onSearchChange={setSearch}
+              onSearchChange={(value) => {
+                setSearch(value);
+                setPage(1);
+                setSelectedIds(new Set<string>());
+              }}
               status={status}
-              onStatusChange={setStatus}
+              onStatusChange={(value) => {
+                setStatus(value);
+                setPage(1);
+                setSelectedIds(new Set<string>());
+              }}
               onClear={clearFilters}
               isFiltered={isFiltered}
             />
@@ -324,12 +306,7 @@ const Applications = () => {
                     )}
                     {t("job.applications.selection.retryReview")}
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSelection}
-                  >
+                  <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
                     <XIcon data-icon="inline-start" />
                     {t("job.applications.selection.clear")}
                   </Button>
@@ -345,7 +322,10 @@ const Applications = () => {
                 emptyMessage={t("job.applications.empty")}
                 onRowClick={openCandidate}
                 sorting={sorting}
-                onSortingChange={setSorting}
+                onSortingChange={(next) => {
+                  setSorting(next);
+                  setPage(1);
+                }}
                 containerClassName="border-0"
               />
             </div>
@@ -360,9 +340,7 @@ const Applications = () => {
                   variant="outline"
                   size="sm"
                   disabled={page <= 1}
-                  onClick={() =>
-                    setPage((current) => Math.max(1, current - 1))
-                  }
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
                 >
                   <ChevronLeftIcon data-icon="inline-start" />
                   {t("job.pagination.previous")}
@@ -387,19 +365,14 @@ const Applications = () => {
             onViewDocument={openDocument}
           />
 
-          <DocumentViewerPanel
-            target={viewerTarget}
-            onClose={() => setViewerTarget(null)}
-          />
+          <DocumentViewerPanel target={viewerTarget} onClose={() => setViewerTarget(null)} />
         </div>
       )}
 
       <AlertDialog open={isRetryDialogOpen} onOpenChange={setRetryDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("job.applications.selection.retryReviewTitle")}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{t("job.applications.selection.retryReviewTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t("job.applications.selection.retryReviewDescription", {
                 count: selectedIds.size,

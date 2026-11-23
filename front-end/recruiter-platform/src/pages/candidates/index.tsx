@@ -1,14 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PlusIcon,
-  UploadIcon,
-} from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, UploadIcon } from "lucide-react";
 
 import { Button } from "@ui/button";
 import {
@@ -23,14 +18,8 @@ import {
 } from "@ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
 
-import {
-  useDeleteCandidate,
-  useGetCandidates,
-} from "@/api/hooks/useCandidates";
-import {
-  DataTable,
-  type DataTableSorting,
-} from "@/components/common/DataTable";
+import { useDeleteCandidate, useGetCandidates } from "@/api/hooks/useCandidates";
+import { DataTable, type DataTableSorting } from "@/components/common/DataTable";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { CandidateListItem } from "@/api/schemas/candidates.schema";
 import { CandidateStatus } from "@/types/candidate.types";
@@ -40,19 +29,13 @@ import type { RootState } from "@/store";
 import { CandidateCreateDialog } from "./components/CandidateCreateDialog";
 import { CandidateOverviewDialog } from "./components/CandidateOverviewDialog";
 import { CandidatesToolbar } from "./components/CandidatesToolbar";
-import {
-  DEFAULT_CANDIDATE_SORT,
-  type CandidateSortValue,
-} from "./components/candidateSort";
+import { DEFAULT_CANDIDATE_SORT, type CandidateSortValue } from "./components/candidateSort";
 import { useCandidateColumns } from "./components/useCandidateColumns";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
 
-const SORT_TO_TABLE: Record<
-  CandidateSortValue,
-  DataTableSorting
-> = {
+const SORT_TO_TABLE: Record<CandidateSortValue, DataTableSorting> = {
   "createdAt:DESC": { sortKey: "createdAt", direction: "DESC" },
   "createdAt:ASC": { sortKey: "createdAt", direction: "ASC" },
   "experience:DESC": { sortKey: "experience", direction: "DESC" },
@@ -75,18 +58,14 @@ const Candidates = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { can } = usePermissions();
-  const currentUserId = useSelector(
-    (state: RootState) => state.auth.user?.id,
-  );
+  const currentUserId = useSelector((state: RootState) => state.auth.user?.id);
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] =
-    useState<CandidateSortValue>(DEFAULT_CANDIDATE_SORT);
+  const [sortBy, setSortBy] = useState<CandidateSortValue>(DEFAULT_CANDIDATE_SORT);
   const [overviewId, setOverviewId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] =
-    useState<CandidateListItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CandidateListItem | null>(null);
   const removeCandidate = useDeleteCandidate();
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
@@ -106,18 +85,16 @@ const Candidates = () => {
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
   const total = pagination?.total ?? 0;
 
-  useEffect(() => {
-    setPage(1);
-  }, [effectiveSearch, sortBy]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(Math.max(1, totalPages));
-    }
-  }, [page, totalPages]);
+  // Server-side totals can shrink after a delete. Clamping during render is
+  // the documented alternative to a synchronising effect; the handlers below
+  // reset the page whenever a filter changes.
+  if (page > totalPages) {
+    setPage(Math.max(1, totalPages));
+  }
 
   const sorting = SORT_TO_TABLE[sortBy];
   const handleSortingChange = (next: DataTableSorting | null) => {
+    setPage(1);
     if (!next) {
       setSortBy(DEFAULT_CANDIDATE_SORT);
       return;
@@ -144,8 +121,7 @@ const Candidates = () => {
   };
 
   const columns = useCandidateColumns({
-    onViewOverview: (candidate: CandidateListItem) =>
-      setOverviewId(candidate.id),
+    onViewOverview: (candidate: CandidateListItem) => setOverviewId(candidate.id),
     canDelete: canDeleteCandidate,
     onDelete: (candidate: CandidateListItem) => setPendingDelete(candidate),
   });
@@ -155,16 +131,13 @@ const Candidates = () => {
   const clearFilters = () => {
     setSearch("");
     setSortBy(DEFAULT_CANDIDATE_SORT);
+    setPage(1);
   };
 
   const bulkActions = (
     <div className="flex items-center gap-2">
       <Tooltip>
-        <TooltipTrigger
-          render={
-            <span className="inline-flex" tabIndex={0} aria-disabled="true" />
-          }
-        >
+        <TooltipTrigger render={<span className="inline-flex" tabIndex={0} aria-disabled="true" />}>
           <Button type="button" variant="outline" disabled>
             <UploadIcon data-icon="inline-start" />
             {t("candidate.list.bulkImport")}
@@ -173,11 +146,7 @@ const Candidates = () => {
         <TooltipContent>{t("candidate.list.bulkImportTooltip")}</TooltipContent>
       </Tooltip>
       <Tooltip>
-        <TooltipTrigger
-          render={
-            <span className="inline-flex" tabIndex={0} aria-disabled="true" />
-          }
-        >
+        <TooltipTrigger render={<span className="inline-flex" tabIndex={0} aria-disabled="true" />}>
           <Button type="button" variant="outline" disabled>
             <UploadIcon data-icon="inline-start" />
             {t("candidate.list.bulkResume")}
@@ -208,26 +177,24 @@ const Candidates = () => {
 
       <CandidatesToolbar
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
         sortBy={sortBy}
-        onSortChange={setSortBy}
+        onSortChange={(value) => {
+          setSortBy(value);
+          setPage(1);
+        }}
         onClear={clearFilters}
         isFiltered={isFiltered}
       />
 
       {candidatesQuery.isError ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border bg-background p-8 text-center">
-          <p className="text-sm font-medium">
-            {t("candidate.list.loadFailedTitle")}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t("candidate.list.loadFailed")}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void candidatesQuery.refetch()}
-          >
+          <p className="text-sm font-medium">{t("candidate.list.loadFailedTitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("candidate.list.loadFailed")}</p>
+          <Button type="button" variant="outline" onClick={() => void candidatesQuery.refetch()}>
             {t("common.retry")}
           </Button>
         </div>
@@ -279,9 +246,7 @@ const Candidates = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("candidate.list.deleteTitle")}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{t("candidate.list.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete
                 ? t("candidate.list.deleteDescription", {
@@ -299,18 +264,13 @@ const Candidates = () => {
               onClick={onConfirmDelete}
               disabled={removeCandidate.isPending}
             >
-              {removeCandidate.isPending
-                ? t("common.deleting")
-                : t("candidate.list.delete")}
+              {removeCandidate.isPending ? t("common.deleting") : t("candidate.list.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <CandidateOverviewDialog
-        candidateId={overviewId}
-        onClose={() => setOverviewId(null)}
-      />
+      <CandidateOverviewDialog candidateId={overviewId} onClose={() => setOverviewId(null)} />
 
       <CandidateCreateDialog
         open={isCreateOpen}

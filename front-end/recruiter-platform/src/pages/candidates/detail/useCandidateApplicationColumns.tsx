@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { EyeIcon } from "lucide-react";
-import { type ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@ui/button";
 
 import type { CandidateApplicationListItem } from "@/api/schemas/candidates.schema";
 import { ApplicationStatusBadge } from "@/components/common/ApplicationStatusBadge";
+import { type DataTableColumn } from "@/components/common/DataTable";
 import { formatIsoDate } from "@/lib/jobFormat";
 
 interface CandidateApplicationColumnsOptions {
@@ -15,7 +15,7 @@ interface CandidateApplicationColumnsOptions {
 /** Applications of one candidate across every job. Read-only. */
 export function useCandidateApplicationColumns({
   onViewApplication,
-}: CandidateApplicationColumnsOptions): ColumnDef<CandidateApplicationListItem>[] {
+}: CandidateApplicationColumnsOptions): DataTableColumn<CandidateApplicationListItem>[] {
   const { t } = useTranslation();
 
   return [
@@ -32,29 +32,22 @@ export function useCandidateApplicationColumns({
     {
       id: "department",
       header: t("common.department"),
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.jobDepartment ?? "—"}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.jobDepartment ?? "—"}</span>,
     },
     {
       id: "location",
       header: t("common.location"),
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.jobLocation}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.jobLocation}</span>,
     },
     {
       accessorKey: "status",
       header: t("common.stage"),
-      cell: ({ row }) => (
-        <ApplicationStatusBadge status={row.original.status} />
-      ),
+      cell: ({ row }) => <ApplicationStatusBadge status={row.original.status} />,
     },
     {
       accessorKey: "appliedAt",
       header: t("common.appliedOn"),
-      cell: ({ row }) =>
-        formatIsoDate(row.original.appliedAt ?? row.original.createdAt),
+      cell: ({ row }) => formatIsoDate(row.original.appliedAt ?? row.original.createdAt),
     },
     {
       id: "actions",

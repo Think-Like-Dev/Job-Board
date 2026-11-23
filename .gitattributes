@@ -3,3 +3,6 @@
 # Docker images, so the images strip the carriage returns themselves.
 *.sh text
 dk text
+
+# Git runs hooks through sh; a CRLF shebang fails on Linux and macOS.
+.githooks/* text eol=lf

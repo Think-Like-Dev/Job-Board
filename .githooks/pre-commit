@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+#
+# Runs the checks for the projects touched by this commit:
+#   - ESLint and Prettier on the staged files
+#   - the project build/typecheck (whole project, since types cross files)
+#   - ruff format/lint on the staged Python files
+#   - migration filename length (32 characters including the extension)
+#
+# Only the affected apps run, so a candidate-portal-only commit does not build
+# the recruiter app or the back ends. Everything is a check, never a rewrite:
+# the hook does not run `--fix` or `--write`.
+#
+# Written for the bash 3.2 that ships with macOS: no mapfile, no associative
+# arrays, no bare empty-array expansion under `set -u`.
+set -eo pipefail
+
+# Git runs hooks from the work-tree root, but an explicit cd keeps the hook
+# correct when it is invoked by a GUI client, a hook runner, or from a
+# subdirectory of the repo.
+cd "$(git rev-parse --show-toplevel)"
+
+MAX_MIGRATION_NAME=32
+status=0
+
+require_tool() {
+  local tool="$1"
+  local hint="$2"
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    printf 'pre-commit: %s is not on PATH. %s\n' "$tool" "$hint" >&2
+    printf 'pre-commit: install it, or commit with --no-verify if the machine cannot run it.\n' >&2
+    exit 1
+  fi
+}
+
+staged=()
+while IFS= read -r file; do
+  staged+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+if [ "${#staged[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+# Files of one project, without the project prefix, one per line.
+project_files() {
+  local prefix="$1"
+  local file
+  for file in "${staged[@]}"; do
+    case "$file" in
+      "$prefix"/*) printf '%s\n' "${file#"$prefix"/}" ;;
+    esac
+  done
+}
+
+# Subset whose path matches a regular expression, one per line.
+matching() {
+  local regex="$1"
+  shift
+  local file
+  for file in "$@"; do
+    if [[ "$file" =~ $regex ]]; then
+      printf '%s\n' "$file"
+    fi
+  done
+}
+
+project_changed() {
+  local prefix="$1"
+  local file
+  for file in "${staged[@]}"; do
+    case "$file" in
+      "$prefix"/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# Fills FILES (everything Prettier knows) and LINTABLE (everything ESLint
+# knows) for one project prefix.
+collect_project() {
+  local prefix="$1"
+  local project=()
+  local file
+  while IFS= read -r file; do
+    project+=("$file")
+  done < <(project_files "$prefix")
+  if [ "${#project[@]}" -eq 0 ]; then
+    return 0
+  fi
+
+  FILES=()
+  while IFS= read -r file; do
+    FILES+=("$file")
+  done < <(matching '\.(ts|tsx|js|jsx|mjs|cjs|json|css|html)$' "${project[@]}")
+
+  LINTABLE=()
+  while IFS= read -r file; do
+    LINTABLE+=("$file")
+  done < <(matching '\.(ts|tsx|js|jsx)$' "${FILES[@]}")
+}
+
+check_migrations() {
+  local prefix="$1"
+  local file
+  local base
+  local failed=0
+  while IFS= read -r file; do
+    case "$file" in
+      alembic/versions/*.py|src/migrations/*.ts)
+        base="${file##*/}"
+        if [ "${#base}" -gt "$MAX_MIGRATION_NAME" ]; then
+          printf '  %s is %d characters; the maximum is %d\n' \
+            "$base" "${#base}" "$MAX_MIGRATION_NAME"
+          failed=1
+        fi
+        ;;
+    esac
+  done < <(project_files "$prefix")
+  if [ "$failed" -ne 0 ]; then
+    printf 'Migration filenames must be %d characters or fewer (including .py/.ts).\n' \
+      "$MAX_MIGRATION_NAME"
+    status=1
+  fi
+}
+
+frontend() {
+  local name="$1"
+  local dir="front-end/$name"
+  require_tool pnpm "Install pnpm 12.21 (see CONTRIBUTING.md)."
+  FILES=()
+  LINTABLE=()
+  collect_project "$dir"
+  if [ "${#FILES[@]}" -eq 0 ]; then
+    return 0
+  fi
+
+  printf '\n== %s ==\n' "$name"
+
+  if [ "${#LINTABLE[@]}" -gt 0 ]; then
+    printf 'eslint  %d file(s)\n' "${#LINTABLE[@]}"
+    if ! (cd "$dir" && pnpm exec eslint --max-warnings 0 "${LINTABLE[@]}"); then
+      status=1
+    fi
+  fi
+
+  printf 'prettier --check  %d file(s)\n' "${#FILES[@]}"
+  if ! (cd "$dir" && pnpm exec prettier --check "${FILES[@]}"); then
+    status=1
+  fi
+
+  printf 'build\n'
+  if ! (cd "$dir" && pnpm build); then
+    status=1
+  fi
+}
+
+node_api() {
+  local dir="back-end/platform-api"
+  require_tool pnpm "Install pnpm 12.21 (see CONTRIBUTING.md)."
+  FILES=()
+  LINTABLE=()
+  collect_project "$dir"
+  if [ "${#FILES[@]}" -eq 0 ]; then
+    return 0
+  fi
+
+  printf '\n== platform-api ==\n'
+
+  if [ "${#LINTABLE[@]}" -gt 0 ]; then
+    printf 'eslint  %d file(s)\n' "${#LINTABLE[@]}"
+    if ! (cd "$dir" && pnpm exec eslint --max-warnings 0 "${LINTABLE[@]}"); then
+      status=1
+    fi
+  fi
+
+  printf 'prettier --check  %d file(s)\n' "${#FILES[@]}"
+  if ! (cd "$dir" && pnpm exec prettier --check "${FILES[@]}"); then
+    status=1
+  fi
+
+  printf 'build\n'
+  if ! (cd "$dir" && pnpm build); then
+    status=1
+  fi
+}
+
+python_api() {
+  local dir="back-end/ai-platform"
+  require_tool uv "Install uv and run 'uv sync' in back-end/ai-platform."
+  local project=()
+  local files=()
+  local file
+  while IFS= read -r file; do
+    project+=("$file")
+  done < <(project_files "$dir")
+  if [ "${#project[@]}" -eq 0 ]; then
+    return 0
+  fi
+  while IFS= read -r file; do
+    files+=("$file")
+  done < <(matching '\.py$' "${project[@]}")
+
+  printf '\n== ai-platform ==\n'
+
+  if [ "${#files[@]}" -gt 0 ]; then
+    printf 'ruff format --check  %d file(s)\n' "${#files[@]}"
+    if ! (cd "$dir" && uv run ruff format --check "${files[@]}"); then
+      status=1
+    fi
+
+    printf 'ruff check  %d file(s)\n' "${#files[@]}"
+    if ! (cd "$dir" && uv run ruff check "${files[@]}"); then
+      status=1
+    fi
+  fi
+}
+
+check_migrations "back-end/platform-api"
+check_migrations "back-end/ai-platform"
+
+if project_changed "front-end/recruiter-platform"; then
+  frontend "recruiter-platform"
+fi
+if project_changed "front-end/candidate-portal"; then
+  frontend "candidate-portal"
+fi
+if project_changed "back-end/platform-api"; then
+  node_api
+fi
+if project_changed "back-end/ai-platform"; then
+  python_api
+fi
+
+if [ "$status" -ne 0 ]; then
+  printf '\nCommit blocked: fix the checks above and stage the result.\n' >&2
+  exit 1
+fi
+
+printf '\nAll staged checks passed.\n'

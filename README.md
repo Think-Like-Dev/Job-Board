@@ -51,5 +51,40 @@ Job-Board
 
 For a more detailed overview of the architecture and implementation, refer to the documentation in the respective [front-end](./front-end/FrontEnd-Readme.md) and [back-end](./back-end/BackEnd-Readme.md) directories.
 
+## Local development
+
+Prerequisites: **Node 22 LTS**, **pnpm 12.21.0**, **Docker + Compose**, and **Python 3.14 with
+uv** (AI service only). The pnpm version is pinned in each `package.json` (`packageManager`)
+and in the API Dockerfiles; keep them in sync when upgrading.
+
+```sh
+# from the repository root
+./dk setup                 # back-end env files + host dependencies
+./scripts/setup-hooks.sh   # enables the tracked Git hooks (once per clone)
+./dk run:dev               # whole local stack
+```
+
+The frontends are installed independently:
+
+```sh
+cd front-end/candidate-portal && pnpm install && pnpm dev
+cd front-end/recruiter-platform && pnpm install && pnpm dev
+```
+
+**Git hooks are not installed automatically.** This repository does not use husky or
+`pre-commit install`; it ships a plain hook in `.githooks/` and enables it with
+`git config core.hooksPath .githooks`, which `./scripts/setup-hooks.sh` does for you. Run that
+once per clone (and after moving the repository). The hook works from any subdirectory and in
+any terminal: Git itself runs it from the work-tree root, through the bash bundled with Git
+(Git Bash on Windows).
+
+`pre-commit` checks only the projects a commit touches: ESLint with zero warnings, Prettier
+`--check` and the project build/typecheck for each affected app; `ruff format --check` and
+`ruff check` for staged Python files; and the migration filename limit (32 characters
+including `.ts`/`.py`). It never rewrites files.
+
+The full setup guide — migrations, dependency and version updates, cleanup, branch/PR
+conventions and repo quirks — is in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

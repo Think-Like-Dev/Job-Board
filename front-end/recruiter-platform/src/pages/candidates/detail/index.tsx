@@ -1,16 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { Button } from "@ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ui/select";
 
 import { useGetCandidate, useGetCandidateApplications } from "@/api/hooks/useCandidates";
 import type { CandidateApplicationListItem } from "@/api/schemas/candidates.schema";
@@ -21,10 +15,7 @@ import {
 } from "@/components/common/DocumentViewerPanel";
 import { CandidatePanel } from "@pages/jobs/Applications/components/CandidatePanel";
 import { useIsDesktopPanel } from "@/hooks/useIsDesktopPanel";
-import {
-  APPLICATION_FILTER_STATUSES,
-  type ApplicationStatus,
-} from "@/types/application.types";
+import { APPLICATION_FILTER_STATUSES, type ApplicationStatus } from "@/types/application.types";
 import { CandidateOverviewPanel } from "@/pages/candidates/components/CandidateOverviewPanel";
 import { CandidateDetailHeader } from "./CandidateDetailHeader";
 import { useCandidateApplicationColumns } from "./useCandidateApplicationColumns";
@@ -46,14 +37,10 @@ const CandidateDetail = () => {
 
   const [showOverview, setShowOverview] = useState(isDesktopPanel);
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<ApplicationStatus | undefined>(
-    undefined,
-  );
+  const [status, setStatus] = useState<ApplicationStatus | undefined>(undefined);
   const [selectedApplication, setSelectedApplication] =
     useState<CandidateApplicationListItem | null>(null);
-  const [viewerTarget, setViewerTarget] = useState<DocumentViewerTarget | null>(
-    null,
-  );
+  const [viewerTarget, setViewerTarget] = useState<DocumentViewerTarget | null>(null);
 
   const candidateQuery = useGetCandidate(id);
   const candidate = candidateQuery.data?.data;
@@ -68,21 +55,24 @@ const CandidateDetail = () => {
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
   const totalApplications = pagination?.total ?? 0;
 
-  useEffect(() => {
-    setPage(1);
-  }, [status]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(Math.max(1, totalPages));
-  }, [page, totalPages]);
+  // Server-side totals can shrink after a rejection. Clamping during render
+  // is the documented alternative to a synchronising effect; the status
+  // filter resets the page in its handler.
+  if (page > totalPages) {
+    setPage(Math.max(1, totalPages));
+  }
 
   // The layout switches at 861px. Desktop opens the overview inline; mobile
-  // starts on the table and opens panels as sheets on demand.
-  useEffect(() => {
+  // starts on the table and opens panels as sheets on demand. Adjusting the
+  // dependent state during render is React's pattern for a changed prop; an
+  // effect would render one frame with the old layout.
+  const [wasDesktopPanel, setWasDesktopPanel] = useState(isDesktopPanel);
+  if (wasDesktopPanel !== isDesktopPanel) {
+    setWasDesktopPanel(isDesktopPanel);
     setShowOverview(isDesktopPanel);
     setSelectedApplication(null);
     setViewerTarget(null);
-  }, [isDesktopPanel]);
+  }
 
   const openDocument = (target: DocumentViewerTarget) => {
     // The application detail and the document preview share the right-hand
@@ -120,17 +110,9 @@ const CandidateDetail = () => {
 
       {candidateQuery.isError ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border bg-background p-8 text-center">
-          <p className="text-sm font-medium">
-            {t("candidate.detail.loadFailedTitle")}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t("common.candidateUnavailable")}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void candidateQuery.refetch()}
-          >
+          <p className="text-sm font-medium">{t("candidate.detail.loadFailedTitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("common.candidateUnavailable")}</p>
+          <Button type="button" variant="outline" onClick={() => void candidateQuery.refetch()}>
             {t("common.retry")}
           </Button>
         </div>
@@ -147,9 +129,7 @@ const CandidateDetail = () => {
           <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border bg-background p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-0.5">
-                <h2 className="text-sm font-semibold">
-                  {t("candidate.applications.title")}
-                </h2>
+                <h2 className="text-sm font-semibold">{t("candidate.applications.title")}</h2>
                 <p className="text-xs text-muted-foreground">
                   {t("candidate.applications.total", {
                     count: totalApplications,
@@ -158,28 +138,18 @@ const CandidateDetail = () => {
               </div>
               <Select
                 value={status ?? ALL_STATUSES}
-                onValueChange={(value) =>
-                  setStatus(
-                    value === ALL_STATUSES
-                      ? undefined
-                      : (value as ApplicationStatus),
-                  )
-                }
+                onValueChange={(value) => {
+                  setStatus(value === ALL_STATUSES ? undefined : (value as ApplicationStatus));
+                  setPage(1);
+                }}
               >
-                <SelectTrigger
-                  className="w-full sm:w-48"
-                  aria-label={t("common.status")}
-                >
+                <SelectTrigger className="w-full sm:w-48" aria-label={t("common.status")}>
                   <SelectValue>
-                    {status
-                      ? t(`job.applications.status.${status}`)
-                      : t("common.allStatuses")}
+                    {status ? t(`job.applications.status.${status}`) : t("common.allStatuses")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ALL_STATUSES}>
-                    {t("common.allStatuses")}
-                  </SelectItem>
+                  <SelectItem value={ALL_STATUSES}>{t("common.allStatuses")}</SelectItem>
                   {APPLICATION_FILTER_STATUSES.map((option) => (
                     <SelectItem key={option} value={option}>
                       {t(`job.applications.status.${option}`)}
@@ -225,9 +195,7 @@ const CandidateDetail = () => {
                   variant="outline"
                   size="sm"
                   disabled={page <= 1}
-                  onClick={() =>
-                    setPage((current) => Math.max(1, current - 1))
-                  }
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
                 >
                   <ChevronLeftIcon data-icon="inline-start" />
                   {t("job.pagination.previous")}
@@ -258,10 +226,7 @@ const CandidateDetail = () => {
             }
           />
 
-          <DocumentViewerPanel
-            target={viewerTarget}
-            onClose={() => setViewerTarget(null)}
-          />
+          <DocumentViewerPanel target={viewerTarget} onClose={() => setViewerTarget(null)} />
         </div>
       )}
     </section>

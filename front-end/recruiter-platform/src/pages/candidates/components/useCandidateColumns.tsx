@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { EyeIcon, Trash2Icon } from "lucide-react";
-import { type ColumnDef } from "@tanstack/react-table";
 
 import { Badge } from "@ui/badge";
 import { Button } from "@ui/button";
 
 import type { CandidateListItem } from "@/api/schemas/candidates.schema";
+import { type DataTableColumn } from "@/components/common/DataTable";
 import { CandidateStatus } from "@/types/candidate.types";
 import {
   candidateDisplayName,
@@ -26,7 +26,7 @@ export function useCandidateColumns({
   onViewOverview,
   canDelete,
   onDelete,
-}: UseCandidateColumnsOptions): ColumnDef<CandidateListItem>[] {
+}: UseCandidateColumnsOptions): DataTableColumn<CandidateListItem>[] {
   const { t } = useTranslation();
 
   return [
@@ -41,13 +41,9 @@ export function useCandidateColumns({
               {candidateInitials(candidate)}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">
-                {candidateDisplayName(candidate)}
-              </span>
+              <span className="font-medium">{candidateDisplayName(candidate)}</span>
               {candidate.createdBy ? (
-                <Badge variant="secondary">
-                  {t("candidate.source.recruiter")}
-                </Badge>
+                <Badge variant="secondary">{t("candidate.source.recruiter")}</Badge>
               ) : null}
               {candidate.status === CandidateStatus.INVITED ? (
                 <Badge variant="outline">{t("candidate.status.invited")}</Badge>
@@ -72,9 +68,7 @@ export function useCandidateColumns({
     {
       id: "location",
       header: t("common.location"),
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.currentLocation ?? "—"}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.currentLocation ?? "—"}</span>,
     },
     {
       id: "skills",
@@ -94,16 +88,13 @@ export function useCandidateColumns({
     {
       id: "applications",
       header: t("candidate.list.columns.applications"),
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.totalApplicationsCount}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.totalApplicationsCount}</span>,
     },
     {
       id: "createdAt",
       header: t("candidate.list.columns.registeredAt"),
       meta: { sortable: true, sortKey: "createdAt" },
-      cell: ({ row }) =>
-        row.original.createdAt ? formatIsoDate(row.original.createdAt) : "—",
+      cell: ({ row }) => (row.original.createdAt ? formatIsoDate(row.original.createdAt) : "—"),
     },
     {
       id: "actions",

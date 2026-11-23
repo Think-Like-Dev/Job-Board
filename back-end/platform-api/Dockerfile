@@ -6,7 +6,7 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm@12.9.1
+RUN npm install -g pnpm@12.21.0
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
@@ -28,7 +28,7 @@ FROM node:22-bookworm-slim AS production-deps
 
 WORKDIR /app
 
-RUN npm install -g pnpm@12.9.1
+RUN npm install -g pnpm@12.21.0
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
@@ -49,7 +49,7 @@ RUN apt-get update \
 
 WORKDIR /app
 
-RUN npm install -g pnpm@12.9.1
+RUN npm install -g pnpm@12.21.0
 
 COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
 

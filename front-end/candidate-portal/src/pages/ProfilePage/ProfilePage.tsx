@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useIsMutating, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -15,10 +15,7 @@ import { ProfileFormSchema } from '@api/schemas/profile.schema';
 import type { ProfileFormValues } from '@api/schemas/profile.schema';
 import { useProfile, useUpdateProfile } from '@api/hooks/useProfile';
 import { getErrorMessage } from '@utils/errorMessage';
-import {
-  validateCoverLetter,
-  validateResume,
-} from '@utils/validators';
+import { validateCoverLetter, validateResume } from '@utils/validators';
 import type {
   CandidateProfile,
   CertificationPayload,
@@ -209,7 +206,7 @@ export default function ProfilePage() {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     setValue,
     formState: { errors, isDirty },
   } = useForm<ProfileFormValues>({
@@ -220,10 +217,10 @@ export default function ProfilePage() {
   const [educationModal, setEducationModal] = useState<EducationModalState>({
     open: false,
   });
-  const [experienceModal, setExperienceModal] =
-    useState<ExperienceModalState>({ open: false });
-  const [certificationModal, setCertificationModal] =
-    useState<CertificationModalState>({ open: false });
+  const [experienceModal, setExperienceModal] = useState<ExperienceModalState>({ open: false });
+  const [certificationModal, setCertificationModal] = useState<CertificationModalState>({
+    open: false,
+  });
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
@@ -232,10 +229,10 @@ export default function ProfilePage() {
     reset(toFormValues(profile));
   }, [profile, reset]);
 
-  const education = watch('education') ?? [];
-  const experience = watch('experience') ?? [];
-  const certifications = watch('certifications') ?? [];
-  const skillIds = watch('skillIds') ?? [];
+  const education = useWatch({ control, name: 'education' }) ?? [];
+  const experience = useWatch({ control, name: 'experience' }) ?? [];
+  const certifications = useWatch({ control, name: 'certifications' }) ?? [];
+  const skillIds = useWatch({ control, name: 'skillIds' }) ?? [];
 
   const certificationSkills: Skill[] = [...(profile?.skills ?? [])];
   for (const certification of profile?.certifications ?? []) {
@@ -255,9 +252,7 @@ export default function ProfilePage() {
     patch: UpdateProfilePayload,
     optimistic?: Partial<CandidateProfile>,
   ): Promise<void> {
-    const previous = queryClient.getQueryData<CandidateProfile>(
-      QUERY_KEYS.PROFILE.ME,
-    );
+    const previous = queryClient.getQueryData<CandidateProfile>(QUERY_KEYS.PROFILE.ME);
 
     // File inputs save immediately, even before the rest of the mandatory
     // profile is complete. Update the cached profile first so the filename
@@ -306,17 +301,11 @@ export default function ProfilePage() {
   );
 
   const profileImageError =
-    submitAttempted && !profile?.profileImage
-      ? t('profile.photo.required')
-      : null;
+    submitAttempted && !profile?.profileImage ? t('profile.photo.required') : null;
   const resumeError =
-    submitAttempted && !profile?.resume
-      ? t('profile.documents.resume.required')
-      : null;
+    submitAttempted && !profile?.resume ? t('profile.documents.resume.required') : null;
   const educationError =
-    submitAttempted && education.length === 0
-      ? t('profile.education.required')
-      : null;
+    submitAttempted && education.length === 0 ? t('profile.education.required') : null;
 
   function saveEducation(value: EducationPayload) {
     const next = [...education];
@@ -362,24 +351,16 @@ export default function ProfilePage() {
   }
 
   const editingEducation =
-    educationModal.index === undefined
-      ? undefined
-      : education[educationModal.index];
+    educationModal.index === undefined ? undefined : education[educationModal.index];
   const editingExperience =
-    experienceModal.index === undefined
-      ? undefined
-      : experience[experienceModal.index];
+    experienceModal.index === undefined ? undefined : experience[experienceModal.index];
   const editingCertification =
-    certificationModal.index === undefined
-      ? undefined
-      : certifications[certificationModal.index];
+    certificationModal.index === undefined ? undefined : certifications[certificationModal.index];
 
   return (
     <div className="container mx-auto max-w-4xl space-y-8 px-4 py-12">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          {t('profile.title')}
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('profile.title')}</h1>
         <p className="mt-2 text-muted-foreground">{t('profile.subtitle')}</p>
       </div>
 
@@ -400,37 +381,26 @@ export default function ProfilePage() {
                   { profileImage: toProfileFile(uploaded) },
                 )
               }
-              onRemove={() =>
-                persistFile(
-                  { profileImageFileId: null },
-                  { profileImage: null },
-                )
-              }
+              onRemove={() => persistFile({ profileImageFileId: null }, { profileImage: null })}
             />
 
             <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>
-                  {t('profile.fields.firstName')}{' '}
-                  <span className="text-destructive">*</span>
+                  {t('profile.fields.firstName')} <span className="text-destructive">*</span>
                 </Label>
                 <Input {...register('firstName')} />
                 {errors.firstName && (
-                  <p className="text-xs text-destructive">
-                    {t('profile.validation.nameRequired')}
-                  </p>
+                  <p className="text-xs text-destructive">{t('profile.validation.nameRequired')}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label>
-                  {t('profile.fields.lastName')}{' '}
-                  <span className="text-destructive">*</span>
+                  {t('profile.fields.lastName')} <span className="text-destructive">*</span>
                 </Label>
                 <Input {...register('lastName')} />
                 {errors.lastName && (
-                  <p className="text-xs text-destructive">
-                    {t('profile.validation.nameRequired')}
-                  </p>
+                  <p className="text-xs text-destructive">{t('profile.validation.nameRequired')}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -469,18 +439,14 @@ export default function ProfilePage() {
                 <Label>{t('profile.fields.linkedinUrl')}</Label>
                 <Input {...register('linkedinUrl')} placeholder="https://" />
                 {errors.linkedinUrl && (
-                  <p className="text-xs text-destructive">
-                    {t('validation.invalid')}
-                  </p>
+                  <p className="text-xs text-destructive">{t('validation.invalid')}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label>{t('profile.fields.portfolioUrl')}</Label>
                 <Input {...register('portfolioUrl')} placeholder="https://" />
                 {errors.portfolioUrl && (
-                  <p className="text-xs text-destructive">
-                    {t('validation.invalid')}
-                  </p>
+                  <p className="text-xs text-destructive">{t('validation.invalid')}</p>
                 )}
               </div>
             </div>
@@ -504,10 +470,7 @@ export default function ProfilePage() {
             error={resumeError}
             validate={validateResume}
             onUploaded={(uploaded) =>
-              persistFile(
-                { resumeFileId: uploaded.id },
-                { resume: toProfileFile(uploaded) },
-              )
+              persistFile({ resumeFileId: uploaded.id }, { resume: toProfileFile(uploaded) })
             }
           />
 
@@ -528,12 +491,7 @@ export default function ProfilePage() {
                 { coverLetter: toProfileFile(uploaded) },
               )
             }
-            onRemove={() =>
-              persistFile(
-                { coverLetterFileId: null },
-                { coverLetter: null },
-              )
-            }
+            onRemove={() => persistFile({ coverLetterFileId: null }, { coverLetter: null })}
           />
         </CardContent>
       </Card>
@@ -602,9 +560,7 @@ export default function ProfilePage() {
 
       <div className="flex items-center justify-end gap-4">
         {Object.keys(errors).length > 0 && (
-          <p className="mr-auto text-sm text-destructive">
-            {t('profile.validation.invalid')}
-          </p>
+          <p className="mr-auto text-sm text-destructive">{t('profile.validation.invalid')}</p>
         )}
         <Button
           type="button"
@@ -614,13 +570,8 @@ export default function ProfilePage() {
         >
           {t('common.cancel')}
         </Button>
-        <Button
-          onClick={() => void onSubmit()}
-          disabled={updateProfile.isPending || isUploading}
-        >
-          {updateProfile.isPending
-            ? t('profile.actions.saving')
-            : t('profile.actions.save')}
+        <Button onClick={() => void onSubmit()} disabled={updateProfile.isPending || isUploading}>
+          {updateProfile.isPending ? t('profile.actions.saving') : t('profile.actions.save')}
         </Button>
       </div>
 

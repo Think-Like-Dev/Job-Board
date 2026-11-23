@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
   Post,
   Req,
   Res,
@@ -19,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { AuthRole, UserRole } from '@common/constants/enums';
+import { AuthRole, UserRole, UserStatus } from '@common/constants/enums';
 import type { Candidate } from '@modules/candidates/candidate.schema';
 import type { User } from '@modules/users/user.schema';
 import { MailService } from '@modules/mail/mail.service';
@@ -39,6 +40,10 @@ import {
   ResetPasswordDto,
   VerifyOtpDto,
 } from './auth.dto';
+import {
+  AcceptInvitationDto,
+  InvitationPreviewDto,
+} from '@modules/users/user.dto';
 import type { AppConfig } from '@src/config/configuration';
 import { SessionAuth } from './session-auth.decorator';
 import { PermissionsService } from '@modules/rbac/permissions.service';
@@ -109,8 +114,15 @@ export class AuthController {
     }
 
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user || user.isActive === false) {
+    if (
+      !user ||
+      user.isActive === false ||
+      user.status === UserStatus.SUSPENDED
+    ) {
       throw new UnauthorizedException('Invalid or expired OTP');
+    }
+    if (user.status === UserStatus.INVITED) {
+      throw new UnauthorizedException('Finish your invitation first');
     }
 
     await this.authService.createSession(res, {
@@ -142,8 +154,11 @@ export class AuthController {
     ) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    if (user.isActive === false) {
+    if (user.isActive === false || user.status === UserStatus.SUSPENDED) {
       throw new UnauthorizedException('Account is disabled');
+    }
+    if (user.status === UserStatus.INVITED) {
+      throw new UnauthorizedException('Finish your invitation first');
     }
 
     const otp = await this.authService.generateOtp(
@@ -156,6 +171,38 @@ export class AuthController {
       otpRequired: true,
       message: 'OTP sent to your email',
       ...this.devOtp(otp),
+    };
+  }
+
+  @Get('invitation/:token')
+  @ApiOperation({ summary: 'Preview an invitation (public onboarding)' })
+  @ApiOkResponse({ type: InvitationPreviewDto })
+  async previewInvitation(
+    @Param('token') token: string,
+  ): Promise<InvitationPreviewDto> {
+    return this.usersService.previewInvitation(token);
+  }
+
+  @Post('invitation/accept')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Complete an invitation and start a session' })
+  @ApiOkResponse({ type: AuthResponseDto })
+  async acceptInvitation(
+    @Body() dto: AcceptInvitationDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
+    const user = await this.usersService.acceptInvitation(dto);
+    const role = user.role ?? UserRole.HIRING_MANAGER;
+
+    await this.authService.createSession(res, {
+      principalType: 'user',
+      principalId: user.id,
+      email: user.email,
+      role,
+    });
+
+    return {
+      user: toUserDto(user, this.permissionsService.forRole(role)),
     };
   }
 

@@ -6,6 +6,14 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     RESET_PASSWORD_REQUEST: '/auth/password/reset/request',
     RESET_PASSWORD_CONFIRM: '/auth/password/reset/confirm',
+    INVITATION_PREVIEW: (token: string) => `/auth/invitation/${token}`,
+    INVITATION_ACCEPT: '/auth/invitation/accept',
+  },
+  USERS: {
+    LIST: '/users',
+    UPDATE: (id: string) => `/users/${id}`,
+    DELETE: (id: string) => `/users/${id}`,
+    RESEND_INVITE: (id: string) => `/users/${id}/invite/resend`,
   },
   JOBS: {
     GET_ALL: '/jobs',

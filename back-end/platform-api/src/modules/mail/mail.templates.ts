@@ -38,8 +38,7 @@ export function otpEmail(code: string, expiryMinutes: number): MailContent {
   };
 }
 
-/** Password reset link for an internal user (recruiter, admin, manager). */
-export function passwordResetEmail(
+/** Password reset link for an internal user (recruiter, admin, manager). */ export function passwordResetEmail(
   link: string,
   expiryMinutes: number,
 ): MailContent {
@@ -60,6 +59,35 @@ export function passwordResetEmail(
        <p style="margin:0;color:#6b7280">
          The link expires in ${expiryMinutes} minutes and can be used once.
          If you did not ask for this, no action is needed.
+       </p>`,
+    ),
+  };
+}
+
+/** Invitation to join the platform as an internal user. */
+export function invitationEmail(
+  link: string,
+  roleLabel: string,
+  inviterName: string,
+  expiryDays: number,
+): MailContent {
+  return {
+    subject: `You have been invited to Job Board as ${roleLabel}`,
+    text: [
+      `${inviterName} invited you to Job Board as ${roleLabel}.`,
+      `Finish your profile and choose a password here: ${link}`,
+      `The invitation expires in ${expiryDays} days.`,
+    ].join('\n\n'),
+    html: layout(
+      'You have been invited',
+      `<p style="margin:0 0 16px">
+         ${inviterName} invited you to Job Board as <strong>${roleLabel}</strong>.
+       </p>
+       <p style="margin:0 0 16px">
+         <a href="${link}" style="display:inline-block;background:#111827;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none">Accept the invitation</a>
+       </p>
+       <p style="margin:0;color:#6b7280">
+         The invitation expires in ${expiryDays} days.
        </p>`,
     ),
   };

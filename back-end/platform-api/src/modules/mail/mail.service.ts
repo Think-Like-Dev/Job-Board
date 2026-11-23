@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import nodemailer, { type Transporter } from 'nodemailer';
 import type { AppConfig, MailConfig } from '@src/config/configuration';
 import {
+  invitationEmail,
   otpEmail,
   passwordResetEmail,
   type MailContent,
@@ -46,6 +47,19 @@ export class MailService {
     await this.send(
       to,
       passwordResetEmail(link, this.config.passwordResetExpiryMinutes),
+    );
+  }
+
+  async sendInvitation(
+    to: string,
+    link: string,
+    roleLabel: string,
+    inviterName: string,
+    expiryDays: number,
+  ): Promise<void> {
+    await this.send(
+      to,
+      invitationEmail(link, roleLabel, inviterName, expiryDays),
     );
   }
 

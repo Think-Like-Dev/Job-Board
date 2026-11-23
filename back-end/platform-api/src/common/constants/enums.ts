@@ -13,6 +13,16 @@ export enum AuthRole {
   RECRUITER = 'RECRUITER',
 }
 
+/** Lifecycle of an internal user account (recruiter, admin, manager). */
+export enum UserStatus {
+  /** Created by an invite; no password yet, cannot sign in. */
+  INVITED = 'INVITED',
+  /** Onboarded and able to sign in. */
+  ACTIVE = 'ACTIVE',
+  /** Blocked by an admin; keeps the record, loses access. */
+  SUSPENDED = 'SUSPENDED',
+}
+
 export enum JobStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',

@@ -8,8 +8,6 @@ interleaved into nonsense, an OCR pass that read noise.
 
 from __future__ import annotations
 
-import re
-
 from app.services.document.ocr import MIN_USABLE_CONFIDENCE
 from app.services.document.schemas import ExtractedDocument, QualityReport
 
@@ -30,10 +28,6 @@ _SUSPICIOUS_CHARS = (
     chr(0x200D),  # zero width joiner
 )
 
-# A line that is very short and sits between two long lines is the classic
-# sign of two columns having been read in the wrong order.
-_SHORT_LINE = re.compile(r"^.{1,40}$")
-
 
 def assess(document: ExtractedDocument, language: str | None = None) -> QualityReport:
     """Builds the quality report for an extracted document."""
@@ -50,10 +44,12 @@ def assess(document: ExtractedDocument, language: str | None = None) -> QualityR
     if not unicode_ok:
         issues.append("the text contains replacement characters")
 
-    reading_order_ok = _reading_order_looks_sane(text)
-    if not reading_order_ok:
-        issues.append("the text looks like two columns were interleaved")
-
+    # The extractor now puts two-column pages into reading order itself
+    # (`services/document/layout.py`), so there is no separate verdict to take
+    # here. A page it cannot read is left in the text layer's order rather than
+    # guessed at; the other checks below still refuse a file that produced
+    # noise.
+    reading_order_ok = True
     confidences = [
         page.ocr_confidence for page in document.pages if page.ocr_confidence is not None
     ]
@@ -80,22 +76,3 @@ def assess(document: ExtractedDocument, language: str | None = None) -> QualityR
         language=language,
         issues=tuple(issues),
     )
-
-
-def _reading_order_looks_sane(text: str) -> bool:
-    """A cheap check for interleaved columns.
-
-    Two columns read in the wrong order alternate between short lines and
-    long lines: the left column's line, then the right column's line. A run of
-    such alternation is a warning, not a verdict — one short line in a
-    heading is normal.
-    """
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    if len(lines) < 12:
-        return True
-
-    flags = [bool(_SHORT_LINE.match(line)) for line in lines]
-    alternations = sum(1 for index in range(len(flags) - 1) if flags[index] != flags[index + 1])
-
-    # More than a third of the line boundaries flipping is not a coincidence.
-    return alternations / (len(flags) - 1) <= 0.34

@@ -6,7 +6,7 @@ from datetime import date
 from app.schemas.job_match import JobSpec, SeniorityLevel
 from app.schemas.resume import EducationEntry, ExperienceEntry, ResumeExtractionSchema
 from app.schemas.scoring import ComponentScores
-from app.services.scoring.experience import parse_month, score_experience
+from app.services.scoring.experience import merged_months, parse_month, score_experience
 from app.services.scoring.models import DeterministicScore
 from app.services.scoring.semantic import score_semantic
 from app.services.scoring.skills import contains_skill, score_skills
@@ -63,36 +63,80 @@ def _tokens(value: str) -> set[str]:
     }
 
 
+# Spellings that name the same role; joined before tokenising so
+# "front-end" and "frontend" are one token.
+_TITLE_REPLACEMENTS = (
+    ("front end", "frontend"),
+    ("front-end", "frontend"),
+    ("back end", "backend"),
+    ("back-end", "backend"),
+    ("full stack", "fullstack"),
+    ("full-stack", "fullstack"),
+    ("machine learning", "ml"),
+    ("artificial intelligence", "ai"),
+)
+
+
+def _title_tokens(value: str) -> set[str]:
+    lowered = (value or "").lower()
+    for old, new in _TITLE_REPLACEMENTS:
+        lowered = lowered.replace(old, new)
+    return _tokens(lowered)
+
+
 def _infer_level(title: str) -> int | None:
-    tokens = _tokens(title)
+    tokens = _title_tokens(title)
     for token, level in _LEVELS.items():
         if token in tokens:
             return level
     return None
 
 
-def score_role(entries: list[ExperienceEntry], spec: JobSpec) -> float:
+def _level_from_years(years: float) -> int | None:
+    if years >= 8:
+        return 4
+    if years >= 5:
+        return 3
+    if years >= 2:
+        return 2
+    if years >= 1:
+        return 1
+    return None
+
+
+def score_role(
+    entries: list[ExperienceEntry],
+    spec: JobSpec,
+    today: date | None = None,
+) -> float:
+    today = today or date.today()
     latest = max(
         (entry for entry in entries if entry.role),
         key=lambda entry: parse_month(entry.end_date) or date.max,
         default=None,
     )
     candidate_title = latest.role if latest else ""
-    job_tokens = _tokens(spec.title)
+    job_tokens = _title_tokens(spec.title)
     title_score = (
-        len(job_tokens & _tokens(candidate_title)) / len(job_tokens) * 100.0 if job_tokens else 0.0
+        len(job_tokens & _title_tokens(candidate_title)) / len(job_tokens) * 100.0
+        if job_tokens
+        else 0.0
     )
 
     candidate_level = _infer_level(candidate_title)
+    if candidate_level is None:
+        # A title without "senior"/"junior" still has years behind it.
+        candidate_level = _level_from_years(merged_months(entries, today) / 12.0)
+
     job_level = (
         _LEVELS.get(spec.seniority.value) if spec.seniority != SeniorityLevel.UNKNOWN else None
     )
     if candidate_level is None or job_level is None:
-        level_score = 70.0
-    else:
-        difference = abs(candidate_level - job_level)
-        level_score = 100.0 if difference == 0 else 60.0 if difference == 1 else 25.0
+        # No level on one side: title overlap is the only honest signal.
+        return title_score
 
+    difference = abs(candidate_level - job_level)
+    level_score = 100.0 if difference == 0 else 60.0 if difference == 1 else 25.0
     return 0.5 * title_score + 0.5 * level_score
 
 
@@ -178,7 +222,7 @@ def score_candidate(
             score_semantic(candidate_vectors, job_vector) if applicable["semantic"] else 0.0,
             2,
         ),
-        role=round(score_role(resume.experience, spec) if applicable["role"] else 0.0, 2),
+        role=round(score_role(resume.experience, spec, today) if applicable["role"] else 0.0, 2),
         projects=round(
             score_projects(resume.experience, spec) if applicable["projects"] else 0.0,
             2,

@@ -16,6 +16,7 @@ from app.core.exceptions import UnreadableDocument
 from app.models.ats import ResumeAnalysis
 from app.schemas.resume import ResumeExtractionSchema
 from app.services.canonical import render_resume_text
+from app.services.extraction_quality import clean_extraction
 from app.services.orchestrator import LLMOrchestrator
 from app.services.parser import DocumentParser
 from app.services.prompts import RESUME_EXTRACTION_SYSTEM
@@ -64,7 +65,7 @@ class ResumeService:
                 "the profile snapshot fallback is required"
             )
 
-        extracted = await self.extract_from_text(document.text)
+        extracted = clean_extraction(await self.extract_from_text(document.text), document.text)
         record = ResumeAnalysis(
             resume_file_id=resume_file_id,
             source_filename=filename,

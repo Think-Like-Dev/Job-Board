@@ -37,6 +37,8 @@ from app.services.canonical import is_empty_extraction, render_resume_text
 from app.services.document import ingest_document
 from app.services.document_store import DocumentStore
 from app.services.embedding_service import EmbeddingService
+from app.services.evaluation_quality import sanitise_evaluation
+from app.services.extraction_quality import clean_extraction
 from app.services.job_service import JobService
 from app.services.job_spec import build_deterministic_job_spec
 from app.services.match_store import upsert_match
@@ -154,6 +156,7 @@ async def _stored_evaluation(
         evaluation = QualitativeEvaluationSchema.model_validate(record.qualitative)
     except Exception:
         return None
+    evaluation = sanitise_evaluation(evaluation)
     return evaluation if _has_narrative(evaluation) else None
 
 
@@ -242,15 +245,26 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 stored.id,
                 (state.resume_filename or state.resume_sha256 or "")[:60],
             )
-            return {
-                "extracted": ResumeExtractionSchema.model_validate(stored.extracted_data),
-                "resume_analysis_id": stored.id,
-            }
+            stored_extracted = ResumeExtractionSchema.model_validate(stored.extracted_data)
+            extracted = clean_extraction(stored_extracted, state.resume_text)
+            if not stored.canonical_text or extracted != stored_extracted:
+                # Backfill the rendering, and persist the clean-up so the next
+                # run and the embeddings see the same data.
+                stored.extracted_data = extracted.model_dump(mode="json")
+                stored.canonical_text = render_resume_text(extracted)
+                stored.summary = extracted.executive_summary
+                await deps.session.commit()
+            return {"extracted": extracted, "resume_analysis_id": stored.id}
 
         if not state.llm_available and state.profile_snapshot:
             # No language model: the profile snapshot is the structured
             # candidate data.
-            return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
+            return {
+                "extracted": clean_extraction(
+                    _snapshot_to_extraction(state.profile_snapshot),
+                    state.resume_text,
+                )
+            }
         try:
             extracted = await deps.orchestrator.structured_output(
                 ResumeExtractionSchema,
@@ -260,8 +274,13 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         except NoActiveProvider, AllProvidersExhausted:
             if not state.profile_snapshot:
                 raise
-            return {"extracted": _snapshot_to_extraction(state.profile_snapshot)}
-        return {"extracted": extracted}
+            return {
+                "extracted": clean_extraction(
+                    _snapshot_to_extraction(state.profile_snapshot),
+                    state.resume_text,
+                )
+            }
+        return {"extracted": clean_extraction(extracted, state.resume_text)}
 
     async def persist_resume(state: ScoringState) -> dict[str, Any]:
         if state.extracted is None:
@@ -331,7 +350,11 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         """The job spec and the job vector."""
         try:
             job_record, job_spec = await deps.job_service.analyze(
-                state.job_description_text, state.job_id
+                state.job_description_text,
+                state.job_id,
+                title=state.job_title,
+                skills=state.job_skills,
+                years=state.job_years_of_experience,
             )
         except NoActiveProvider, AllProvidersExhausted:
             # No language model: the recruiter's own skill list and experience
@@ -348,6 +371,9 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 state.job_description_text,
                 job_spec,
                 state.job_id,
+                title=state.job_title,
+                skills=state.job_skills,
+                years=state.job_years_of_experience,
             )
             job_vector = await deps.embedder.ensure_job_embedding(job_record)
             return {"job_spec": job_spec, "job_vector": job_vector}
@@ -386,7 +412,6 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 user=evaluation_user_prompt(
                     state.extracted,
                     state.job_spec,
-                    state.deterministic.components,
                     deps.settings.max_text_chars,
                     state.output_language,
                 ),
@@ -395,7 +420,7 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
             # The deterministic score is still valid; the run is reported as
             # "score only" instead of "scored".
             qualitative = QualitativeEvaluationSchema()
-        return {"qualitative": qualitative}
+        return {"qualitative": sanitise_evaluation(qualitative)}
 
     async def persist_match(state: ScoringState) -> dict[str, Any]:
         if (

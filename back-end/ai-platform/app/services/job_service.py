@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -13,8 +14,67 @@ from app.core.config import Settings
 from app.core.constants import EXTRACTION_VERSION
 from app.models.ats import JobAnalysis
 from app.schemas.job_match import JobSpec
+from app.services.job_spec import infer_seniority, parse_min_years
 from app.services.orchestrator import LLMOrchestrator
 from app.services.prompts import JOB_ANALYSIS_SYSTEM
+
+
+def _content_hash(
+    description: str,
+    title: str | None = None,
+    skills: list[str] | None = None,
+    years: str | None = None,
+) -> str:
+    """The cache key: the description plus the requirements the recruiter typed.
+
+    Two jobs with the same description but different skills or experience are
+    different requirements and must not share one analysis.
+    """
+    payload = json.dumps(
+        {
+            "description": description,
+            "title": (title or "").strip(),
+            "skills": sorted(
+                {skill.strip().casefold() for skill in (skills or []) if skill.strip()}
+            ),
+            "years": (years or "").strip(),
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _apply_requirements(
+    spec: JobSpec,
+    *,
+    title: str | None,
+    skills: list[str] | None,
+    years: str | None,
+) -> JobSpec:
+    """Makes the recruiter's own requirements win over the model's reading."""
+    min_years = parse_min_years(years) if years else spec.min_years_experience
+    recruiter_skills = [skill.strip() for skill in (skills or []) if skill.strip()]
+    if recruiter_skills:
+        must_have = recruiter_skills
+        nice_to_have = [
+            skill
+            for skill in spec.nice_to_have_skills
+            if skill.casefold() not in {item.casefold() for item in must_have}
+        ]
+    else:
+        must_have = spec.must_have_skills
+        nice_to_have = spec.nice_to_have_skills
+
+    resolved_title = (title or spec.title or "").strip()
+    return spec.model_copy(
+        update={
+            "title": resolved_title,
+            "seniority": infer_seniority(resolved_title, min_years),
+            "min_years_experience": min_years,
+            "must_have_skills": must_have,
+            "nice_to_have_skills": nice_to_have,
+        }
+    )
 
 
 class JobService:
@@ -29,9 +89,15 @@ class JobService:
         self._settings = settings
 
     async def analyze(
-        self, description: str, job_id: UUID | None = None
+        self,
+        description: str,
+        job_id: UUID | None = None,
+        *,
+        title: str | None = None,
+        skills: list[str] | None = None,
+        years: str | None = None,
     ) -> tuple[JobAnalysis, JobSpec]:
-        content_hash = hashlib.sha256(description.encode("utf-8")).hexdigest()
+        content_hash = _content_hash(description, title, skills, years)
         cached = await self._find(content_hash)
         if cached is not None:
             return await self._with_job_id(cached, job_id)
@@ -44,6 +110,7 @@ class JobService:
             system=JOB_ANALYSIS_SYSTEM,
             user=description[: self._settings.max_text_chars],
         )
+        spec = _apply_requirements(spec, title=title, skills=skills, years=years)
         record = JobAnalysis(
             job_id=job_id,
             content_hash=content_hash,
@@ -70,6 +137,10 @@ class JobService:
         description: str,
         spec: JobSpec,
         job_id: UUID | None = None,
+        *,
+        title: str | None = None,
+        skills: list[str] | None = None,
+        years: str | None = None,
     ) -> JobAnalysis:
         """Stores a job analysis that no language model produced.
 
@@ -78,7 +149,12 @@ class JobService:
         own skills and the job text are enough to build that row, so the
         semantic part of the score still works.
         """
-        content_hash = hashlib.sha256(description.encode("utf-8")).hexdigest()
+        content_hash = _content_hash(
+            description,
+            title or spec.title,
+            skills if skills is not None else spec.must_have_skills,
+            years if years is not None else str(spec.min_years_experience),
+        )
         cached = await self._find(content_hash)
         if cached is not None:
             return await self._with_job_id(cached, job_id)

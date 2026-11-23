@@ -36,12 +36,29 @@ _LEVEL_TO_SENIORITY: dict[int, SeniorityLevel] = {
 _YEARS_PATTERN = re.compile(r"(\d+(?:\.\d+)?)")
 
 
-def infer_seniority(title: str) -> SeniorityLevel:
-    """Reads the seniority out of a job title."""
+def infer_seniority(title: str, years: float | None = None) -> SeniorityLevel:
+    """Reads the seniority out of a job title, falling back to its years.
+
+    The title wins when it names a level ("Senior", "Junior", "Lead"). When it
+    does not, the stated minimum experience decides: 0-1 junior, 2-4 mid,
+    5-7 senior, 8+ lead. A job with no level and no years stays unknown rather
+    than being called senior.
+    """
     tokens = set(re.findall(r"[a-z0-9+#.]+", (title or "").lower()))
     for token, level in _LEVEL_TOKENS.items():
         if token in tokens:
             return _LEVEL_TO_SENIORITY[level]
+
+    if years is None:
+        return SeniorityLevel.UNKNOWN
+    if years >= 8:
+        return SeniorityLevel.LEAD
+    if years >= 5:
+        return SeniorityLevel.SENIOR
+    if years >= 2:
+        return SeniorityLevel.MID
+    if years >= 1:
+        return SeniorityLevel.JUNIOR
     return SeniorityLevel.UNKNOWN
 
 
@@ -70,11 +87,12 @@ def build_deterministic_job_spec(
 ) -> JobSpec:
     """A job spec built from what the recruiter typed, without a model."""
     cleaned = [skill.strip() for skill in skills if skill and skill.strip()]
+    years = parse_min_years(years_of_experience)
 
     return JobSpec(
         title=title or "",
-        seniority=infer_seniority(title),
-        min_years_experience=parse_min_years(years_of_experience),
+        seniority=infer_seniority(title, years),
+        min_years_experience=years,
         must_have_skills=cleaned,
         nice_to_have_skills=[],
         summary=(description_text or "")[:1_000],

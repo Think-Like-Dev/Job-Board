@@ -46,14 +46,102 @@ retrying a credential after an authentication/permission error.
 
 ## Models
 
+Both models run **locally**, on your own machine, served by
+[llama.cpp](https://github.com/ggml-org/llama.cpp). Nothing is sent to a paid
+provider and no API key is needed.
+
 | Purpose | Model | Where it runs |
 | --- | --- | --- |
-| Embeddings | `multilingual-e5-small` (384 dimensions, 100 languages) | an OpenAI-compatible server you run (`AI_EMBEDDING_BASE_URL`), or in-process later |
-| Chat / extraction | any OpenAI-compatible model server you run (`AI_LOCAL_LLM_BASE_URL`) | no API key needed |
+| Chat / extraction | a small instruct model (Qwen2.5 0.5B) | `llama-server` on port 9931 |
+| Embeddings | `multilingual-e5-small` (384 dimensions, 100 languages) | `llama-server --embedding` on port 9932 |
 
-Both are **configuration**: the model name and the vector size come from
-`AI_LOCAL_EMBEDDING_MODEL` and `AI_EMBEDDING_DIM`. The vector size is also the
-column type in Postgres, so changing it needs
+Two processes, because `llama-server` serves either chat **or** embeddings
+(`--embedding` restricts it), and they are different model files.
+
+### Download, in order
+
+1. **llama.cpp for Windows (CPU)** — <https://github.com/ggml-org/llama.cpp/releases>
+   Take the `llama-*-bin-win-cpu-x64` zip, unzip it to `C:\Users\<you>\llama.cpp\`.
+   You need `llama-server.exe` from it.
+2. **The embedding model** — <https://huggingface.co/keisuke-miyako/multilingual-e5-small-gguf-q8_0>
+   Download `multilingual-e5-small-Q8_0.gguf` (126 MB) and **rename it** to
+   `e5-small-multilingual-q8_0.gguf` when you put it in the models folder.
+
+   > **Do not use `cstr/multilingual-e5-small-GGUF`.** Its conversion is
+   > missing the `tokenizer.ggml.model` and `tokenizer.ggml.token_type_count`
+   > keys that llama.cpp needs for BERT-style models, so the server refuses
+   > to load it:
+   > `error loading model: bert model needs to define token type count`.
+   > The `keisuke-miyako` build has them. Because Windows filenames are
+   > case-insensitive, the broken `multilingual-e5-small-q8_0.gguf` and the
+   > working `multilingual-e5-small-Q8_0.gguf` are the same name — that is
+   > why the scripts look for `e5-small-multilingual-q8_0.gguf`.
+   >
+   > The Q4_K_M build (119 MB) is in the sibling repository
+   > <https://huggingface.co/keisuke-miyako/multilingual-e5-small-gguf-q4_k_m>
+   > and works just as well.
+3. **The chat model** — <https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF>
+   Download `qwen2.5-0.5b-instruct-q4_k_m.gguf` (469 MB). Alternatives:
+   `gemma-3-1b-it-Q4_K_M.gguf` (769 MB) from
+   <https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF>, or
+   `Llama-3.2-1B-Instruct-Q4_K_M.gguf` (800 MB) from
+   <https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF>.
+
+### Where to put them
+
+Outside the repository, so they can never be committed:
+
+```
+C:\Users\<you>\models\
+├── e5-small-multilingual-q8_0.gguf     (the keisuke-miyako build, renamed)
+└── qwen2.5-0.5b-instruct-q4_k_m.gguf
+```
+
+### Start them
+
+```powershell
+cd back-end\ai-platform
+.\scripts\start-llama-servers.ps1
+```
+
+```sh
+cd back-end/ai-platform
+./scripts/start-llama-servers.sh
+```
+
+The script checks that the files exist, starts both servers in the background
+and prints the URLs. Logs land in `<models>\logs\`. Stop them with
+`Get-Process llama-server | Stop-Process` (or `pkill -f llama-server`).
+
+Check them:
+
+```sh
+curl http://localhost:9931/v1/models
+curl http://localhost:9932/v1/embeddings -d '{"input":"hello"}'
+```
+
+The embedding response must have **384** dimensions — that is what the vector
+columns are.
+
+### Configuration
+
+The AI service talks to them over the OpenAI-compatible API:
+
+| Setting | Value |
+| --- | --- |
+| `AI_LOCAL_LLM_BASE_URL` | `http://localhost:9931/v1` (host) · `http://host.docker.internal:9931/v1` (container) |
+| `AI_LOCAL_LLM_MODEL` | `local-chat` (the `--alias` of the chat server) |
+| `AI_EMBEDDING_BASE_URL` | `http://localhost:9932/v1` (host) · `http://host.docker.internal:9932/v1` (container) |
+| `AI_LOCAL_EMBEDDING_MODEL` | `multilingual-e5-small` |
+| `AI_EMBEDDING_DIM` | `384` |
+
+The compose overlays set the container-side URLs; the env file keeps the
+host-side ones.
+
+### Changing the embedding model
+
+The model name and the vector size are configuration, never constants baked
+into the schema. Changing the size also needs
 
 1. an Alembic migration that alters the column
    (`ALTER COLUMN ... TYPE vector(N)`) and rebuilds the HNSW index, and
@@ -61,8 +149,13 @@ column type in Postgres, so changing it needs
    texts — a vector cannot be converted between models or sizes, it has to be
    computed again.
 
-The model itself is not downloaded automatically: point the service at a server
-you run, or add the download step to the image build.
+E5-style models expect an asymmetric prefix: the job description is a query,
+the resume passages are passages (`AI_EMBEDDING_QUERY_PREFIX`,
+`AI_EMBEDDING_PASSAGE_PREFIX`).
+
+Without a model server the pipeline still runs: it falls back to the candidate's
+profile data and the recruiter's own skill list, and the result is stored as a
+score-only match.
 
 ## OCR languages (Tesseract)
 

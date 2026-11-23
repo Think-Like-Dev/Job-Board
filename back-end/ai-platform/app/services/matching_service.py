@@ -67,6 +67,8 @@ class MatchingService:
             deterministic=deterministic,
             qualitative=qualitative,
         )
+        # The match and anything else written in this request commit together.
+        await self._session.commit()
 
         return EvaluateMatchResponse(
             candidate_job_match_id=record.id,

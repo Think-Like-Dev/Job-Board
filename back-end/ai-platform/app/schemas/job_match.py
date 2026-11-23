@@ -34,6 +34,13 @@ class JobSpec(BaseModel):
 
 
 class QualitativeEvaluationSchema(BaseModel):
+    """The LLM's narrative about the fit.
+
+    Every field is optional on purpose: when no model is configured the
+    deterministic score is still produced and stored, and the result is
+    reported as "score only" instead of "scored".
+    """
+
     fit_analysis: str = ""
     strengths: list[str] = Field(default_factory=list)
     risks: list[str] = Field(default_factory=list)

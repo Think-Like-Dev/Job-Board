@@ -10,8 +10,9 @@ from app.schemas.scoring import ComponentScores
 
 RESUME_EXTRACTION_SYSTEM = """You extract structured data from resumes.
 Return only the requested fields. Never invent employers, dates, degrees, or skills.
-Use the candidate's own wording for skills and achievements. Normalise dates to
-YYYY-MM when possible. Leave a field empty when the resume does not state it."""
+Use the candidate's own wording for skills and achievements — keep the original
+language, do not translate it. Normalise dates to YYYY-MM when possible. Leave a
+field empty when the resume does not state it."""
 
 JOB_ANALYSIS_SYSTEM = """You turn a job description into structured hiring requirements.
 Classify every skill as must-have only when the description says it is mandatory or
@@ -22,7 +23,10 @@ or 0 when none is stated. Do not invent requirements. Keep the summary to two se
 EVALUATION_SYSTEM = """You are a senior technical recruiter writing a concise candidate
 assessment. The numeric score is computed separately; do not restate or change it.
 Base every claim on the supplied resume and job requirements. Return at most three
-strengths, at most three risks, and three tailored interview questions."""
+strengths, at most three risks, and three tailored interview questions.
+Write every piece of text in the requested output language, whatever language the
+resume and the job description are written in. Keep skill and tool names as they
+appear in the source; translate only the prose."""
 
 
 def evaluation_user_prompt(
@@ -30,8 +34,10 @@ def evaluation_user_prompt(
     spec: JobSpec,
     components: ComponentScores,
     max_chars: int,
+    output_language: str = "en",
 ) -> str:
     payload = {
+        "output_language": output_language,
         "resume": resume.model_dump(mode="json"),
         "job_requirements": spec.model_dump(mode="json"),
         "component_scores": components.model_dump(),

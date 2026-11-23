@@ -98,6 +98,21 @@ class Settings(BaseSettings):
     local_llm_model: str = Field(default="", validation_alias="AI_LOCAL_LLM_MODEL")
     local_llm_api_key: str = Field(default="", validation_alias="AI_LOCAL_LLM_API_KEY")
 
+    # The local model runs on a CPU and is slow, and its context is small. One
+    # call is therefore bounded: a longer timeout than a paid provider, a
+    # shorter input, and a hard cap on the answer. These are per call, so a
+    # model that ignores the schema cannot hold a worker for long.
+    local_llm_timeout_seconds: int = Field(
+        default=180, validation_alias="AI_LOCAL_LLM_TIMEOUT_SECONDS", gt=0
+    )
+    local_llm_max_input_chars: int = Field(
+        default=8_000, validation_alias="AI_LOCAL_LLM_MAX_INPUT_CHARS", gt=0
+    )
+    local_llm_max_tokens: int = Field(default=900, validation_alias="AI_LOCAL_LLM_MAX_TOKENS", gt=0)
+    local_llm_temperature: float = Field(
+        default=0.0, validation_alias="AI_LOCAL_LLM_TEMPERATURE", ge=0, le=2
+    )
+
     # ── Object storage (Garage / S3) ───────────────────────────────────────
     # The shared env file carries the bare S3_* names; AI_* wins when set.
     storage_endpoint: str = Field(

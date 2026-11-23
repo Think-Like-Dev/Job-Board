@@ -15,12 +15,16 @@ WORKDIR /app
 
 # Tesseract for scanned (image-only) pages. Only the English language pack is
 # installed; see the README for adding another language.
+# curl is not used by the app - it is there so an operator can probe the host
+# model servers from inside this container (`host.docker.internal:9931`), which
+# is the only place that name resolves. A slim image has no curl.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         tesseract-ocr \
         tesseract-ocr-eng \
         libgl1 \
         libglib2.0-0 \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml uv.lock ./

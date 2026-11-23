@@ -71,14 +71,14 @@ export function useCandidateColumns({
     },
     {
       id: "location",
-      header: t("candidate.list.columns.location"),
+      header: t("common.location"),
       cell: ({ row }) => (
         <span className="text-sm">{row.original.currentLocation ?? "—"}</span>
       ),
     },
     {
       id: "skills",
-      header: t("candidate.list.columns.skills"),
+      header: t("common.skills"),
       cell: ({ row }) => <CandidateSkillsCell skills={row.original.skills} />,
     },
     {
@@ -107,7 +107,7 @@ export function useCandidateColumns({
     },
     {
       id: "actions",
-      header: t("candidate.list.columns.actions"),
+      header: t("common.actions"),
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
           <Button

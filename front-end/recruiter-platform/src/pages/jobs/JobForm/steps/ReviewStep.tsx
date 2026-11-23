@@ -60,7 +60,7 @@ export function ReviewStep({ form }: ReviewStepProps) {
       value: formatEnumToStartCase(values.employmentType),
     },
     {
-      label: t("jobForm.fields.location"),
+      label: t("common.location"),
       value: reviewValue(values.location),
     },
     {
@@ -70,7 +70,7 @@ export function ReviewStep({ form }: ReviewStepProps) {
       ),
     },
     {
-      label: t("jobForm.fields.skills"),
+      label: t("common.skills"),
       value: reviewValue(values.skills),
     },
     {

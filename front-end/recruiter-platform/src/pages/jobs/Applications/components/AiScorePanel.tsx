@@ -187,7 +187,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
       assessment.missingSkills?.length ? (
         <section className="space-y-2">
           <h4 className="text-sm font-medium">
-            {t("job.applications.drawer.ai.skills")}
+            {t("common.skills")}
           </h4>
           <div className="flex flex-wrap gap-1.5">
             {assessment.matchingSkills?.map((skill) => (

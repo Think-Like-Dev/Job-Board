@@ -176,10 +176,10 @@ const Team = () => {
             <TableRow>
               <TableHead>{t("team.columnMember")}</TableHead>
               <TableHead>{t("team.columnRole")}</TableHead>
-              <TableHead>{t("team.columnStatus")}</TableHead>
+              <TableHead>{t("common.status")}</TableHead>
               <TableHead>{t("team.columnInvited")}</TableHead>
               <TableHead className="text-right">
-                {t("team.columnActions")}
+                {t("common.actions")}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -197,7 +197,7 @@ const Team = () => {
                 <TableCell colSpan={5} className="text-center py-8">
                   <p className="mb-2">{t("team.loadError")}</p>
                   <Button variant="outline" onClick={() => void refetch()}>
-                    {t("team.retry")}
+                    {t("common.retry")}
                   </Button>
                 </TableCell>
               </TableRow>

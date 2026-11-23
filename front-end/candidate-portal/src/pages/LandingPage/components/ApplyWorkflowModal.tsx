@@ -150,7 +150,7 @@ export function ApplyWorkflowModal({
 
               <div className="space-y-3">
                 <Label>
-                  {t('apply.resume.label')}{' '}
+                  {t('common.resume')}{' '}
                   <span className="text-destructive">*</span>
                 </Label>
                 {profile?.resume ? (
@@ -159,7 +159,7 @@ export function ApplyWorkflowModal({
                   </p>
                 ) : draft?.resumeFileId ? (
                   <p className="text-sm text-muted-foreground">
-                    {t('apply.resume.draft')}: {draft.resumeFileName}
+                    {t('common.draft')}: {draft.resumeFileName}
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
@@ -193,7 +193,7 @@ export function ApplyWorkflowModal({
 
               <div className="space-y-3">
                 <Label>
-                  {t('apply.coverLetter.label')}{' '}
+                  {t('common.coverLetter')}{' '}
                   <span className="text-muted-foreground">
                     ({t('apply.coverLetter.optional')})
                   </span>
@@ -208,7 +208,7 @@ export function ApplyWorkflowModal({
                   </p>
                 ) : draft?.coverLetterFileId ? (
                   <p className="text-sm text-muted-foreground">
-                    {t('apply.coverLetter.draft')}:{' '}
+                    {t('common.draft')}:{' '}
                     {draft.coverLetterFileName}
                   </p>
                 ) : (
@@ -259,7 +259,7 @@ export function ApplyWorkflowModal({
                   </span>
                   <span>{profileName}</span>
                   <span className="text-muted-foreground">
-                    {t('apply.profile.email')}
+                    {t('common.email')}
                   </span>
                   <span>{profile?.email ?? t('apply.profile.none')}</span>
                   <span className="text-muted-foreground">
@@ -267,7 +267,7 @@ export function ApplyWorkflowModal({
                   </span>
                   <span>{profile?.phone ?? t('apply.profile.none')}</span>
                   <span className="text-muted-foreground">
-                    {t('apply.profile.skills')}
+                    {t('common.skills')}
                   </span>
                   <span>
                     {profile?.skills.length
@@ -344,7 +344,7 @@ export function ApplyWorkflowModal({
             )}
             {step < STEPS.DECLARATION ? (
               <Button type="button" onClick={nextStep}>
-                {t('apply.actions.next')}
+                {t('common.next')}
               </Button>
             ) : (
               <Button

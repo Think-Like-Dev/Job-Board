@@ -107,7 +107,7 @@ const Jobs = () => {
         formatCompensation(row.original.compensation) ||
         t("jobForm.review.notProvided"),
     },
-    { accessorKey: "location", header: t("job.list.location") },
+    { accessorKey: "location", header: t("common.location") },
     {
       id: "applications",
       header: t("job.list.applications"),
@@ -133,7 +133,7 @@ const Jobs = () => {
     },
     {
       id: "actions",
-      header: t("job.actions"),
+      header: t("common.actions"),
       cell: ({ row }) => {
         const job = row.original;
         const isOwner = !job.createdBy || job.createdBy === currentUserId;
@@ -265,7 +265,7 @@ const Jobs = () => {
             disabled={page >= totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
-            {t("job.pagination.next")}
+            {t("common.next")}
             <ChevronRightIcon data-icon="inline-end" />
           </Button>
         </div>

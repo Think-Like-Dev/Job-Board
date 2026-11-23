@@ -434,7 +434,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>{t('profile.fields.email')}</Label>
+                <Label>{t('common.email')}</Label>
                 <Input value={profile?.email ?? ''} disabled />
               </div>
               <div className="space-y-2">
@@ -491,7 +491,7 @@ export default function ProfilePage() {
       <Card>
         <CardContent className="grid gap-8 pt-6">
           <DocumentUploadCard
-            title={t('profile.documents.resume.title')}
+            title={t('common.resume')}
             description={t('profile.documents.resume.description')}
             file={profile?.resume}
             fileType="RESUME"
@@ -512,7 +512,7 @@ export default function ProfilePage() {
           />
 
           <DocumentUploadCard
-            title={t('profile.documents.coverLetter.title')}
+            title={t('common.coverLetter')}
             description={t('profile.documents.coverLetter.description')}
             file={profile?.coverLetter}
             fileType="COVER_LETTER"
@@ -540,7 +540,7 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('profile.skills.title')}</CardTitle>
+          <CardTitle>{t('common.skills')}</CardTitle>
           <CardDescription>{t('profile.skills.description')}</CardDescription>
         </CardHeader>
         <CardContent>

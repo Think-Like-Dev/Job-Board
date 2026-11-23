@@ -105,7 +105,7 @@ export function CandidateProfileSnapshot({
 
       <section className="space-y-2">
         <h3 className="text-sm font-semibold">
-          {t("job.applications.drawer.profile.skills")}
+          {t("common.skills")}
         </h3>
         {profile.skills.length ? (
           <div className="flex flex-wrap gap-1.5">

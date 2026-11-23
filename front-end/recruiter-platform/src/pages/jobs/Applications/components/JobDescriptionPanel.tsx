@@ -91,7 +91,7 @@ export function JobDescriptionPanel({
             <Section title={t("job.applications.jobDescription.overview")}>
               <div className="space-y-1">
                 <Field
-                  label={t("job.detail.fields.location")}
+                  label={t("common.location")}
                   value={job.location || notProvided}
                 />
                 <Field
@@ -129,7 +129,7 @@ export function JobDescriptionPanel({
               </p>
             </Section>
 
-            <Section title={t("job.detail.fields.skills")}>
+            <Section title={t("common.skills")}>
               {job.skills.length ? (
                 <TagList values={job.skills} />
               ) : (

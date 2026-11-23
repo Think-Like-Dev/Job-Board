@@ -51,7 +51,7 @@ export function CandidateFormBody({
       <FormSection title={t("candidate.form.sections.documents")}>
         <FileField
           id="resumeFile"
-          label={t("candidate.form.fields.resume")}
+          label={t("common.resume")}
           hint={t("candidate.form.resumeHint")}
           accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           required
@@ -74,7 +74,7 @@ export function CandidateFormBody({
       </FormSection>
 
       <FormSection
-        title={t("candidate.form.sections.location")}
+        title={t("common.location")}
         defaultOpen={false}
       >
         <LocationSection form={form} />
@@ -88,7 +88,7 @@ export function CandidateFormBody({
       </FormSection>
 
       <FormSection
-        title={t("candidate.form.sections.skills")}
+        title={t("common.skills")}
         defaultOpen={false}
       >
         <SkillsSection form={form} />

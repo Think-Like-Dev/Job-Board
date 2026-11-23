@@ -79,7 +79,7 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
     <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
       <DetailSection title={t("job.detail.sections.overview")}>
         <dl className="space-y-2">
-          <DetailField label={t("job.detail.fields.status")}>
+          <DetailField label={t("common.status")}>
             <StatusBadge status={job.status} />
           </DetailField>
           <DetailField label={t("job.detail.fields.code")}>
@@ -97,7 +97,7 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
           <DetailField label={t("job.detail.fields.employmentType")}>
             {formatEnumToStartCase(job.employmentType)}
           </DetailField>
-          <DetailField label={t("job.detail.fields.location")}>
+          <DetailField label={t("common.location")}>
             {job.location || notProvided}
           </DetailField>
           <DetailField label={t("job.detail.fields.workMode")}>
@@ -126,7 +126,7 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
           <DetailField label={t("job.detail.fields.yearsOfExperience")}>
             {job.yearsOfExperience || notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.skills")}>
+          <DetailField label={t("common.skills")}>
             {job.skills.length ? <TagList values={job.skills} /> : notProvided}
           </DetailField>
           <DetailField label={t("job.detail.fields.keywords")}>

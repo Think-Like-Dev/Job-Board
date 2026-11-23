@@ -38,7 +38,7 @@ export function useCandidateApplicationColumns({
     },
     {
       id: "location",
-      header: t("candidate.applications.columns.location"),
+      header: t("common.location"),
       cell: ({ row }) => (
         <span className="text-sm">{row.original.jobLocation}</span>
       ),
@@ -58,7 +58,7 @@ export function useCandidateApplicationColumns({
     },
     {
       id: "actions",
-      header: t("candidate.applications.columns.actions"),
+      header: t("common.actions"),
       cell: ({ row }) => (
         <Button
           type="button"

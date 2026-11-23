@@ -182,11 +182,11 @@ export function CandidateOverview({
         ) : null}
       </div>
 
-      <Section title={t("candidate.overview.resume")}>
+      <Section title={t("common.resume")}>
         {resume ? (
           <div className="flex flex-wrap items-center gap-2 rounded-md border p-2.5">
             <span className="min-w-0 flex-1 truncate text-sm">
-              {resume.filename ?? t("candidate.overview.resume")}
+              {resume.filename ?? t("common.resume")}
             </span>
             {onViewDocument ? (
               <Button
@@ -198,7 +198,7 @@ export function CandidateOverview({
                 }
               >
                 <ExternalLinkIcon data-icon="inline-start" />
-                {t("candidate.overview.viewResume")}
+                {t("common.view")}
               </Button>
             ) : null}
             <Button
@@ -208,7 +208,7 @@ export function CandidateOverview({
               onClick={handleDownload}
             >
               <DownloadIcon data-icon="inline-start" />
-              {t("candidate.overview.downloadResume")}
+              {t("common.download")}
             </Button>
           </div>
         ) : (

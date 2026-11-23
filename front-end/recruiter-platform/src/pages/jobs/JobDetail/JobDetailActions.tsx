@@ -98,7 +98,7 @@ export function JobDetailActions({
               disabled={busy}
             >
               <PencilIcon data-icon="inline-start" />
-              {t("job.detail.actions.edit")}
+              {t("common.edit")}
             </Button>
             <Button
               type="button"
@@ -107,7 +107,7 @@ export function JobDetailActions({
               disabled={busy}
             >
               <Trash2Icon data-icon="inline-start" />
-              {t("job.detail.actions.delete")}
+              {t("common.delete")}
             </Button>
             <Button type="button" onClick={actions.publish} disabled={busy}>
               {actions.isPublishing ? (
@@ -208,7 +208,7 @@ export function JobDetailActions({
             >
               {actions.isDeleting
                 ? t("common.deleting")
-                : t("job.detail.actions.delete")}
+                : t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

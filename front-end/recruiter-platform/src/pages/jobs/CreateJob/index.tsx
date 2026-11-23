@@ -69,7 +69,7 @@ const CreateJob = () => {
                 </p>
               </div>
               <Button type="button" onClick={() => navigate("/jobs")}>
-                {t("jobForm.actions.back")}
+                {t("common.back")}
               </Button>
             </CardContent>
           </Card>

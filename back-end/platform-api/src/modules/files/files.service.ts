@@ -25,7 +25,7 @@ import type { SessionPayload } from '@modules/auth/auth.service';
 import { File, FileSchema } from './file.schema';
 import { FileAccessGrantsService } from './file-access-grants.service';
 import { canMutateFile, canReadFile, canReadSharedFile } from './files.access';
-import { assertUploadMatchesType } from './file-validation';
+import { assertPageLimit, assertUploadMatchesType } from './file-validation';
 import { S3StorageService, type StoredObject } from './s3-storage.service';
 
 /** Single-bucket path prefixes, one folder per file kind. */
@@ -105,6 +105,7 @@ export class FilesService extends GenericCrudService<File> {
     ownerId: string,
   ): Promise<File> {
     assertUploadMatchesType(file, fileType);
+    await assertPageLimit(file, fileType);
 
     if (!file?.buffer?.length) {
       throw new BadRequestException('Uploaded file is empty');

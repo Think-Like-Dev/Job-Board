@@ -198,7 +198,8 @@
     },
     "draftSaved": "Application saved as draft",
     "submitted": "Application submitted successfully",
-    "failed": "Could not submit your application"
+    "failed": "Could not submit your application",
+    "pageLimit": "A resume can be 3 pages and a cover letter 2 pages."
   },
   "profile": {
     "title": "Your Profile",

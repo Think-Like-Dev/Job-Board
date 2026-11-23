@@ -13,6 +13,7 @@ import logging
 from dataclasses import asdict
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -51,6 +52,16 @@ class DocumentStore:
         quality = asdict(ingested.quality)
         needs_review = not ingested.quality.ok
 
+        existing = await self._find(session, application_id, digest)
+        if existing is not None:
+            logger.info(
+                "Reusing document %s for application %s (%s)",
+                existing.id,
+                application_id,
+                digest[:12],
+            )
+            return existing
+
         document = ResumeDocument(
             resume_file_id=resume_file_id,
             application_id=application_id,
@@ -65,8 +76,16 @@ class DocumentStore:
             quality=quality,
             status=STATUS_NEEDS_REVIEW if needs_review else STATUS_ACCEPTED,
         )
-        session.add(document)
-        await session.flush()
+        try:
+            session.add(document)
+            await session.flush()
+        except IntegrityError:
+            # A concurrent worker stored the same file first.
+            await session.rollback()
+            existing = await self._find(session, application_id, digest)
+            if existing is None:
+                raise
+            return existing
 
         await self._store_chunks(session, document, ingested.chunks)
 
@@ -80,6 +99,24 @@ class DocumentStore:
             document.status,
         )
         return document
+
+    async def _find(
+        self,
+        session: AsyncSession,
+        application_id: UUID | None,
+        digest: str,
+    ) -> ResumeDocument | None:
+        """The document already stored for this application and file hash."""
+        if application_id is None:
+            return None
+        return (
+            await session.exec(
+                select(ResumeDocument).where(
+                    ResumeDocument.application_id == application_id,
+                    ResumeDocument.sha256 == digest,
+                )
+            )
+        ).first()
 
     async def _store_chunks(
         self,

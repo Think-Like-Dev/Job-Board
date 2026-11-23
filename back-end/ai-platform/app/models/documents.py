@@ -34,6 +34,13 @@ class ResumeDocument(SQLModel, table=True):
     """One ingested resume."""
 
     __tablename__ = "resume_documents"
+    __table_args__ = (
+        UniqueConstraint(
+            "application_id",
+            "sha256",
+            name="resume_documents_app_sha_key",
+        ),
+    )
 
     id: UUID = Field(sa_column=uuid_pk())
     # The file id in the core API, when the document came from an application.

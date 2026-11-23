@@ -36,6 +36,7 @@ async def upsert_match(
         "matching_skills": deterministic.matching_skills,
         "missing_skills": deterministic.missing_skills,
         "ai_summary": qualitative.fit_analysis,
+        "qualitative": qualitative.model_dump(mode="json"),
         "component_scores": deterministic.components.model_dump(),
         "weights_version": WEIGHTS_VERSION,
         "knockout_reason": deterministic.knockout_reason,

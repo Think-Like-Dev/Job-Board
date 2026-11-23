@@ -14,6 +14,7 @@ from app.core.exceptions import NoActiveProvider
 from app.core.security import CredentialCipher
 from app.models.ats import JobAnalysis, JobEmbedding, ResumeAnalysis, ResumeEmbedding
 from app.models.llm_config import AICredential, AIProvider
+from app.services.canonical import embedding_text
 
 # Where embeddings come from: `(base_url, model, api_key, dimensions)`.
 # `base_url` None means the default OpenAI endpoint; `dimensions` None means
@@ -51,7 +52,15 @@ class EmbeddingService:
         if existing is not None:
             return existing
 
-        vector = await self.embed(resume.raw_text or resume.summary)
+        text = embedding_text(
+            canonical_text=resume.canonical_text,
+            extracted_data=resume.extracted_data,
+            raw_text=resume.raw_text,
+            summary=resume.summary,
+        )
+        if not text:
+            return None
+        vector = await self.embed(text)
         self._session.add(
             ResumeEmbedding(
                 resume_analysis_id=resume_id,

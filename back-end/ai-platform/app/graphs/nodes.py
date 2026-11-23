@@ -16,22 +16,24 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import Settings
-from app.core.constants import EXTRACTION_VERSION
+from app.core.constants import EXTRACTION_VERSION, WEIGHTS_VERSION
 from app.core.exceptions import (
     AllProvidersExhausted,
     NoActiveProvider,
     UnreadableDocument,
 )
 from app.graphs.state import ScoringState
-from app.models.ats import ResumeAnalysis
+from app.models.ats import CandidateJobMatch, ResumeAnalysis
 from app.schemas.job_match import QualitativeEvaluationSchema
 from app.schemas.resume import EducationEntry, ExperienceEntry, ResumeExtractionSchema
+from app.services.canonical import is_empty_extraction, render_resume_text
 from app.services.document import ingest_document
 from app.services.document_store import DocumentStore
 from app.services.embedding_service import EmbeddingService
@@ -101,6 +103,60 @@ def _snapshot_to_extraction(snapshot: dict[str, Any]) -> ResumeExtractionSchema:
     )
 
 
+async def _stored_analysis(session: AsyncSession, sha256: str | None) -> ResumeAnalysis | None:
+    """The extraction already stored for this file, if there is one."""
+    if not sha256:
+        return None
+    return (
+        await session.exec(
+            select(ResumeAnalysis).where(
+                ResumeAnalysis.sha256 == sha256,
+                ResumeAnalysis.extraction_version == EXTRACTION_VERSION,
+            )
+        )
+    ).first()
+
+
+def _has_narrative(evaluation: QualitativeEvaluationSchema) -> bool:
+    return bool(
+        evaluation.fit_analysis
+        or evaluation.strengths
+        or evaluation.risks
+        or evaluation.interview_questions
+    )
+
+
+async def _stored_evaluation(
+    session: AsyncSession,
+    application_id: UUID | None,
+    resume_analysis_id: UUID | None,
+) -> QualitativeEvaluationSchema | None:
+    """The narrative already stored for this application and resume.
+
+    A valid narrative is reused so a re-review cannot flip `SCORED` to
+    `SCORE_ONLY` (or the reverse). An empty one is retried: it costs one call
+    and may still produce a usable assessment.
+    """
+    if application_id is None or resume_analysis_id is None:
+        return None
+    record = (
+        await session.exec(
+            select(CandidateJobMatch).where(
+                CandidateJobMatch.application_id == application_id,
+                CandidateJobMatch.resume_analysis_id == resume_analysis_id,
+                CandidateJobMatch.weights_version == WEIGHTS_VERSION,
+            )
+        )
+    ).first()
+    if record is None or not record.qualitative:
+        return None
+    try:
+        evaluation = QualitativeEvaluationSchema.model_validate(record.qualitative)
+    except Exception:
+        return None
+    return evaluation if _has_narrative(evaluation) else None
+
+
 def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
     store = DocumentStore(deps.embedder)
 
@@ -167,15 +223,30 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         return "extract"
 
     async def manual_review(state: ScoringState) -> dict[str, Any]:
-        """The terminal branch for an unreadable document."""
+        """The terminal branch for an unreadable or empty document."""
+        reason = "; ".join(state.quality_issues) or ("the extraction produced no candidate data")
         logger.warning(
             "Application %s needs a manual review: %s",
             state.application_id,
-            "; ".join(state.quality_issues),
+            reason,
         )
         return {"needs_review": True}
 
     async def llm_extraction(state: ScoringState) -> dict[str, Any]:
+        stored = await _stored_analysis(deps.session, state.resume_sha256)
+        if stored is not None:
+            # The same file was extracted before: reuse it. A re-review must
+            # not depend on whether the model succeeds this time.
+            logger.info(
+                "Reusing stored resume analysis %s for %s",
+                stored.id,
+                (state.resume_filename or state.resume_sha256 or "")[:60],
+            )
+            return {
+                "extracted": ResumeExtractionSchema.model_validate(stored.extracted_data),
+                "resume_analysis_id": stored.id,
+            }
+
         if not state.llm_available and state.profile_snapshot:
             # No language model: the profile snapshot is the structured
             # candidate data.
@@ -196,6 +267,14 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         if state.extracted is None:
             raise UnreadableDocument("Resume extraction did not produce any data")
 
+        needs_review = is_empty_extraction(state.extracted)
+        if state.resume_analysis_id is not None:
+            return {
+                "resume_analysis_id": state.resume_analysis_id,
+                "resume_sha256": state.resume_sha256,
+                "needs_review": needs_review,
+            }
+
         sha256 = (
             state.resume_sha256 or hashlib.sha256(state.resume_text.encode("utf-8")).hexdigest()
         )
@@ -215,6 +294,7 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                 extraction_version=EXTRACTION_VERSION,
                 raw_text=state.resume_text[: deps.settings.max_text_chars],
                 extracted_data=state.extracted.model_dump(mode="json"),
+                canonical_text=render_resume_text(state.extracted),
                 summary=state.extracted.executive_summary,
             )
             deps.session.add(record)
@@ -235,7 +315,17 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
                     raise
             else:
                 await deps.session.refresh(record)
-        return {"resume_analysis_id": record.id, "resume_sha256": sha256}
+        return {
+            "resume_analysis_id": record.id,
+            "resume_sha256": sha256,
+            "needs_review": needs_review,
+        }
+
+    def route_after_extraction(state: ScoringState) -> str:
+        """An extraction with no candidate data is not scored."""
+        if state.needs_review or is_empty_extraction(state.extracted):
+            return "manual_review"
+        return "score"
 
     async def embed_job(state: ScoringState) -> dict[str, Any]:
         """The job spec and the job vector."""
@@ -279,6 +369,14 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
     async def evaluation(state: ScoringState) -> dict[str, Any]:
         if state.extracted is None or state.job_spec is None or state.deterministic is None:
             raise UnreadableDocument("Evaluation requires a deterministic score first")
+
+        cached = await _stored_evaluation(
+            deps.session, state.application_id, state.resume_analysis_id
+        )
+        if cached is not None:
+            logger.info("Reusing the stored evaluation for application %s", state.application_id)
+            return {"qualitative": cached}
+
         # No pooled connection should be held during the LLM call.
         await deps.session.rollback()
         try:
@@ -325,6 +423,7 @@ def build_nodes(deps: GraphDependencies) -> dict[str, Any]:
         "manual_review": manual_review,
         "llm_extraction": llm_extraction,
         "persist_resume": persist_resume,
+        "route_after_extraction": route_after_extraction,
         "embed_job": embed_job,
         "deterministic_scoring": deterministic_scoring,
         "evaluation": evaluation,

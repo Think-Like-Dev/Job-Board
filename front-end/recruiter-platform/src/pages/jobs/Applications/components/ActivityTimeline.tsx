@@ -5,7 +5,7 @@ import {
   ApplicationStatus,
   type JobApplicationDetail,
 } from "@/types/application.types";
-import { ApplicationStatusBadge } from "./ApplicationStatusBadge";
+import { ApplicationStatusBadge } from "@/components/common/ApplicationStatusBadge";
 
 interface TimelineEntry {
   id: string;

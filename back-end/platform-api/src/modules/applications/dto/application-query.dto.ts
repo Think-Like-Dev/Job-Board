@@ -30,3 +30,14 @@ export class JobApplicationsQueryDto extends PaginationQueryDto {
   @IsOptional()
   status?: ApplicationStatus;
 }
+
+/**
+ * Recruiter view of one candidate's applications across every job. Drafts are
+ * rejected as a filter and excluded by default.
+ */
+export class CandidateJobApplicationsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: ApplicationStatus })
+  @IsEnum(ApplicationStatus)
+  @IsOptional()
+  status?: ApplicationStatus;
+}

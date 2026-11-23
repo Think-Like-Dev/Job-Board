@@ -10,6 +10,7 @@ import { CandidateCertificationSchema } from '@modules/candidates/candidate-cert
 import { CandidateEducationSchema } from '@modules/candidates/candidate-education.schema';
 import { CandidateExperienceSchema } from '@modules/candidates/candidate-experience.schema';
 import { CandidateSkillSchema } from '@modules/candidates/candidate-skill.schema';
+import { calculateExperience } from '@modules/candidates/experience/experience-calculator';
 import {
   Candidate,
   CandidateSchema,
@@ -145,6 +146,22 @@ export class ProfileWriteService {
     if (dto.certifications !== undefined) {
       await this.syncCertifications(em, candidateId, dto.certifications);
     }
+
+    // Keep the denormalized list-sorting total in sync with the final arrays.
+    // The DTO is authoritative for fields present in the payload; omitted
+    // arrays fall back to the rows already stored.
+    const educationForExperience =
+      dto.education !== undefined
+        ? dto.education
+        : await em.find(CandidateEducationSchema, { candidateId });
+    const experienceForExperience =
+      dto.experience !== undefined
+        ? dto.experience
+        : await em.find(CandidateExperienceSchema, { candidateId });
+    candidate.totalExperienceMonths = calculateExperience(
+      experienceForExperience,
+      educationForExperience,
+    ).totalMonths;
 
     // Immediate file-only updates are allowed before the profile is complete.
     // Full saves enforce the profile contract. Detect this from the payload

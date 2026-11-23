@@ -66,6 +66,44 @@ export class FilesService extends GenericCrudService<File> {
     fileType: FileType,
     session: SessionContext,
   ): Promise<File> {
+    return this.persistUpload(
+      file,
+      fileType,
+      this.ownerTypeFor(session),
+      session.principalId,
+    );
+  }
+
+  /**
+   * Recruiter-created candidate documents. The candidate is the owner even
+   * though an internal user uploaded the file, so the candidate can later
+   * replace/delete it and reuse it as the central resume when applying.
+   * The candidate row may not exist yet; `files.owner_id` is polymorphic and
+   * the caller supplies the generated candidate UUID.
+   */
+  async registerAndUploadForCandidate(
+    file: Express.Multer.File,
+    fileType: FileType,
+    candidateId: string,
+  ): Promise<File> {
+    if (!candidateId) {
+      throw new BadRequestException('Candidate id is required');
+    }
+
+    return this.persistUpload(
+      file,
+      fileType,
+      FileOwnerType.CANDIDATE,
+      candidateId,
+    );
+  }
+
+  private async persistUpload(
+    file: Express.Multer.File,
+    fileType: FileType,
+    ownerType: FileOwnerType,
+    ownerId: string,
+  ): Promise<File> {
     assertUploadMatchesType(file, fileType);
 
     if (!file?.buffer?.length) {
@@ -83,8 +121,8 @@ export class FilesService extends GenericCrudService<File> {
       mimeType: file.mimetype,
       size: file.size,
       storagePath: key,
-      ownerType: this.ownerTypeFor(session),
-      ownerId: session.principalId,
+      ownerType,
+      ownerId,
       createdAt: new Date(),
     });
   }

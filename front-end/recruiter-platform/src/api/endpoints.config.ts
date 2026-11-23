@@ -24,6 +24,15 @@ export const API_ENDPOINTS = {
     LIST_BY_JOB: (jobId: string) => `/jobs/${jobId}/applications`,
     GET_DETAILS: (id: string) => `/applications/${id}`,
   },
+  CANDIDATES: {
+    GET_ALL: '/candidates',
+    CREATE: '/candidates',
+    GET_DETAILS: (id: string) => `/candidates/${id}`,
+    LIST_APPLICATIONS: (id: string) => `/candidates/${id}/applications`,
+  },
+  SKILLS: {
+    SEARCH: '/skills',
+  },
   FILES: {
     CONTENT: (id: string) => `/files/${id}/content`,
   },

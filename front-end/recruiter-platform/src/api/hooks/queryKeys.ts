@@ -1,4 +1,8 @@
 import type { JobFilters } from "@/api/schemas/jobs.schema";
+import type {
+  CandidateApplicationFilters,
+  CandidateFilters,
+} from "@/api/schemas/candidates.schema";
 import type { JobApplicationsFilters } from "@/types/application.types";
 
 /**
@@ -22,6 +26,18 @@ export const QUERY_KEYS = {
     LIST: (jobId: string, filters: JobApplicationsFilters) =>
       ["applications", "list", jobId, filters] as const,
     DETAIL: (id: string) => ["applications", "detail", id] as const,
+  },
+  CANDIDATES: {
+    ALL: ["candidates"] as const,
+    LISTS: ["candidates", "list"] as const,
+    LIST: (filters: CandidateFilters) =>
+      ["candidates", "list", filters] as const,
+    DETAIL: (id: string) => ["candidates", "detail", id] as const,
+    APPLICATIONS: (id: string, filters: CandidateApplicationFilters) =>
+      ["candidates", "applications", id, filters] as const,
+  },
+  SKILLS: {
+    SEARCH: (term: string) => ["skills", "search", term] as const,
   },
   PROFILE: {
     ME: ["profile", "me"] as const,

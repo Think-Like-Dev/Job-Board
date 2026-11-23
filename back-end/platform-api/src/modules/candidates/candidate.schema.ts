@@ -3,6 +3,7 @@ import {
   EntitySchema,
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
+import { UserSchema } from '@modules/users/user.schema';
 import { FileSchema } from '../files/file.schema';
 
 /**
@@ -29,6 +30,10 @@ export interface Candidate {
   postalCode?: string | null;
   linkedinUrl?: string | null;
   portfolioUrl?: string | null;
+  /** Internal user who pre-created the profile. Null for self-registered candidates. */
+  createdBy?: string | null;
+  /** Denormalized merged experience total used for list sorting. */
+  totalExperienceMonths?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -36,6 +41,7 @@ export interface Candidate {
 export const CandidateSchema = new EntitySchema<Candidate>({
   name: 'Candidate',
   tableName: 'candidates',
+  indexes: [{ name: 'candidates_created_by_index', properties: ['createdBy'] }],
   properties: {
     id: { type: 'uuid', primary: true, defaultRaw: 'gen_random_uuid()' },
     email: { type: 'string', unique: true },
@@ -86,6 +92,18 @@ export const CandidateSchema = new EntitySchema<Candidate>({
     postalCode: { type: 'string', nullable: true },
     linkedinUrl: { type: 'string', nullable: true },
     portfolioUrl: { type: 'string', nullable: true },
+    createdBy: {
+      kind: 'm:1',
+      entity: () => UserSchema,
+      mapToPk: true,
+      joinColumn: 'created_by',
+      nullable: true,
+      deleteRule: 'restrict',
+      updateRule: 'no action',
+      deferMode: DeferMode.INITIALLY_IMMEDIATE,
+      foreignKeyName: 'fk_users_id_candidates_created_by',
+    } as unknown as EntitySchemaProperty<string, Candidate>,
+    totalExperienceMonths: { type: 'integer', default: 0 },
     createdAt: { type: 'datetime', nullable: true },
     updatedAt: { type: 'datetime', nullable: true },
   },

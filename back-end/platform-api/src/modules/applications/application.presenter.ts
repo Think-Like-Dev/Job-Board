@@ -9,6 +9,7 @@ import type {
   ApplicationStatusHistoryDto,
   CandidateApplicationDetailDto,
   CandidateApplicationSummaryDto,
+  CandidateJobApplicationListItemDto,
   RecruiterApplicationDetailDto,
   RecruiterApplicationListItemDto,
 } from './dto/application-response.dto';
@@ -118,6 +119,24 @@ export function toRecruiterApplicationListItemDto(
     candidatePhone: profile?.phone ?? candidate.phone ?? undefined,
     resumeFileId: application.resumeFileId,
     resumeFileName: resume?.filename ?? '',
+    status: application.status,
+    appliedAt: toIso(application.appliedAt) ?? null,
+    createdAt: application.createdAt?.toISOString() ?? new Date().toISOString(),
+  };
+}
+
+export function toCandidateJobApplicationListItemDto(
+  application: Application,
+  job: Job,
+): CandidateJobApplicationListItemDto {
+  return {
+    id: application.id,
+    jobId: application.jobId,
+    jobTitle: job.title,
+    jobCode: job.code,
+    jobCategory: job.category,
+    jobDepartment: job.department ?? null,
+    jobLocation: job.location,
     status: application.status,
     appliedAt: toIso(application.appliedAt) ?? null,
     createdAt: application.createdAt?.toISOString() ?? new Date().toISOString(),

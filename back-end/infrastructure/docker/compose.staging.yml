@@ -50,6 +50,9 @@ services:
       AI_LOCAL_LLM_BASE_URL: http://host.docker.internal:9931/v1
       AI_LOCAL_LLM_MODEL: local-chat
       AI_EMBEDDING_BASE_URL: http://host.docker.internal:9932/v1
+      # Same value as the local overlay: it names the vectors too, so staging
+      # and local never mix vectors from different model files.
+      AI_LOCAL_EMBEDDING_MODEL: multilingual-e5-small-xlmr
       OMP_NUM_THREADS: "2"
 
     # Docker Desktop resolves host.docker.internal to an IPv6 address, which

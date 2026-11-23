@@ -20,6 +20,11 @@ services:
       # Inside Compose the API reaches Garage by service name. Host-run dev
       # servers use http://localhost:3900 from .env.local instead.
       S3_ENDPOINT: http://garage:3900
+      # Same idea for the datastores: .env.local carries the host view
+      # (localhost + published ports), the container gets service names.
+      DATABASE_HOST: postgres
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
 
     volumes:
       - ../../platform-api:/app
@@ -47,6 +52,9 @@ services:
       # run outside Docker.
       S3_ENDPOINT: http://garage:3900
       AI_RABBITMQ_HOST: rabbitmq
+      # Same for its own database: host port 5433, container port 5432.
+      AI_DATABASE_HOST: ai-postgres
+      AI_DATABASE_PORT: "5432"
       # The model servers run on the host (see
       # ai-platform/scripts/start-llama-servers.ps1), so the container reaches
       # them through the Docker host gateway. The alias is the chat server's
@@ -54,6 +62,9 @@ services:
       AI_LOCAL_LLM_BASE_URL: http://host.docker.internal:9931/v1
       AI_LOCAL_LLM_MODEL: local-chat
       AI_EMBEDDING_BASE_URL: http://host.docker.internal:9932/v1
+      # Doubles as the cache key for stored vectors. A new name means the
+      # vectors from the previous model file are not silently reused.
+      AI_LOCAL_EMBEDDING_MODEL: multilingual-e5-small-xlmr
       # Keep the ONNX runtime from using every core: the whole stack shares
       # one 8 GB machine.
       OMP_NUM_THREADS: "2"
@@ -127,6 +138,7 @@ services:
 
     environment:
       NODE_ENV: local
+      DATABASE_HOST: postgres
 
     volumes:
       - ../../platform-api:/app
@@ -151,6 +163,7 @@ services:
 
     environment:
       NODE_ENV: local
+      DATABASE_HOST: postgres
 
     volumes:
       - ../../platform-api:/app
@@ -174,6 +187,8 @@ services:
 
     environment:
       AI_ENVIRONMENT: local
+      AI_DATABASE_HOST: ai-postgres
+      AI_DATABASE_PORT: "5432"
 
     volumes:
       - ../../ai-platform:/app
@@ -190,6 +205,8 @@ services:
 
     environment:
       AI_ENVIRONMENT: local
+      AI_DATABASE_HOST: ai-postgres
+      AI_DATABASE_PORT: "5432"
 
     volumes:
       - ../../ai-platform:/app

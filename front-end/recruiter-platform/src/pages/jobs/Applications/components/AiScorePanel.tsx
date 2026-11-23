@@ -48,11 +48,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
   const { t } = useTranslation();
 
   if (!assessment) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        {t("job.applications.drawer.ai.none")}
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">{t("job.applications.drawer.ai.none")}</p>;
   }
 
   if (assessment.status === "PENDING") {
@@ -60,9 +56,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
       <div className="flex items-start gap-3 rounded-md border p-3">
         <Loader2 className="mt-0.5 size-4 animate-spin text-muted-foreground" />
         <div className="space-y-1">
-          <Badge variant="outline">
-            {t("job.applications.drawer.ai.pending")}
-          </Badge>
+          <Badge variant="outline">{t("job.applications.drawer.ai.pending")}</Badge>
           <p className="text-sm text-muted-foreground">
             {t("job.applications.drawer.ai.pendingDescription")}
           </p>
@@ -77,12 +71,9 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         <div className="flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
           <AlertTriangleIcon className="mt-0.5 size-4 text-amber-600 dark:text-amber-500" />
           <div className="space-y-1">
-            <Badge variant="outline">
-              {t("common.needsReview")}
-            </Badge>
+            <Badge variant="outline">{t("common.needsReview")}</Badge>
             <p className="text-sm text-muted-foreground">
-              {assessment.failureMessage ||
-                t("job.applications.drawer.ai.needsReviewDescription")}
+              {assessment.failureMessage || t("job.applications.drawer.ai.needsReviewDescription")}
             </p>
             <p className="text-sm text-muted-foreground">
               {t("job.applications.drawer.ai.needsReviewNextStep")}
@@ -95,9 +86,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
       <div className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
         <AlertTriangleIcon className="mt-0.5 size-4 text-destructive" />
         <div className="space-y-1">
-          <Badge variant="destructive">
-            {t("job.applications.drawer.ai.failed")}
-          </Badge>
+          <Badge variant="destructive">{t("job.applications.drawer.ai.failed")}</Badge>
           <p className="text-sm text-muted-foreground">
             {assessment.failureMessage ||
               assessment.failureReason ||
@@ -108,9 +97,11 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
     );
   }
 
-  const fitBullets = assessment.aiSummary
-    ? toBullets(assessment.aiSummary)
-    : null;
+  // `SCORE_ONLY` means the AI produced the number but no usable narrative. The
+  // stored fields may still hold the model's rejected text, so nothing that
+  // belongs to the assessment is rendered unless the run is `SCORED`.
+  const isScored = assessment.status === "SCORED";
+  const fitBullets = isScored && assessment.aiSummary ? toBullets(assessment.aiSummary) : null;
 
   return (
     <div className="space-y-4">
@@ -128,8 +119,8 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
             : "—"}
         </span>
         <div className="space-y-0.5">
-          <Badge variant={assessment.status === "SCORED" ? "default" : "secondary"}>
-            {assessment.status === "SCORED"
+          <Badge variant={isScored ? "default" : "secondary"}>
+            {isScored
               ? t("job.applications.drawer.ai.scored")
               : t("job.applications.drawer.ai.scoreOnly")}
           </Badge>
@@ -143,6 +134,12 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         </div>
       </div>
 
+      {!isScored ? (
+        <p className="text-sm text-muted-foreground">
+          {t("job.applications.drawer.ai.scoreOnlyDescription")}
+        </p>
+      ) : null}
+
       {assessment.knockoutReason ? (
         <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
           <CircleSlashIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
@@ -150,11 +147,9 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         </div>
       ) : null}
 
-      {assessment.aiSummary ? (
+      {isScored && assessment.aiSummary ? (
         <section className="space-y-1">
-          <h4 className="text-sm font-medium">
-            {t("job.applications.drawer.ai.summary")}
-          </h4>
+          <h4 className="text-sm font-medium">{t("job.applications.drawer.ai.summary")}</h4>
           {fitBullets ? (
             <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
               {fitBullets.map((bullet, index) => (
@@ -167,7 +162,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         </section>
       ) : null}
 
-      {assessment.strengths?.length ? (
+      {isScored && assessment.strengths?.length ? (
         <List
           title={t("job.applications.drawer.ai.strengths")}
           items={assessment.strengths}
@@ -175,7 +170,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         />
       ) : null}
 
-      {assessment.risks?.length ? (
+      {isScored && assessment.risks?.length ? (
         <List
           title={t("job.applications.drawer.ai.risks")}
           items={assessment.risks}
@@ -183,19 +178,24 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         />
       ) : null}
 
-      {assessment.matchingSkills?.length ||
-      assessment.missingSkills?.length ? (
+      {assessment.matchingSkills?.length ? (
         <section className="space-y-2">
-          <h4 className="text-sm font-medium">
-            {t("common.skills")}
-          </h4>
+          <h4 className="text-sm font-medium">{t("job.applications.drawer.ai.matchedSkills")}</h4>
           <div className="flex flex-wrap gap-1.5">
-            {assessment.matchingSkills?.map((skill) => (
+            {assessment.matchingSkills.map((skill) => (
               <Badge key={`matching-${skill}`} variant="secondary">
                 {skill}
               </Badge>
             ))}
-            {assessment.missingSkills?.map((skill) => (
+          </div>
+        </section>
+      ) : null}
+
+      {assessment.missingSkills?.length ? (
+        <section className="space-y-2">
+          <h4 className="text-sm font-medium">{t("job.applications.drawer.ai.missingSkills")}</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {assessment.missingSkills.map((skill) => (
               <Badge key={`missing-${skill}`} variant="outline">
                 {skill}
               </Badge>
@@ -204,7 +204,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
         </section>
       ) : null}
 
-      {assessment.interviewQuestions?.length ? (
+      {isScored && assessment.interviewQuestions?.length ? (
         <List
           title={t("job.applications.drawer.ai.interviewQuestions")}
           items={assessment.interviewQuestions}
@@ -215,15 +215,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
   );
 }
 
-function List({
-  title,
-  items,
-  icon,
-}: {
-  title: string;
-  items: string[];
-  icon: React.ReactNode;
-}) {
+function List({ title, items, icon }: { title: string; items: string[]; icon: React.ReactNode }) {
   return (
     <section className="space-y-1">
       <h4 className="text-sm font-medium">{title}</h4>

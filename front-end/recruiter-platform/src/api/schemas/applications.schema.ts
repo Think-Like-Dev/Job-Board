@@ -177,9 +177,24 @@ export const JobApplicationDetailResponseSchema = CommonServerResponseSchema(
   JobApplicationDetailSchema,
 );
 
+/** What a bulk "retry AI review" request did. */
+export const AiReviewOutcomeSchema = z.object({
+  queued: z.number(),
+  skipped: z.number().optional(),
+});
+
+export const RetryAiReviewResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  data: AiReviewOutcomeSchema,
+});
+
 export type JobApplicationsListResponse = z.infer<
   typeof JobApplicationsListResponseSchema
 >;
 export type JobApplicationDetailResponse = z.infer<
   typeof JobApplicationDetailResponseSchema
+>;
+export type RetryAiReviewResponse = z.infer<
+  typeof RetryAiReviewResponseSchema
 >;

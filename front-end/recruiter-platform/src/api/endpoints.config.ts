@@ -41,6 +41,8 @@ export const API_ENDPOINTS = {
   APPLICATIONS: {
     LIST_BY_JOB: (jobId: string) => `/jobs/${jobId}/applications`,
     GET_DETAILS: (id: string) => `/applications/${id}`,
+    RETRY_AI_REVIEW: (jobId: string) =>
+      `/jobs/${jobId}/applications/ai-review`,
   },
   CANDIDATES: {
     GET_ALL: '/candidates',

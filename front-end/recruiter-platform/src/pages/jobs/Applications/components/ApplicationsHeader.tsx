@@ -54,7 +54,7 @@ export function ApplicationsHeader({
           </div>
           <div className="flex flex-wrap items-center justify-start gap-2">
             <p className="text-sm text-muted-foreground">
-              {t("job.applications.candidateCount", { count: candidateCount })}
+              {t("common.candidateCount", { count: candidateCount })}
             </p>
 
             <Button

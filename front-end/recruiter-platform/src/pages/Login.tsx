@@ -56,7 +56,7 @@ const Login = () => {
       { email, otp: values.otp },
       {
         onSuccess: () => {
-          toast.success(t("auth.loginSuccess"));
+          toast.success(t("common.loginSuccess"));
           setStep("email");
           navigate("/");
         },

@@ -40,7 +40,7 @@ export function useJobActions({ job, onDeleted }: UseJobActionsOptions) {
     patchJobStatus.mutate(
       { id: job.id, status: JobStatus.PUBLISHED },
       {
-        onSuccess: () => toast.success(t("job.detail.toasts.published")),
+        onSuccess: () => toast.success(t("common.jobPublished")),
         onError: (error) =>
           toast.error(
             getErrorMessage(error, t("job.detail.toasts.publishFailed")),

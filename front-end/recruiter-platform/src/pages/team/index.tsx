@@ -156,7 +156,7 @@ const Team = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">{t("team.allStatuses")}</SelectItem>
+            <SelectItem value="ALL">{t("common.allStatuses")}</SelectItem>
             <SelectItem value={UserStatus.INVITED}>
               {t("team.statusInvited")}
             </SelectItem>

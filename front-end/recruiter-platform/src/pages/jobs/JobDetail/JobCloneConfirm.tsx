@@ -28,7 +28,7 @@ export function JobCloneConfirm({
           {t("common.cancel")}
         </Button>
         <Button type="button" onClick={onConfirm}>
-          {t("job.cloneConfirm.confirm")}
+          {t("common.cloneJob")}
         </Button>
       </div>
     </div>

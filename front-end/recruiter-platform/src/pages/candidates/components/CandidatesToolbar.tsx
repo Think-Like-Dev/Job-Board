@@ -76,7 +76,7 @@ export function CandidatesToolbar({
         disabled={!isFiltered}
       >
         <XIcon data-icon="inline-start" />
-        {t("candidate.list.clearFilters")}
+        {t("common.clearFilters")}
       </Button>
     </div>
   );

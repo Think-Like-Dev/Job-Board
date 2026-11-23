@@ -14,7 +14,6 @@
     "edit": "Edit",
     "delete": "Delete",
     "apply": "Apply Now",
-    "applied": "Applied",
     "view": "View",
     "remove": "Remove",
     "uploading": "Uploading...",
@@ -27,7 +26,10 @@
     "coverLetter": "Cover letter",
     "next": "Next",
     "previous": "Previous",
-    "draft": "Draft"
+    "draft": "Draft",
+    "pageOf": "Page {{page}} of {{total}}",
+    "resumeInvalid": "Resume must be a PDF or DOCX file under 2 MB",
+    "coverLetterInvalid": "Cover letter must be a PDF or DOCX file under 1 MB"
   },
   "validation": {
     "required": "This field is required",
@@ -75,7 +77,6 @@
     "applyBy": "Apply by {{date}}",
     "vacancies_one": "{{count}} vacancy",
     "vacancies_other": "{{count}} vacancies",
-    "pageOf": "Page {{page}} of {{total}}",
     "employmentType": {
       "fullTime": "Full time",
       "partTime": "Part time",
@@ -115,7 +116,6 @@
     "appliedOn": "Applied on {{date}}",
     "createdOn": "Created on {{date}}",
     "loadFailed": "Could not load your applications.",
-    "pageOf": "Page {{page}} of {{total}}",
     "continueDraft": "Continue draft",
     "deleteDraft": "Delete draft",
     "withdraw": "Withdraw",
@@ -167,7 +167,6 @@
       "noCentral": "You have no central resume. Upload one for this application or add one to your profile.",
       "jobSpecific": "Upload a resume for this job (PDF/DOCX, max 2 MB)",
       "required": "A resume is required",
-      "invalid": "Resume must be a PDF or DOCX file under 2 MB",
       "updateCentral": "Also replace my central resume with this file"
     },
     "coverLetter": {
@@ -176,7 +175,6 @@
       "central": "Use my central cover letter",
       "noCentral": "You have no central cover letter",
       "jobSpecific": "Upload a cover letter for this job (PDF/DOCX, max 1 MB)",
-      "invalid": "Cover letter must be a PDF or DOCX file under 1 MB",
       "updateCentral": "Also replace my central cover letter with this file"
     },
     "profile": {
@@ -249,7 +247,6 @@
         "required": "A central resume is required before saving your profile.",
         "upload": "Upload resume",
         "replace": "Replace resume",
-        "invalid": "Resume must be a PDF or DOCX file under 2 MB",
         "uploaded": "Resume uploaded",
         "none": "No resume uploaded yet."
       },
@@ -257,7 +254,6 @@
         "description": "Optional. Used for applications that ask for a cover letter unless you upload a job-specific copy.",
         "upload": "Upload cover letter",
         "replace": "Replace cover letter",
-        "invalid": "Cover letter must be a PDF or DOCX file under 1 MB",
         "uploaded": "Cover letter uploaded",
         "none": "No cover letter uploaded yet."
       }

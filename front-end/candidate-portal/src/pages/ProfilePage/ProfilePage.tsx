@@ -499,7 +499,7 @@ export default function ProfilePage() {
             uploadLabel={t('profile.documents.resume.upload')}
             replaceLabel={t('profile.documents.resume.replace')}
             noneLabel={t('profile.documents.resume.none')}
-            invalidMessage={t('profile.documents.resume.invalid')}
+            invalidMessage={t('common.resumeInvalid')}
             required
             error={resumeError}
             validate={validateResume}
@@ -520,7 +520,7 @@ export default function ProfilePage() {
             uploadLabel={t('profile.documents.coverLetter.upload')}
             replaceLabel={t('profile.documents.coverLetter.replace')}
             noneLabel={t('profile.documents.coverLetter.none')}
-            invalidMessage={t('profile.documents.coverLetter.invalid')}
+            invalidMessage={t('common.coverLetterInvalid')}
             validate={validateCoverLetter}
             onUploaded={(uploaded) =>
               persistFile(

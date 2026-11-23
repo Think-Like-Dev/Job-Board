@@ -78,7 +78,7 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
           <AlertTriangleIcon className="mt-0.5 size-4 text-amber-600 dark:text-amber-500" />
           <div className="space-y-1">
             <Badge variant="outline">
-              {t("job.applications.drawer.ai.needsReview")}
+              {t("common.needsReview")}
             </Badge>
             <p className="text-sm text-muted-foreground">
               {assessment.failureMessage ||

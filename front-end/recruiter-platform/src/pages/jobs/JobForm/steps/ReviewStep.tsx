@@ -18,16 +18,16 @@ export function ReviewStep({ form }: ReviewStepProps) {
     value: string | string[] | number | undefined | null,
   ): string => {
     if (value === undefined || value === null || value === "") {
-      return t("jobForm.review.notProvided");
+      return t("common.notProvided");
     }
     if (Array.isArray(value)) {
-      return value.length ? value.join(", ") : t("jobForm.review.notProvided");
+      return value.length ? value.join(", ") : t("common.notProvided");
     }
     return String(value);
   };
 
   const formatCompensation = (value: SalaryType): string => {
-    if (!value) return t("jobForm.review.notProvided");
+    if (!value) return t("common.notProvided");
     const period = value.period ?? "";
     switch (value.type) {
       case CompensationType.FIXED:
@@ -37,7 +37,7 @@ export function ReviewStep({ form }: ReviewStepProps) {
       case CompensationType.NEGOTIABLE:
         return t("jobForm.compensationOptions.NEGOTIABLE");
       default:
-        return t("jobForm.review.notProvided");
+        return t("common.notProvided");
     }
   };
 

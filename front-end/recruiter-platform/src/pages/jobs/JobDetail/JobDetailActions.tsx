@@ -117,7 +117,7 @@ export function JobDetailActions({
               )}
               {actions.isPublishing
                 ? t("job.publishing")
-                : t("job.detail.actions.publish")}
+                : t("common.publish")}
             </Button>
           </>
         )}
@@ -146,7 +146,7 @@ export function JobDetailActions({
               )}
               {actions.isArchiving
                 ? t("job.archiving")
-                : t("job.detail.actions.archive")}
+                : t("common.archive")}
             </Button>
           </>
         )}
@@ -177,7 +177,7 @@ export function JobDetailActions({
             >
               {actions.isArchiving
                 ? t("job.archiving")
-                : t("job.detail.actions.archive")}
+                : t("common.archive")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

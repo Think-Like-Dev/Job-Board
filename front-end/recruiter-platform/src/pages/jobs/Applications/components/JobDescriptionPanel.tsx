@@ -66,7 +66,7 @@ export function JobDescriptionPanel({
   onClose,
 }: JobDescriptionPanelProps) {
   const { t } = useTranslation();
-  const notProvided = t("jobForm.review.notProvided");
+  const notProvided = t("common.notProvided");
 
   return (
     <ResponsiveSidePanel

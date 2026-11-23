@@ -59,7 +59,7 @@ export function JobListToolbar({
         disabled={!isFiltered}
       >
         <XIcon data-icon="inline-start" />
-        {t("job.list.clearFilters")}
+        {t("common.clearFilters")}
       </Button>
     </div>
   );

@@ -72,7 +72,7 @@ function StatusBadge({ status }: { status: JobStatus }) {
  */
 export function JobDetailContent({ job }: JobDetailContentProps) {
   const { t } = useTranslation();
-  const notProvided = t("jobForm.review.notProvided");
+  const notProvided = t("common.notProvided");
   const settings = job.applicationSettings;
 
   return (

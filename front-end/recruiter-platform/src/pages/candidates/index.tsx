@@ -194,7 +194,7 @@ const Candidates = () => {
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">{t("candidate.list.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("candidate.list.total", { count: total })}
+            {t("common.candidateCount", { count: total })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

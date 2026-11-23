@@ -14,7 +14,7 @@ export const PERMISSIONS = {
   JOB_CREATE: 'job.create',
   JOB_UPDATE: 'job.update',
   JOB_DELETE: 'job.delete',
-  JOB_PUBLISH: 'job.publish',
+  JOB_PUBLISH: 'common.publish',
 
   APPLICATION_READ: 'application.read',
 

@@ -83,10 +83,10 @@ export function JobDetailDrawer({
         ) : isError || !job ? (
           <div className="flex min-h-40 flex-1 flex-col items-center justify-center gap-1 p-8 text-center">
             <p className="text-sm font-medium">
-              {t("job.detail.loadFailedTitle")}
+              {t("common.jobUnavailableTitle")}
             </p>
             <p className="text-sm text-muted-foreground">
-              {t("job.detail.loadFailed")}
+              {t("common.jobUnavailable")}
             </p>
           </div>
         ) : (

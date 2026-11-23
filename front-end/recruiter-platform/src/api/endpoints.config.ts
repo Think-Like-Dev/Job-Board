@@ -4,6 +4,8 @@ export const API_ENDPOINTS = {
     VERIFY_OTP: '/auth/otp/verify',
     ME: '/auth/me',
     LOGOUT: '/auth/logout',
+    RESET_PASSWORD_REQUEST: '/auth/password/reset/request',
+    RESET_PASSWORD_CONFIRM: '/auth/password/reset/confirm',
   },
   JOBS: {
     GET_ALL: '/jobs',

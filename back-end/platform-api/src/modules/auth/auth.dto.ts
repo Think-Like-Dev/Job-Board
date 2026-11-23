@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
 /** Requests an OTP to be sent to the email (candidate auth). */
 export class RequestOtpDto {
@@ -28,6 +28,45 @@ export class LoginDto {
   @ApiProperty()
   @IsString()
   password!: string;
+}
+
+/** Password reset step 1: ask for a reset link. */
+export class RequestPasswordResetDto {
+  @ApiProperty({ example: 'jane@company.com' })
+  @IsEmail()
+  email!: string;
+}
+
+/** Password reset step 2: exchange the emailed token for a new password. */
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'Token from the reset link.' })
+  @IsString()
+  token!: string;
+
+  @ApiProperty({ minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
+export class PasswordResetRequestResponseDto {
+  @ApiProperty({ example: true })
+  success!: boolean;
+
+  @ApiProperty({
+    example: 'If the account exists, a reset link has been sent.',
+  })
+  message!: string;
+
+  @ApiPropertyOptional({
+    description: 'Only returned in local development, where Mailpit is used.',
+  })
+  resetUrl?: string;
+}
+
+export class PasswordResetConfirmResponseDto {
+  @ApiProperty({ example: true })
+  success!: boolean;
 }
 
 /** Principal returned after authentication (candidate or internal user). */

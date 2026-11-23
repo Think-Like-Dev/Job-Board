@@ -33,6 +33,27 @@ export const LoginPayloadSchema = z.object({
   password: z.string().min(1, 'Please enter your password'),
 });
 
+export const RequestPasswordResetPayloadSchema = z.object({
+  email: z.email('Please enter a valid email address'),
+});
+
+export const ResetPasswordPayloadSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+// ─── Password reset responses ────────────────────────────────────────────────
+
+export const PasswordResetRequestResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  resetUrl: z.string().optional(),
+});
+
+export const PasswordResetConfirmResponseSchema = z.object({
+  success: z.boolean(),
+});
+
 export const VerifyOtpPayloadSchema = z.object({
   email: z.email(),
   otp: z.string().length(6, 'OTP must be exactly 6 digits'),

@@ -13,6 +13,24 @@ export interface AppConfig {
   corsOrigins: string[];
   storage: StorageConfig;
   rabbitmq: RabbitMqConfig;
+  mail: MailConfig;
+}
+
+/**
+ * Outgoing mail. Local development points at Mailpit (SMTP on 1025, UI on
+ * 8025); staging and production read a real SMTP relay from the env files.
+ */
+export interface MailConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  user?: string;
+  password?: string;
+  from: string;
+  /** Public base URL of the recruiter SPA, used for links inside emails. */
+  appBaseUrl: string;
+  /** Link lifetime for a password reset, in minutes. */
+  passwordResetExpiryMinutes: number;
 }
 
 /** S3-compatible object storage (Garage) used for resumes and cover letters. */
@@ -153,6 +171,20 @@ export default (): AppConfig => ({
     outboxPollMs: parseInt(process.env.RABBITMQ_OUTBOX_POLL_MS ?? '5000', 10),
     maxPublishAttempts: parseInt(
       process.env.RABBITMQ_MAX_PUBLISH_ATTEMPTS ?? '5',
+      10,
+    ),
+  },
+  mail: {
+    // Mailpit's default SMTP port in local development.
+    host: process.env.MAIL_HOST ?? 'localhost',
+    port: parseInt(process.env.MAIL_PORT ?? '1025', 10),
+    secure: (process.env.MAIL_SECURE ?? 'false') === 'true',
+    user: process.env.MAIL_USER || undefined,
+    password: process.env.MAIL_PASSWORD || undefined,
+    from: process.env.MAIL_FROM ?? 'no-reply@jobboard.local',
+    appBaseUrl: process.env.RECRUITER_APP_URL ?? 'http://localhost:5174',
+    passwordResetExpiryMinutes: parseInt(
+      process.env.PASSWORD_RESET_EXPIRY_MINUTES ?? '30',
       10,
     ),
   },

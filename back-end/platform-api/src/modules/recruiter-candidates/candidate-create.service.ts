@@ -6,7 +6,7 @@ import {
 import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { randomUUID } from 'node:crypto';
-import { FileType } from '@common/constants/enums';
+import { CandidateStatus, FileType } from '@common/constants/enums';
 import type { SessionPayload } from '@modules/auth/auth.service';
 import { CandidateCertificationSchema } from '@modules/candidates/candidate-certification.schema';
 import { CandidateEducationSchema } from '@modules/candidates/candidate-education.schema';
@@ -104,6 +104,7 @@ export class CandidateCreateService {
           profileImageFileId: profileImage?.id ?? null,
           resumeFileId: resume.id,
           createdBy: session.principalId,
+          status: CandidateStatus.INVITED,
           totalExperienceMonths: calculation.totalMonths,
           createdAt: now,
           updatedAt: now,

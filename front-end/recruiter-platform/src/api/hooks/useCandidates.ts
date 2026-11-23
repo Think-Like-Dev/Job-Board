@@ -6,6 +6,7 @@ import type {
 } from "../schemas/candidates.schema";
 import {
   createCandidate,
+  deleteCandidate,
   getCandidate,
   getCandidateApplications,
   getCandidates,
@@ -56,6 +57,18 @@ export function useCreateCandidate() {
         QUERY_KEYS.CANDIDATES.DETAIL(response.data.id),
         response,
       );
+    },
+  });
+}
+
+export function useDeleteCandidate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ["candidates", "delete"],
+    mutationFn: (id: string) => deleteCandidate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CANDIDATES.LISTS });
     },
   });
 }

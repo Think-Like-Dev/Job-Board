@@ -4,6 +4,7 @@ import {
   type EntitySchemaProperty,
 } from '@mikro-orm/core';
 import { UserSchema } from '@modules/users/user.schema';
+import { CandidateStatus } from '@common/constants/enums';
 import {
   softDeleteFilter,
   softDeleteProperty,
@@ -21,6 +22,7 @@ import { FileSchema } from '../files/file.schema';
 export interface Candidate extends SoftDeletable {
   id: string;
   email: string;
+  status: CandidateStatus;
   firstName?: string;
   lastName?: string;
   phone?: string | null;
@@ -58,6 +60,11 @@ export const CandidateSchema = new EntitySchema<Candidate>({
   properties: {
     id: { type: 'uuid', primary: true, defaultRaw: 'gen_random_uuid()' },
     email: { type: 'string' },
+    status: {
+      enum: true,
+      items: () => CandidateStatus,
+      nativeEnumName: 'candidate_status',
+    },
     firstName: { type: 'string', nullable: true },
     lastName: { type: 'string', nullable: true },
     phone: { type: 'string', nullable: true },

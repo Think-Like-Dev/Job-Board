@@ -109,7 +109,7 @@ export function JobFiltersForm({ value, onChange }: JobFiltersFormProps) {
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="filter-category" className="font-medium text-sm">
-            {t('jobs.filters.category')}
+            {t('common.category')}
           </Label>
           <Input
             id="filter-category"

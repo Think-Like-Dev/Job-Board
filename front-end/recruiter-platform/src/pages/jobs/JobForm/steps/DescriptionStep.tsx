@@ -36,7 +36,7 @@ export function DescriptionStep({ form }: DescriptionStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="responsibilities">
-          {t("jobForm.fields.responsibilities")}
+          {t("common.responsibilities")}
         </FormLabel>
         <Textarea
           id="responsibilities"
@@ -48,7 +48,7 @@ export function DescriptionStep({ form }: DescriptionStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="yearsOfExperience">
-          {t("jobForm.fields.yearsOfExperience")}
+          {t("common.yearsOfExperience")}
         </FormLabel>
         <Input
           id="yearsOfExperience"
@@ -78,7 +78,7 @@ export function DescriptionStep({ form }: DescriptionStepProps) {
       </div>
 
       <div className="space-y-2">
-        <FormLabel htmlFor="keywords">{t("jobForm.fields.keywords")}</FormLabel>
+        <FormLabel htmlFor="keywords">{t("common.keywords")}</FormLabel>
         <Controller
           control={form.control}
           name="keywords"

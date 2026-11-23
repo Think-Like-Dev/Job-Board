@@ -125,7 +125,7 @@ export function ApplicationDetailsModal({
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-2 gap-2">
                     <span className="text-muted-foreground">
-                      {t('applications.details.jobCategory')}
+                      {t('common.category')}
                     </span>
                     <span>{app.jobCategory}</span>
                   </div>

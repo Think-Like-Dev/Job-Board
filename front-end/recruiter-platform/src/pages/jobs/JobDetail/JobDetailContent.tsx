@@ -77,59 +77,59 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
 
   return (
     <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
-      <DetailSection title={t("job.detail.sections.overview")}>
+      <DetailSection title={t("common.overview")}>
         <dl className="space-y-2">
           <DetailField label={t("common.status")}>
             <StatusBadge status={job.status} />
           </DetailField>
-          <DetailField label={t("job.detail.fields.code")}>
+          <DetailField label={t("common.jobCode")}>
             {job.code}
           </DetailField>
-          <DetailField label={t("job.detail.fields.category")}>
+          <DetailField label={t("common.category")}>
             {job.category || notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.department")}>
+          <DetailField label={t("common.department")}>
             {job.department || notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.designation")}>
+          <DetailField label={t("common.designation")}>
             {job.designation || notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.employmentType")}>
+          <DetailField label={t("common.employmentType")}>
             {formatEnumToStartCase(job.employmentType)}
           </DetailField>
           <DetailField label={t("common.location")}>
             {job.location || notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.workMode")}>
+          <DetailField label={t("common.workMode")}>
             {job.workMode.length
               ? job.workMode.map(formatEnumToStartCase).join(", ")
               : notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.vacancies")}>
+          <DetailField label={t("common.vacancies")}>
             {job.vacancies ?? notProvided}
           </DetailField>
         </dl>
       </DetailSection>
 
-      <DetailSection title={t("job.detail.sections.description")}>
+      <DetailSection title={t("common.descriptionRequirements")}>
         <dl className="space-y-2">
           <DetailField label={t("job.detail.fields.description")}>
             <p className="whitespace-pre-line">
               {job.description || notProvided}
             </p>
           </DetailField>
-          <DetailField label={t("job.detail.fields.responsibilities")}>
+          <DetailField label={t("common.responsibilities")}>
             <p className="whitespace-pre-line">
               {job.responsibilities || notProvided}
             </p>
           </DetailField>
-          <DetailField label={t("job.detail.fields.yearsOfExperience")}>
+          <DetailField label={t("common.yearsOfExperience")}>
             {job.yearsOfExperience || notProvided}
           </DetailField>
           <DetailField label={t("common.skills")}>
             {job.skills.length ? <TagList values={job.skills} /> : notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.keywords")}>
+          <DetailField label={t("common.keywords")}>
             {job.keywords.length ? (
               <TagList values={job.keywords} />
             ) : (
@@ -139,19 +139,19 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
         </dl>
       </DetailSection>
 
-      <DetailSection title={t("job.detail.sections.compensation")}>
+      <DetailSection title={t("common.compensationBenefits")}>
         <dl className="space-y-2">
-          <DetailField label={t("job.detail.fields.compensation")}>
+          <DetailField label={t("common.compensation")}>
             {formatCompensation(job.compensation) || notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.benefits")}>
+          <DetailField label={t("common.benefits")}>
             {job.benefits?.length ? (
               <TagList values={job.benefits} />
             ) : (
               notProvided
             )}
           </DetailField>
-          <DetailField label={t("job.detail.fields.workShiftTiming")}>
+          <DetailField label={t("common.workShiftTiming")}>
             {job.workShiftTiming.length ? (
               <TagList values={job.workShiftTiming} />
             ) : (
@@ -163,10 +163,10 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
 
       <DetailSection title={t("job.detail.sections.hiring")}>
         <dl className="space-y-2">
-          <DetailField label={t("job.detail.fields.totalInterviewRounds")}>
+          <DetailField label={t("common.totalInterviewRounds")}>
             {job.totalInterviewRounds ?? notProvided}
           </DetailField>
-          <DetailField label={t("job.detail.fields.lastApplicationDate")}>
+          <DetailField label={t("common.lastApplicationDate")}>
             {formatIsoDate(job.lastApplicationDate) || notProvided}
           </DetailField>
         </dl>
@@ -174,17 +174,17 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
 
       <DetailSection title={t("job.detail.sections.settings")}>
         <dl className="space-y-2">
-          <DetailField label={t("job.detail.fields.coverLetterRequired")}>
+          <DetailField label={t("common.coverLetterRequired")}>
             {settings?.coverLetterRequired
               ? t("jobForm.review.yes")
               : t("jobForm.review.no")}
           </DetailField>
-          <DetailField label={t("job.detail.fields.attachmentsAllowed")}>
+          <DetailField label={t("common.attachmentsAllowed")}>
             {settings?.attachmentsAllowed
               ? t("jobForm.review.yes")
               : t("jobForm.review.no")}
           </DetailField>
-          <DetailField label={t("job.detail.fields.maximumAttachments")}>
+          <DetailField label={t("common.maximumAttachments")}>
             {settings?.maximumAttachments ?? notProvided}
           </DetailField>
         </dl>

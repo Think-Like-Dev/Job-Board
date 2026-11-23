@@ -96,12 +96,12 @@ const Jobs = () => {
   }, [page, totalPages]);
 
   const columns: Array<ColumnDef<Partial<Job>>> = [
-    { accessorKey: "code", header: t("job.list.code") },
+    { accessorKey: "code", header: t("common.jobCode") },
     { accessorKey: "title", header: t("job.list.title") },
-    { accessorKey: "category", header: t("job.list.category") },
+    { accessorKey: "category", header: t("common.category") },
     {
       accessorKey: "compensation",
-      header: t("job.list.compensation"),
+      header: t("common.compensation"),
       meta: { sortable: true },
       cell: ({ row }) =>
         formatCompensation(row.original.compensation) ||

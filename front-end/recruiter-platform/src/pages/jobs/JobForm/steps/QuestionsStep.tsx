@@ -18,7 +18,7 @@ export function QuestionsStep() {
         </span>
         <div className="space-y-1">
           <h2 className="text-base font-medium">
-            {t("jobForm.questions.title")}
+            {t("common.applicationQuestions")}
           </h2>
           <p className="max-w-md text-sm text-muted-foreground">
             {t("jobForm.questions.description")}

@@ -46,7 +46,7 @@ export function useApplicationColumns({
     },
     {
       accessorKey: "candidateName",
-      header: t("job.applications.columns.candidate"),
+      header: t("common.candidate"),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.candidateName}</span>
       ),
@@ -77,7 +77,7 @@ export function useApplicationColumns({
     },
     {
       accessorKey: "status",
-      header: t("job.applications.columns.status"),
+      header: t("common.stage"),
       cell: ({ row }) => (
         <ApplicationStatusBadge status={row.original.status} />
       ),
@@ -89,7 +89,7 @@ export function useApplicationColumns({
     },
     {
       accessorKey: "appliedAt",
-      header: t("job.applications.columns.appliedAt"),
+      header: t("common.appliedOn"),
       meta: { sortable: true, sortKey: "appliedAt" },
       cell: ({ row }) =>
         formatIsoDate(row.original.appliedAt ?? row.original.createdAt),

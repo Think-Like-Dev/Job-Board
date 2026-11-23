@@ -88,18 +88,18 @@ export function JobDescriptionPanel({
           </p>
         ) : (
           <>
-            <Section title={t("job.applications.jobDescription.overview")}>
+            <Section title={t("common.overview")}>
               <div className="space-y-1">
                 <Field
                   label={t("common.location")}
                   value={job.location || notProvided}
                 />
                 <Field
-                  label={t("job.detail.fields.employmentType")}
+                  label={t("common.employmentType")}
                   value={formatEnumToStartCase(job.employmentType)}
                 />
                 <Field
-                  label={t("job.detail.fields.workMode")}
+                  label={t("common.workMode")}
                   value={
                     job.workMode.length
                       ? job.workMode.map(formatEnumToStartCase).join(", ")
@@ -107,11 +107,11 @@ export function JobDescriptionPanel({
                   }
                 />
                 <Field
-                  label={t("job.detail.fields.yearsOfExperience")}
+                  label={t("common.yearsOfExperience")}
                   value={job.yearsOfExperience || notProvided}
                 />
                 <Field
-                  label={t("job.detail.fields.lastApplicationDate")}
+                  label={t("common.lastApplicationDate")}
                   value={formatIsoDate(job.lastApplicationDate) || notProvided}
                 />
               </div>
@@ -123,7 +123,7 @@ export function JobDescriptionPanel({
               </p>
             </Section>
 
-            <Section title={t("job.detail.fields.responsibilities")}>
+            <Section title={t("common.responsibilities")}>
               <p className="whitespace-pre-line text-sm">
                 {job.responsibilities || notProvided}
               </p>
@@ -137,17 +137,17 @@ export function JobDescriptionPanel({
               )}
             </Section>
 
-            <Section title={t("job.applications.jobDescription.compensation")}>
+            <Section title={t("common.compensationBenefits")}>
               <div className="space-y-1">
                 <Field
-                  label={t("job.detail.fields.compensation")}
+                  label={t("common.compensation")}
                   value={formatCompensation(job.compensation) || notProvided}
                 />
               </div>
               {job.benefits?.length ? (
                 <div className="space-y-1.5 pt-1">
                   <p className="text-xs text-muted-foreground">
-                    {t("job.detail.fields.benefits")}
+                    {t("common.benefits")}
                   </p>
                   <TagList values={job.benefits} />
                 </div>

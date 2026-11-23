@@ -48,7 +48,7 @@ export function CompensationStep({ form }: CompensationStepProps) {
     <div className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2 md:col-span-2">
         <FormLabel htmlFor="compensationType">
-          {t("jobForm.fields.compensationType")}
+          {t("common.compensation")}
         </FormLabel>
         <Select
           value={compensationType}
@@ -194,7 +194,7 @@ export function CompensationStep({ form }: CompensationStepProps) {
       )}
 
       <div className="space-y-2">
-        <FormLabel htmlFor="vacancies">{t("jobForm.fields.vacancies")}</FormLabel>
+        <FormLabel htmlFor="vacancies">{t("common.vacancies")}</FormLabel>
         <Input
           id="vacancies"
           type="number"
@@ -206,7 +206,7 @@ export function CompensationStep({ form }: CompensationStepProps) {
       </div>
 
       <div className="space-y-2">
-        <FormLabel htmlFor="benefits">{t("jobForm.fields.benefits")}</FormLabel>
+        <FormLabel htmlFor="benefits">{t("common.benefits")}</FormLabel>
         <Controller
           control={form.control}
           name="benefits"
@@ -223,7 +223,7 @@ export function CompensationStep({ form }: CompensationStepProps) {
 
       <div className="space-y-2 md:col-span-2">
         <FormLabel htmlFor="workShiftTiming">
-          {t("jobForm.fields.workShiftTiming")}
+          {t("common.workShiftTiming")}
         </FormLabel>
         <Controller
           control={form.control}

@@ -46,7 +46,48 @@
     "publish": "Publish",
     "cloneJob": "Clone job",
     "saveAsDraft": "Save as Draft",
-    "backToSignIn": "Back to sign in"
+    "backToSignIn": "Back to sign in",
+    "candidate": "Candidate",
+    "stage": "Stage",
+    "appliedOn": "Applied On",
+    "present": "Present",
+    "documents": "Documents",
+    "education": "Education",
+    "experience": "Experience",
+    "linkedin": "LinkedIn",
+    "portfolio": "Portfolio",
+    "category": "Category",
+    "compensation": "Compensation",
+    "department": "Department",
+    "employmentType": "Employment Type",
+    "keywords": "Keywords",
+    "responsibilities": "Responsibilities",
+    "vacancies": "Vacancies",
+    "workMode": "Work Mode",
+    "workShiftTiming": "Work Shift Timing",
+    "yearsOfExperience": "Years of Experience",
+    "totalInterviewRounds": "Total Interview Rounds",
+    "maximumAttachments": "Maximum Attachments",
+    "benefits": "Benefits",
+    "lastApplicationDate": "Last Application Date",
+    "designation": "Designation",
+    "jobCode": "Job Code",
+    "attachmentsAllowed": "Attachments Allowed",
+    "coverLetterRequired": "Cover Letter Required",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone",
+    "password": "Password",
+    "jobTitle": "Job title",
+    "role": "Role",
+    "overview": "Overview",
+    "compensationBenefits": "Compensation & Benefits",
+    "descriptionRequirements": "Description & Requirements",
+    "applicationQuestions": "Application Questions",
+    "candidateOverview": "Candidate overview",
+    "certifications": "Certifications",
+    "months_one": "{{count}} mo",
+    "months_other": "{{count}} mos"
   },
   "job": {
     "savingDraft": "Saving Draft...",
@@ -68,10 +109,7 @@
       "ARCHIVED": "Archived"
     },
     "list": {
-      "code": "Job Code",
       "title": "Title",
-      "category": "Category",
-      "compensation": "Compensation",
       "createdAt": "Created Date",
       "updatedAt": "Updated Date",
       "applications": "Applications",
@@ -97,37 +135,15 @@
     },
     "detail": {
       "title": "Job details",
-      "loading": "Loading...",
       "readOnly": "Only the recruiter who created this job can change its status.",
       "archivedReadOnly": "This job is archived and read-only.",
       "sections": {
-        "overview": "Overview",
-        "description": "Description & Requirements",
-        "compensation": "Compensation & Benefits",
         "hiring": "Hiring Process",
         "settings": "Application Settings",
         "lifecycle": "Lifecycle"
       },
       "fields": {
-        "code": "Job Code",
-        "category": "Category",
-        "department": "Department",
-        "designation": "Designation",
-        "employmentType": "Employment Type",
-        "workMode": "Work Mode",
-        "vacancies": "Vacancies",
         "description": "Description",
-        "responsibilities": "Responsibilities",
-        "yearsOfExperience": "Years of Experience",
-        "keywords": "Keywords",
-        "compensation": "Compensation",
-        "benefits": "Benefits",
-        "workShiftTiming": "Work Shift Timing",
-        "totalInterviewRounds": "Total Interview Rounds",
-        "lastApplicationDate": "Last Application Date",
-        "coverLetterRequired": "Cover Letter Required",
-        "attachmentsAllowed": "Attachments Allowed",
-        "maximumAttachments": "Maximum Attachments",
         "createdAt": "Created",
         "updatedAt": "Updated",
         "publishedAt": "Published",
@@ -195,11 +211,8 @@
         "loadFailed": "Could not load this file. Please try again."
       },
       "columns": {
-        "candidate": "Candidate",
         "contact": "Email / Phone",
-        "status": "Stage",
-        "aiScore": "AI Score",
-        "appliedAt": "Applied On"
+        "aiScore": "AI Score"
       },
       "status": {
         "DRAFT": "Draft",
@@ -216,8 +229,6 @@
       },
       "jobDescription": {
         "title": "Job Description",
-        "overview": "Overview",
-        "compensation": "Compensation & Benefits",
         "loadFailed": "Could not load the job description."
       },
       "drawer": {
@@ -226,7 +237,6 @@
         "loadFailedTitle": "Could not load this candidate",
         "loadFailed": "The application may have been removed or the link is invalid.",
         "sections": {
-          "documents": "Documents",
           "profile": "Candidate Profile",
           "ai": "AI Evaluation",
           "timeline": "Recruitment Activity"
@@ -235,14 +245,10 @@
           "coverLetter": "Cover letter"
         },
         "profile": {
-          "education": "Education",
           "experience": "Work Experience",
           "noEducation": "No education details",
           "noExperience": "No work experience",
-          "noSkills": "No skills listed",
-          "present": "Present",
-          "linkedin": "LinkedIn",
-          "portfolio": "Portfolio"
+          "noSkills": "No skills listed"
         },
         "ai": {
           "none": "No score has been calculated for this application yet.",
@@ -283,7 +289,6 @@
   },
   "auth": {
     "emailLabel": "Email Address",
-    "passwordLabel": "Password",
     "otpLabel": "Enter OTP",
     "verify": "Verify",
     "verifying": "Verifying...",
@@ -313,7 +318,6 @@
     "newPasswordLabel": "New password",
     "newPasswordConfirmLabel": "Confirm new password",
     "resetPasswordSubmit": "Save new password",
-    "resetPasswordSubmitting": "Saving...",
     "resetPasswordSuccess": "Password updated. You can sign in now.",
     "resetPasswordInvalid": "This reset link is invalid or has expired.",
     "forgotPassword": "Forgot password?"
@@ -329,9 +333,6 @@
     "inviteLinkCopied": "Invitation link copied",
     "sendInvite": "Send invitation",
     "emailLabel": "Email address",
-    "firstNameLabel": "First name",
-    "lastNameLabel": "Last name",
-    "roleLabel": "Role",
     "roleAdmin": "Administrator",
     "roleRecruiter": "Recruiter",
     "roleHiringManager": "Hiring manager",
@@ -347,7 +348,6 @@
     "status_ACTIVE": "Active",
     "status_SUSPENDED": "Suspended",
     "columnMember": "Member",
-    "columnRole": "Role",
     "columnInvited": "Invited",
     "resend": "Resend",
     "deleteInvitation": "Delete invitation",
@@ -365,11 +365,6 @@
   "onboard": {
     "title": "Finish your profile",
     "subtitle": "Joining as {{role}} with {{email}}.",
-    "firstName": "First name",
-    "lastName": "Last name",
-    "phone": "Phone",
-    "jobTitle": "Job title",
-    "password": "Password",
     "confirmPassword": "Confirm password",
     "passwordLength": "Password must be at least 8 characters",
     "submit": "Activate my account",
@@ -407,7 +402,6 @@
     },
     "stepOf": "Step {{current}} of {{total}}",
     "questions": {
-      "title": "Application Questions",
       "description": "Choose the questions candidates must answer when they apply for this role.",
       "addQuestion": "Add Question",
       "comingSoon": "The questions builder is coming soon."
@@ -418,37 +412,18 @@
     },
     "steps": {
       "basics": "Job Basics",
-      "description": "Description & Requirements",
       "compensation": "Compensation & Details",
       "process": "Hiring Process & Settings",
-      "questions": "Application Questions",
       "review": "Review"
     },
     "fields": {
       "title": "Job Title",
-      "department": "Department",
-      "designation": "Designation",
-      "category": "Category",
-      "employmentType": "Employment Type",
-      "workMode": "Work Mode",
       "description": "Job Description",
-      "responsibilities": "Responsibilities",
-      "yearsOfExperience": "Years of Experience",
-      "keywords": "Keywords",
-      "compensationType": "Compensation",
       "currency": "Currency",
       "period": "Period",
       "amount": "Amount",
       "amountMin": "Minimum Amount",
-      "amountMax": "Maximum Amount",
-      "vacancies": "Vacancies",
-      "benefits": "Benefits",
-      "workShiftTiming": "Work Shift Timing",
-      "totalInterviewRounds": "Total Interview Rounds",
-      "lastApplicationDate": "Last Application Date",
-      "coverLetterRequired": "Cover Letter Required",
-      "attachmentsAllowed": "Attachments Allowed",
-      "maximumAttachments": "Maximum Attachments"
+      "amountMax": "Maximum Amount"
     },
     "placeholders": {
       "title": "e.g. Senior Backend Engineer",
@@ -506,9 +481,7 @@
         "experienceAsc": "Least experience"
       },
       "columns": {
-        "candidate": "Candidate",
         "contact": "Contact",
-        "experience": "Experience",
         "applications": "Applications",
         "registeredAt": "Registered"
       },
@@ -531,17 +504,12 @@
       "fresher": "Fresher",
       "years_one": "{{count}} yr",
       "years_other": "{{count}} yrs",
-      "months_one": "{{count}} mo",
-      "months_other": "{{count}} mos",
       "yearsMonths": "{{years}} yrs {{months}} mos"
     },
     "overview": {
-      "title": "Candidate overview",
       "loading": "Loading profile...",
       "loadFailedTitle": "Could not load the profile",
       "registered": "Registered {{date}}",
-      "linkedin": "LinkedIn",
-      "portfolio": "Portfolio",
       "noResume": "No resume on file",
       "downloadFailed": "Could not download the resume",
       "career": "Career",
@@ -549,19 +517,13 @@
       "careerStart": "Career start",
       "careerGaps": "Career gaps",
       "noGaps": "No gaps of 3 months or more",
-      "gapMonths_one": "{{count}} mo",
-      "gapMonths_other": "{{count}} mos",
       "experience": "Work experience",
       "noExperience": "No work experience recorded",
-      "education": "Education",
       "noEducation": "No education recorded",
-      "certifications": "Certifications",
       "noCertifications": "No certifications recorded",
-      "credential": "Credential",
-      "present": "Present"
+      "credential": "Credential"
     },
     "dialog": {
-      "overviewTitle": "Candidate overview",
       "viewFullProfile": "Open full profile"
     },
     "detail": {
@@ -579,10 +541,7 @@
       "panelTitle": "Application details",
       "loadFailed": "Could not load applications.",
       "columns": {
-        "job": "Job",
-        "department": "Department",
-        "status": "Stage",
-        "appliedAt": "Applied On"
+        "job": "Job"
       }
     },
     "form": {
@@ -596,17 +555,10 @@
       "requiredHint": "Fields marked with * are required.",
       "sections": {
         "basics": "Basic details",
-        "documents": "Documents",
-        "links": "Links",
-        "education": "Education",
-        "experience": "Experience",
-        "certifications": "Certifications"
+        "links": "Links"
       },
       "fields": {
-        "firstName": "First name",
-        "lastName": "Last name",
         "email": "Email",
-        "phone": "Phone",
         "currentLocation": "Current location",
         "address": "Address",
         "city": "City",
@@ -626,7 +578,6 @@
         "gpa": "GPA",
         "additionalDetails": "Additional details",
         "companyName": "Company",
-        "jobTitle": "Job title",
         "salary": "Salary",
         "description": "Description",
         "certificationTitle": "Certification title",

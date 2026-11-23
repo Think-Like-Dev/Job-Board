@@ -120,7 +120,7 @@ export function CompensationFilterDropdown({
 
       <PopoverContent align="start" className="w-80">
         <p className="px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {t("job.list.compensation")}
+          {t("common.compensation")}
         </p>
 
         <div className="flex flex-col gap-0.5">

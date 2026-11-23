@@ -30,7 +30,7 @@ export function ExperienceTable({
     const startLabel = start ? new Date(start).getFullYear() : '—';
     const endLabel = end
       ? new Date(end).getFullYear()
-      : t('profile.experience.present');
+      : t('common.present');
     return `${startLabel} – ${endLabel}`;
   }
 
@@ -61,7 +61,7 @@ export function ExperienceTable({
             <TableRow>
               <TableHead>{t('profile.experience.company')}</TableHead>
               <TableHead>{t('profile.experience.role')}</TableHead>
-              <TableHead>{t('profile.experience.duration')}</TableHead>
+              <TableHead>{t('common.duration')}</TableHead>
               <TableHead className="w-[90px] text-right">
                 {t('common.edit')}
               </TableHead>

@@ -24,7 +24,7 @@ export function ProcessStep({ form }: ProcessStepProps) {
     <div className="grid gap-4 md:grid-cols-2">
       <div className="space-y-2">
         <FormLabel htmlFor="totalInterviewRounds" required>
-          {t("jobForm.fields.totalInterviewRounds")}
+          {t("common.totalInterviewRounds")}
         </FormLabel>
         <Input
           id="totalInterviewRounds"
@@ -38,7 +38,7 @@ export function ProcessStep({ form }: ProcessStepProps) {
 
       <div className="space-y-2">
         <FormLabel htmlFor="lastApplicationDate" required>
-          {t("jobForm.fields.lastApplicationDate")}
+          {t("common.lastApplicationDate")}
         </FormLabel>
         <Input
           id="lastApplicationDate"
@@ -51,7 +51,7 @@ export function ProcessStep({ form }: ProcessStepProps) {
 
       <div className="flex items-center justify-between rounded-lg border p-3">
         <FormLabel htmlFor="coverLetterRequired" className="cursor-pointer">
-          {t("jobForm.fields.coverLetterRequired")}
+          {t("common.coverLetterRequired")}
         </FormLabel>
         <Controller
           control={form.control}
@@ -68,7 +68,7 @@ export function ProcessStep({ form }: ProcessStepProps) {
 
       <div className="flex items-center justify-between rounded-lg border p-3">
         <FormLabel htmlFor="attachmentsAllowed" className="cursor-pointer">
-          {t("jobForm.fields.attachmentsAllowed")}
+          {t("common.attachmentsAllowed")}
         </FormLabel>
         <Controller
           control={form.control}
@@ -86,7 +86,7 @@ export function ProcessStep({ form }: ProcessStepProps) {
       {attachmentsAllowed && (
         <div className="space-y-2 md:col-span-2">
           <FormLabel htmlFor="maximumAttachments">
-            {t("jobForm.fields.maximumAttachments")}
+            {t("common.maximumAttachments")}
           </FormLabel>
           <Input
             id="maximumAttachments"

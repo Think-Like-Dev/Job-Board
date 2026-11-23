@@ -100,7 +100,7 @@ function CandidateContact({
           className="inline-flex items-center gap-1.5 text-primary hover:underline"
         >
           <LinkIcon className="size-3.5" />
-          {t("job.applications.drawer.profile.linkedin")}
+          {t("common.linkedin")}
         </a>
       ) : null}
       {portfolio ? (
@@ -111,7 +111,7 @@ function CandidateContact({
           className="inline-flex items-center gap-1.5 text-primary hover:underline"
         >
           <GlobeIcon className="size-3.5" />
-          {t("job.applications.drawer.profile.portfolio")}
+          {t("common.portfolio")}
         </a>
       ) : null}
     </div>
@@ -171,7 +171,7 @@ export function CandidatePanel({
           <CandidateContact application={application} />
 
           <PanelSection
-            title={t("job.applications.drawer.sections.documents")}
+            title={t("common.documents")}
           >
             <CandidateDocuments
               resumeFileId={application.resumeFileId}

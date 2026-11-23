@@ -96,7 +96,7 @@ const Login = () => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">
-              {t("auth.passwordLabel")} <span className="text-destructive">*</span>
+              {t("common.password")} <span className="text-destructive">*</span>
             </Label>
             <Input
               type="password"

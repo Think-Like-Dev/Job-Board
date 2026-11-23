@@ -264,6 +264,7 @@ class ScoringWorker:
                 if result.get("needs_review")
                 else ("the scoring run produced no match")
             )
+            code = "needs_review" if result.get("needs_review") else "scoring_failed"
             message = "; ".join(result.get("quality_issues") or []) or reason
             logger.warning("No score for application %s: %s", event.applicationId, message)
 
@@ -279,6 +280,7 @@ class ScoringWorker:
                     "jobId": str(event.jobId),
                     "attempt": 1,
                     "reason": reason,
+                    "code": code,
                     "message": message,
                 },
             )

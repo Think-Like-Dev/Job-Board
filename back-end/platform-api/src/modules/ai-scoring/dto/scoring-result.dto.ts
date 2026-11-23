@@ -11,6 +11,8 @@ import {
   Min,
 } from 'class-validator';
 
+import { AiScoreFailureCode } from '@common/constants/enums';
+
 /**
  * How the AI service produced the result.
  *
@@ -154,6 +156,15 @@ export class ScoringFailedMessageDto extends ScoringEventEnvelopeDto {
   @IsString()
   @IsOptional()
   reason?: string;
+
+  @ApiPropertyOptional({
+    enum: AiScoreFailureCode,
+    description:
+      'needs_review: the document failed the quality gate and needs a better file; scoring_failed: the run produced nothing usable',
+  })
+  @IsEnum(AiScoreFailureCode)
+  @IsOptional()
+  code?: AiScoreFailureCode;
 
   @ApiPropertyOptional()
   @IsString()

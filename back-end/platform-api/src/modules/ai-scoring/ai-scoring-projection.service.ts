@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { type EntityManager, EntityRepository } from '@mikro-orm/core';
 import { EntityManager as PostgreSqlEntityManager } from '@mikro-orm/postgresql';
-import { AiScoreStatus } from '@common/constants/enums';
+import { AiScoreFailureCode, AiScoreStatus } from '@common/constants/enums';
 import {
   ApplicationAiScore,
   ApplicationAiScoreSchema,
@@ -152,12 +152,14 @@ export class AiScoringProjectionService {
              "score", "weights_version", "component_scores", "matching_skills",
              "missing_skills", "ai_summary", "strengths", "risks",
              "interview_questions", "knockout_reason", "failure_reason",
-             "failure_message", "event_id", "scored_at", "created_at", "updated_at")
+             "failure_code", "failure_message", "event_id", "scored_at",
+             "created_at", "updated_at")
        VALUES (gen_random_uuid(), ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL,
-               NULL, NULL, NULL, NULL, ?, ?, ?, ?, now(), now())
+               NULL, NULL, NULL, NULL, ?, ?, ?, ?, ?, now(), now())
        ON CONFLICT ("application_id") DO UPDATE SET
              "status" = EXCLUDED."status",
              "failure_reason" = EXCLUDED."failure_reason",
+             "failure_code" = EXCLUDED."failure_code",
              "failure_message" = EXCLUDED."failure_message",
              "event_id" = EXCLUDED."event_id",
              "scored_at" = EXCLUDED."scored_at",
@@ -171,6 +173,7 @@ export class AiScoringProjectionService {
         message.jobId,
         AiScoreStatus.FAILED,
         message.reason ?? null,
+        message.code ?? AiScoreFailureCode.SCORING_FAILED,
         message.message ?? null,
         message.eventId,
         this.toTimestamp(message.occurredAt),

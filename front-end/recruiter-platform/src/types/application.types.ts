@@ -148,6 +148,8 @@ export type AiScoreStatus = "PENDING" | "SCORED" | "SCORE_ONLY" | "FAILED";
 export interface AiScoreSummary {
   status: AiScoreStatus;
   score?: number | null;
+  /** True when the quality gate blocked scoring and a human must review the file. */
+  needsReview: boolean;
 }
 
 /** The full assessment, as the drawer shows it. */

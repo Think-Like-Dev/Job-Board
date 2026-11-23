@@ -1,5 +1,5 @@
 import { EntitySchema } from '@mikro-orm/core';
-import { AiScoreStatus } from '@common/constants/enums';
+import { AiScoreFailureCode, AiScoreStatus } from '@common/constants/enums';
 
 /**
  * The AI's assessment of one application, as the core API sees it.
@@ -38,6 +38,8 @@ export interface ApplicationAiScore {
   knockoutReason?: string | null;
   /** Why the AI gave up, when it did. */
   failureReason?: string | null;
+  /** Machine-readable reason: a review the recruiter can act on, or a failure. */
+  failureCode?: AiScoreFailureCode | null;
   failureMessage?: string | null;
   /** The event this row was written from, so a replay can be recognised. */
   eventId?: string | null;
@@ -90,6 +92,11 @@ export const ApplicationAiScoreSchema = new EntitySchema<ApplicationAiScore>({
     interviewQuestions: { type: 'json', columnType: 'jsonb', nullable: true },
     knockoutReason: { type: 'text', nullable: true },
     failureReason: { type: 'string', nullable: true },
+    failureCode: {
+      type: 'string',
+      columnType: 'text',
+      nullable: true,
+    },
     failureMessage: { type: 'text', nullable: true },
     eventId: { type: 'uuid', nullable: true },
     scoredAt: { type: 'datetime', nullable: true },

@@ -161,3 +161,15 @@ export enum AiScoreStatus {
   SCORE_ONLY = 'SCORE_ONLY',
   FAILED = 'FAILED',
 }
+
+/**
+ * Why the AI service gave up on an application.
+ *
+ * `NEEDS_REVIEW` is the recoverable case: the file was stored but its text is
+ * not good enough to score, so the recruiter asks for a better one instead of
+ * retrying. `SCORING_FAILED` covers everything else.
+ */
+export enum AiScoreFailureCode {
+  NEEDS_REVIEW = 'needs_review',
+  SCORING_FAILED = 'scoring_failed',
+}

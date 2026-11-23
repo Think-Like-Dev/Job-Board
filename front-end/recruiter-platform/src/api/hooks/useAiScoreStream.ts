@@ -82,6 +82,7 @@ function applyAssessment(
             aiScore: {
               status: assessment.status,
               score: assessment.score,
+              needsReview: assessment.needsReview,
             },
           }
         : current,

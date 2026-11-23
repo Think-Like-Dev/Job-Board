@@ -33,6 +33,8 @@ class PageContent:
     text: str
     #: `text` (selectable), `ocr` (read from an image) or `empty`.
     method: str = "text"
+    #: False when the page looks like it has columns that could not be separated.
+    reading_order_ok: bool = True
     #: Mean word confidence of the OCR pass, when the page was read as an image.
     ocr_confidence: float | None = None
 

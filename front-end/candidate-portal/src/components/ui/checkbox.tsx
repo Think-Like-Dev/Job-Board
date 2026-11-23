@@ -3,7 +3,38 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
 import { cn } from "@/lib/utils"
 import { CheckIcon } from "lucide-react"
 
-function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
+type CheckboxProps = Omit<CheckboxPrimitive.Root.Props, "onCheckedChange"> & {
+  onCheckedChange?: (checked: boolean) => void
+  /**
+   * Render a single native input instead of Base UI's span + hidden input.
+   * Use when the surrounding UI must expose exactly one control to the
+   * accessibility tree (Base UI's hidden input shows up as a second node).
+   */
+  native?: boolean
+}
+
+function Checkbox({ className, native = false, ...props }: CheckboxProps) {
+  if (native) {
+    return (
+      <input
+        type="checkbox"
+        className={cn(
+          "size-4 shrink-0 cursor-pointer rounded border-input accent-primary",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          className as string
+        )}
+        checked={props.checked}
+        defaultChecked={props.defaultChecked}
+        disabled={props.disabled}
+        id={props.id}
+        name={props.name}
+        required={props.required}
+        onChange={(event) => props.onCheckedChange?.(event.target.checked)}
+      />
+    )
+  }
+
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"

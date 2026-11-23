@@ -116,6 +116,7 @@
     "continueDraft": "Continue draft",
     "deleteDraft": "Delete draft",
     "withdraw": "Withdraw",
+    "view": "View application",
     "draftDeleted": "Draft deleted",
     "deleteFailed": "Could not delete the draft",
     "withdrawn": "Application withdrawn",

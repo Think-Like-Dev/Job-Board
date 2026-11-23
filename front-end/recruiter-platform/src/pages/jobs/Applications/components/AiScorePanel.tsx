@@ -17,6 +17,27 @@ interface AiScorePanelProps {
 }
 
 /**
+ * Splits a bulleted fit analysis into its points.
+ *
+ * A paragraph - an assessment stored before the bullets were asked for, or a
+ * model that ignored the instruction - returns `null` and keeps rendering as
+ * text.
+ */
+function toBullets(text: string): string[] | null {
+  const marker = /^(?:[-*•]|\d+[.)])\s+/;
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2 || !lines.every((line) => marker.test(line))) {
+    return null;
+  }
+
+  return lines.map((line) => line.replace(marker, ""));
+}
+
+/**
  * The AI's assessment of an application.
  *
  * What it shows depends on what the AI managed to do: a full assessment, a
@@ -87,6 +108,10 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
     );
   }
 
+  const fitBullets = assessment.aiSummary
+    ? toBullets(assessment.aiSummary)
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -130,7 +155,15 @@ export function AiScorePanel({ assessment }: AiScorePanelProps) {
           <h4 className="text-sm font-medium">
             {t("job.applications.drawer.ai.summary")}
           </h4>
-          <p className="text-sm text-muted-foreground">{assessment.aiSummary}</p>
+          {fitBullets ? (
+            <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+              {fitBullets.map((bullet, index) => (
+                <li key={`${index}-${bullet}`}>{bullet}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{assessment.aiSummary}</p>
+          )}
         </section>
       ) : null}
 

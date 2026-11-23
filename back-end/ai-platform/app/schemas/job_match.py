@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
+
+# The fit analysis is a short list, not a paragraph: the recruiter scans it.
+MAX_FIT_BULLETS = 5
+
+# A line that already is a bullet: "- ", "* ", "• " or "1. ".
+_BULLET = re.compile(r"^(?:[-*•]|\d+[.)])\s+")
 
 
 class SeniorityLevel(StrEnum):
@@ -49,7 +56,23 @@ class QualitativeEvaluationSchema(BaseModel):
     @field_validator("fit_analysis", mode="after")
     @classmethod
     def _tidy_summary(cls, value: str) -> str:
-        return value.strip()
+        """Keeps a bulleted summary to five bullets, one per line.
+
+        Older assessments - and a model that ignores the instruction - answer
+        with a paragraph. That is left as it is: the recruiter reads it, and
+        turning prose into bullets in code would only invent structure.
+        """
+        lines = [line.strip() for line in value.splitlines() if line.strip()]
+        bullets = [line for line in lines if _BULLET.match(line)]
+        if not bullets or len(bullets) != len(lines):
+            return value.strip()
+
+        cleaned: list[str] = []
+        for line in bullets:
+            text = _BULLET.sub("", line).strip()
+            if text:
+                cleaned.append(f"- {text}")
+        return "\n".join(cleaned[:MAX_FIT_BULLETS])
 
     @field_validator("strengths", "risks", "interview_questions", mode="after")
     @classmethod

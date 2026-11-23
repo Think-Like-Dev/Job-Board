@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Repo-local launcher for the Docker shortcuts. No shell configuration needed.
+#
+#   ./dk doctor
+#   ./dk setup
+#   ./dk init:dev
+#   ./dk run:dev
+#
+# Implementation lives in back-end/infrastructure/docker/dockerctl.sh.
+exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/back-end/infrastructure/docker/dockerctl.sh" "$@"

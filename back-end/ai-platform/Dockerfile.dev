@@ -1,0 +1,24 @@
+# Dev image: deps baked in, source bind-mounted by compose, uvicorn --reload.
+# Same idea as platform-api's Dockerfile.dev, with the venv in a named volume.
+
+FROM python:3.14-slim
+
+# shortcut: unpinned uv image, pin the tag once the build is proven
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+
+# Dev group included here (ruff), unlike the production Dockerfile.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+COPY . .
+
+EXPOSE 8000
